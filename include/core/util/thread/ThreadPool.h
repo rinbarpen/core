@@ -10,6 +10,10 @@
 #include <stdexcept>
 #include <functional>
 
+#include <core/util/marcos.h>
+
+LY_NAMESPACE_BEGIN
+
 class ThreadPool 
 {
 public:
@@ -19,7 +23,8 @@ public:
   ~ThreadPool();
 
   template <typename Fn, typename... Args>
-  auto submit(Fn &&fn, Args&&... args) -> std::future<std::result_of_t<Fn(Args...)>>;
+  auto submit(Fn &&fn, Args &&...args)
+    -> std::future<std::invoke_result_t<Fn(Args...)>>;
 
   void start();
   void stop();
@@ -51,3 +56,5 @@ private:
   std::condition_variable cond_;
   std::queue<TaskCallback> tasks_;
 };
+
+LY_NAMESPACE_END

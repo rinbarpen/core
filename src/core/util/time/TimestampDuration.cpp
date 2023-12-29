@@ -1,54 +1,26 @@
-#include "core/util/time/TimestampDuration.h"
-
-#define DEFAULT_TEMPLATE template <class TimeDurationType>
+#include <core/util/time/TimestampDuration.h>
 
 LY_NAMESPACE_BEGIN
 
-DEFAULT_TEMPLATE
+template <class TimeDurationType>
 TimestampDuration<TimeDurationType>::TimestampDuration(
   TimeDurationType duration) : duration_(duration)
   {}
 
-DEFAULT_TEMPLATE
-auto TimestampDuration<TimeDurationType>::duration() -> TimeDurationType 
-{
+template <class TimeDurationType>
+TimestampDuration<TimeDurationType>::TimestampDuration(uint64_t duration)
+  : duration_(TimeDurationType(duration))
+{}
+
+template <class TimeDurationType>
+auto TimestampDuration<TimeDurationType>::duration() const -> TimeDurationType {
   return duration_;
 }
 
 template <class TimeDurationType>
-auto TimestampDuration<TimeDurationType>::count() -> int64_t
-{
+auto TimestampDuration<TimeDurationType>::count() const -> int64_t {
   return duration_.count();
 }
 
-DEFAULT_TEMPLATE
-template <class ClockType>
-auto TimestampDuration<TimeDurationType>::operator+(
-  Timestamp<ClockType> timestamp) -> TimestampDuration<TimeDurationType> {
-  return duration_ + timestamp.currentTp();
-}
-
-DEFAULT_TEMPLATE
-template <class ClockType>
-auto TimestampDuration<TimeDurationType>::operator+=(
-  Timestamp<ClockType> timestamp) -> TimestampDuration<TimeDurationType> & {
-  duration_ += timestamp.currentTp();
-  return *this;
-}
-
-DEFAULT_TEMPLATE
-template <class ClockType>
-auto TimestampDuration<TimeDurationType>::operator-(
-  Timestamp<ClockType> timestamp) -> TimestampDuration<TimeDurationType> {
-  return duration_ - timestamp.currentTp();
-}
-
-DEFAULT_TEMPLATE
-template <class ClockType>
-auto TimestampDuration<TimeDurationType>::operator-=(
-  Timestamp<ClockType> timestamp) -> TimestampDuration<TimeDurationType> & {
-  duration_ -= timestamp.currentTp();
-  return *this;
-}
 
 LY_NAMESPACE_END

@@ -7,23 +7,30 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "marcos.h"
+#include <core/util/marcos.h>
 
-enum class ConfigType 
-{
-  T_YAML,
-  T_TOML,
-};
+LY_NAMESPACE_BEGIN
 
 struct Config {
-  ConfigType use_yaml_or_toml = ConfigType::T_TOML;
-
   struct 
   {
     /** common **/
-    int thread_num = std::thread::hardware_concurrency();
-    int max_block_size = 1024;
+    struct
+    {
+      int thread_num = std::thread::hardware_concurrency();
 
+    } threadpool;
+    struct
+    {
+      
+    } logger;
+    
+    struct
+    {
+      /** buffer **/
+      int max_buffer_size = 1024;           // 
+      
+    } buffer;
   } common;
   
   struct 
@@ -34,54 +41,24 @@ struct Config {
     int send_timeout_ms = 2000;
     int recv_timeout_ms = 2000;
     int connection_timeout_ms = 15000;
+
+    int max_sender_buffer_size =
+      1024;  // use ${max_buffer_size} instead if exceeding ${max_buffer_size}
+    int max_receiver_buffer_size =
+      1024;  // use ${max_buffer_size} instead if exceeding ${max_buffer_size}
   } net;
 
-  struct 
-  {
-    /** buffer **/
-    int buffer_size = 4096;
-
-  } buffer;
 
   std::string toString() const;
-  void toFile(std::string_view filename) const;
+  void toFile(const std::string &filename) const;
+
+  static Config fromFile(const std::string &filename);
 
 private:
   std::string toYamlString() const;
-  std::string toTomlString() const;
-  std::string toIniString() const;
 };
-
-inline std::string Config::toString() const 
-{
-  if (use_yaml_or_toml == ConfigType::T_TOML) {
-    return toTomlString();
-  }
-  else if (use_yaml_or_toml == ConfigType::T_YAML) {
-    return toYamlString();
-  }
-
-  UNREACHABLE();
-}
-inline void Config::toFile(std::string_view filename) const 
-{
-  std::ofstream ofs(filename.data());
-  if (ofs.is_open()) {
-    ofs << toString();
-    ofs.flush();
-  }
-  else {
-    throw std::runtime_error("There is no target file");
-  }
-}
-
-inline std::string Config::toYamlString() const
-{
-}
-
-inline std::string Config::toTomlString() const
-{
-}
 
 
 static Config g_config = {};
+
+LY_NAMESPACE_END

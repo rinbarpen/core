@@ -1,5 +1,7 @@
 #include <core/util/thread/ThreadPool.h>
 
+LY_NAMESPACE_BEGIN
+
 ThreadPool::ThreadPool(size_t nThread, bool autoRun)
   : capacity_(nThread)
 {
@@ -87,3 +89,5 @@ void ThreadPool::work()
     task();
   }
 }
+
+LY_NAMESPACE_END

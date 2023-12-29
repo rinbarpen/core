@@ -24,7 +24,7 @@
 
 #include <core/util/marcos.h>
 
-#include <fmt/format.h>
+#include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
 #define __LogEventGen(level, timestamp) \
@@ -111,18 +111,32 @@
 
 LY_NAMESPACE_BEGIN
 
+// 2023-03-01    root[DEBUG]    Logger.h:121    main    thanks for using lycore
 inline constexpr const char *kDefaultFormatPattern = 
   "$DATETIME{%Y-%m-%d %H:%M:%S}"
   "$CHAR:\t$LOG_NAME$CHAR:[$LOG_LEVEL$CHAR:]"
   "$CHAR:\t$FILENAME$CHAR::$LINE"
   "$CHAR:\t$FUNCTION_NAME"
   "$CHAR:\t$MESSAGE$CHAR:\n";
-
-inline constexpr const char *kBriefFormatPattern =
+// 2023-03-01    Logger.h:121    [DEBUG]    main    thanks for using lycore
+inline constexpr const char *kCommonFormatPattern =
   "$DATETIME{%Y-%m-%d %H:%M:%S}"
   "$CHAR:\t$FILENAME$CHAR::$LINE"
-  "$CHAR:\t$CHAR:[$LOG_LEVEL$CHAR:]$CHAR::"
+  "$CHAR:\t$CHAR:[$LOG_LEVEL$CHAR:]"
+  "$CHAR:\t$FUNCTION_NAME"
   "$CHAR:\t$MESSAGE$CHAR:\n";
+// 2023-03-01    [DEBUG]    main    thanks for using lycore
+inline constexpr const char *kCommon2FormatPattern =
+  "$DATETIME{%Y-%m-%d %H:%M:%S}"
+  "$CHAR:\t$CHAR:[$LOG_LEVEL$CHAR:]"
+  "$CHAR:\t$FUNCTION_NAME"
+  "$CHAR:\t$MESSAGE$CHAR:\n";
+// 2023-03-01    [DEBUG]    thanks for using lycore 
+inline constexpr const char *kBriefFormatPattern =
+  "$DATETIME{%Y-%m-%d %H:%M:%S}"
+  "$CHAR:\t$CHAR:[$LOG_LEVEL$CHAR:]"
+  "$CHAR:\t$MESSAGE$CHAR:\n";
+
 
 /**
  * $MESSAGE      ÏûÏ¢
@@ -144,25 +158,31 @@ inline constexpr const char *kBriefFormatPattern =
  *  "$CHAR:\t$FUNCTION_NAME"
  *  "$CHAR:\t$MESSAGE$CHAR:\n"
  **/
-struct LogLevel
+class LogLevel
 {
-	enum Level : int
+public:
+  enum Level : uint8_t
   {
-		LUNKNOWN  = 0,
-    LTRACE    = 1,
-		LDEBUG    = 2,
-		LINFO     = 3,
+    LUNKNOWN = 0,
+    LTRACE = 1,
+    LDEBUG = 2,
+    LINFO = 3,
     LCRITICAL = 4,
-		LWARN     = 5,
-		LERROR    = 6,
-		LFATAL    = 7,
-    LCLOSE    = 8,
-		/* CUSTOM */
-	};
+    LWARN = 5,
+    LERROR = 6,
+    LFATAL = 7,
+    LCLOSE = 8,
+    /* CUSTOM */
+  };
 
-	static std::string toString(LogLevel::Level level)
+  LogLevel(LogLevel::Level level = LUNKNOWN)
+    : level_(level)
+  {}
+
+  Level level() const { return level_; }
+	std::string toString() const
 	{
-    switch (level)
+    switch (level_)
     {
 #define XX(x) \
     case LogLevel::Level::L##x: \
@@ -185,10 +205,17 @@ struct LogLevel
     LY_UNREACHABLE();
 	}
 
-	static LogLevel::Level fromString(const std::string &str)
+  bool operator<(const LogLevel &rhs) const { return level_ < rhs.level_; }
+  bool operator>(const LogLevel &rhs) const { return !(*this <= rhs); }
+  bool operator<=(const LogLevel &rhs) const { return level_ <= rhs.level_; }
+  bool operator>=(const LogLevel &rhs) const { return !(*this < rhs); }
+  bool operator==(const LogLevel &rhs) const { return level_ == rhs.level_; }
+  bool operator!=(const LogLevel &rhs) const { return !(*this == rhs); }
+
+	static LogLevel fromString(const std::string &str)
 	{
 #define XX(x)                 \
-  if (str == #x) { return LogLevel::Level::L##x; }
+  if (str == #x) { return LogLevel(L##x); }
 
     XX(TRACE)
     XX(DEBUG)
@@ -199,8 +226,11 @@ struct LogLevel
     XX(FATAL)
 #undef XX
 
-    return LogLevel::LUNKNOWN;
+    return LogLevel(LUNKNOWN);
 	}
+
+private:
+  Level level_;
 };
 
 struct LogColorConfig
@@ -250,7 +280,7 @@ class LogEvent
 public:
   using ptr = std::shared_ptr<LogEvent>;
 
-  LogEvent(LogLevel::Level level,
+  LogEvent(LogLevel level,
     const std::string &filename, int32_t line, const std::string &functionName,
     int64_t timestamp,
     LogColorConfig config = LogColorConfig());
@@ -264,23 +294,34 @@ public:
   //std::thread::id getThreadId() const { return std::this_thread::get_id(); }
   //int getProcessId() const {}
 
-  LogLevel::Level getLevel() const { return level_; }
+  LogLevel getLevel() const { return level_; }
   LogColorConfig getColorConfig() const { return color_config_; }
   std::stringstream &getSS() { return ss_; }
 
+#ifdef FMT_VERSION
+  // fmt-style
   template <typename... Args>
   void format(::fmt::string_view fmt, Args&&... args)
   {
     ss_ << ::fmt::format(fmt, std::forward<Args>(args)...);
   }
-
+#else
+  // c-style
+  template <typename... Args>
+  void format(::std::string_view fmt, Args&&... args)
+  {
+    char buf[256];
+    snprintf(buf, 256, fmt.data(), std::forward<Args>(args)...);
+    ss_ << std::string(buf);
+  }
+#endif
 private:
   std::string filename_;
   std::string function_name_;
   int32_t line_ = 0;
   int64_t timestamp_ = 0;
   std::stringstream ss_;
-  LogLevel::Level level_;
+  LogLevel level_;
   LogColorConfig color_config_;
 };
 
@@ -346,12 +387,12 @@ public:
 
   LogFormatter::ptr getFormatter();
 
-  LogLevel::Level getLevel() const { return level_; }
-  void setLevel(LogLevel::Level level) { level_ = level; }
+  LogLevel getLevel() const { return level_; }
+  void setLevel(LogLevel level) { level_ = level; }
 
   virtual auto toYamlString() const -> std::string = 0;
 protected:
-  LogLevel::Level level_{LogLevel::LDEBUG};
+  LogLevel level_{LogLevel::LDEBUG};
   bool hasFormatter_{false};
   std::mutex mutex_;
   LogFormatter::ptr pFormatter_;
@@ -440,7 +481,7 @@ public:
 	using ptr = std::shared_ptr<Logger>;
 
   Logger(const std::string &name = "root");
-  Logger(const std::string &name, LogLevel::Level level, std::string pattern);
+  Logger(const std::string &name, LogLevel level, std::string pattern);
   ~Logger() = default;
 
   void log(LogEvent::ptr pLogEvent);
@@ -452,8 +493,8 @@ public:
   auto toYamlString() const -> std::string;
 
 
-  LogLevel::Level getLevel() const { return level_; }
-  void setLevel(LogLevel::Level level) { level_ = level; }
+  LogLevel getLevel() const { return level_; }
+  void setLevel(LogLevel level) { level_ = level; }
   const std::string &getName() const { return name_; }
 
   void setFormatter(LogFormatter::ptr pFormatter);
@@ -464,7 +505,7 @@ public:
   void setLogger(Logger::ptr pLogger) { root_ = pLogger; }
 private:
   std::string name_;
-  LogLevel::Level level_{LogLevel::Level::LDEBUG};
+  LogLevel level_{LogLevel::Level::LDEBUG};
   mutable std::mutex mutex_;
   std::list<LogAppender::ptr> appenders_;
   LogFormatter::ptr pFormatter_;
@@ -529,91 +570,16 @@ public:
   /* the appender's formatter is the same as the logger */
   static Logger::ptr getLogger(
     /* logger */
-    const std::string &logName, LogLevel::Level logLevel,
+    const std::string &logName, LogLevel logLevel,
     /* formatter */
     const std::string &formatPattern = kDefaultFormatPattern,
     /* appender */
-    bool write2file = true, const std::string &filename = "x", bool async = false)
-  {
-    auto pLogger = LogManager::instance()->getLogger(logName);
-    pLogger->setLevel(logLevel);
-    if (formatPattern != kDefaultFormatPattern)
-      pLogger->setFormatter(formatPattern);
-
-    if (write2file) {
-      if (async)
-        pLogger->addAppender(std::make_shared<AsyncFileLogAppender>(filename));
-      else
-        pLogger->addAppender(std::make_shared<FileLogAppender>(filename));
-    } else {
-      pLogger->addAppender(std::make_shared<StdoutLogAppender>());
-    }
-
-    return pLogger;
-  }
+    bool write2file = true, const std::string &filename = "x", bool async = false);
 
   // TODO: Test me!!
-  static void loadYamlFile(std::string_view filename)
-  {
-    auto node = YAML::LoadFile(filename.data());
-    if (!node["logger"].IsDefined()) return;
+  static void loadYamlFile(std::string_view filename);
 
-    for (auto it = node["logger"].begin(); it != node["logger"].end(); ++it) {
-      // parse logger
-      auto pLogger = std::make_shared<Logger>(
-        node["name"].as<std::string>(),
-             LogLevel::fromString(node["level"].as<std::string>()),
-             node["formatter"]["pattern"].as<std::string>());
-
-      if (!node["appenders"].IsDefined() || node.IsNull()) { continue; }
-
-      for (auto appender : node["appenders"]) {
-        auto app_node = YAML::Load(appender.as<std::string>());
-        auto &&app_type = app_node["type"].as<std::string>();
-        if (app_type == "StdoutLogAppender") {
-          auto pAppender =
-            std::make_shared<StdoutLogAppender>();
-          pAppender->setLevel(
-            LogLevel::fromString(app_node["level"].as<std::string>()));
-          if (app_node["formatter"].IsDefined()
-            && !app_node["formatter"].IsNull()) {
-            pAppender->setFormatter(
-              std::make_shared<LogFormatter>(
-                app_node["formatter"]["pattern"].as<std::string>()
-              ));
-          }
-          pLogger->addAppender(pAppender);
-        }
-        else if (app_type == "SyncFileLogAppender") {
-          auto pAppender = std::make_shared<FileLogAppender>(
-            app_node["filename"].as<std::string>());
-          pAppender->setLevel(
-            LogLevel::fromString(app_node["level"].as<std::string>()));
-          if (app_node["formatter"].IsDefined()
-            && !app_node["formatter"].IsNull())
-          {
-            pAppender->setFormatter(std::make_shared<LogFormatter>(
-              app_node["formatter"]["pattern"].as<std::string>()));
-          }
-          pLogger->addAppender(pAppender);
-        }
-        else if (app_type == "AsyncFileLogAppender") {
-          auto pAppender = std::make_shared<AsyncFileLogAppender>(
-            app_node["filename"].as<std::string>());
-          pAppender->setLevel(
-            LogLevel::fromString(app_node["level"].as<std::string>()));
-          if (app_node["formatter"].IsDefined()
-            && !app_node["formatter"].IsNull())
-          {
-            pAppender->setFormatter(std::make_shared<LogFormatter>(
-              app_node["formatter"]["pattern"].as<std::string>()));
-          }
-          pLogger->addAppender(pAppender);
-        }
-      }
-      LogManager::instance()->putLogger(pLogger);
-    }
-  }
+  static void loadYamlNode(YAML::Node node);
 
 private:
 

@@ -1,5 +1,7 @@
 #include <core/util/Library.h>
 
+LY_NAMESPACE_BEGIN
+
 Library::Library()
 {
 }
@@ -72,3 +74,5 @@ std::string Library::lastError() const
 #endif
   return "";
 }
+
+LY_NAMESPACE_END

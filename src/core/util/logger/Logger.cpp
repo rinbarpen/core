@@ -6,7 +6,7 @@ LY_NAMESPACE_BEGIN
 
 /********************************************* LogEvent *********************************************/
 
-LogEvent::LogEvent(LogLevel::Level level,
+LogEvent::LogEvent(LogLevel level,
   const std::string &filename, int32_t line, const std::string &functionName,
   int64_t timestamp,
   LogColorConfig config)
@@ -52,7 +52,7 @@ public:
   LogLevelFormatterItem(const std::string &str = "") {}
   void format(std::ostream &os, LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) override
   {
-    os << LogLevel::toString(pLogEvent->getLevel());
+    os << pLogEvent->getLevel().toString();
   }
 };
 class LogNameFormatterItem final : public LogFormatterItem
@@ -357,7 +357,7 @@ auto FileLogAppender::toYamlString() const -> std::string
   node["count"] = cnt_;
   node["today"] = today_;
 
-  node["level"] = LogLevel::toString(level_);
+  node["level"] = level_.toString();
   if (hasFormatter_)
   {
     node["formatter"] = pFormatter_->toYamlString();
@@ -433,7 +433,7 @@ auto AsyncFileLogAppender::toYamlString() const -> std::string
   node["count"] = cnt_;
   node["today"] = today_;
 
-  node["level"] = LogLevel::toString(level_);
+  node["level"] = level_.toString();
   if (hasFormatter_)
   {
     node["formatter"] = pFormatter_->toYamlString();
@@ -511,7 +511,7 @@ void StdoutLogAppender::log(LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLo
     std::lock_guard<std::mutex> locker(mutex_);
 
     LogColorConfig conf = pLogEvent->getColorConfig();
-    switch (pLogEvent->getLevel()) {
+    switch (pLogEvent->getLevel().level()) {
 #define XX(x)       \
       case LogLevel::L##x: \
         std::cout << conf.getColor(conf.LOG_LEVEL_##x); \
@@ -539,7 +539,7 @@ auto StdoutLogAppender::toYamlString() const -> std::string
   YAML::Node node;
   node["type"] = "StdoutLogAppender";
 
-  node["level"] = LogLevel::toString(level_);
+  node["level"] = level_.toString();
   if (hasFormatter_)
   {
     node["formatter"] = pFormatter_->toYamlString();
@@ -553,7 +553,7 @@ Logger::Logger(const std::string &name)
   : name_(name), pFormatter_(new LogFormatter())
 {
 }
-Logger::Logger(const std::string &name, LogLevel::Level level, std::string pattern)
+Logger::Logger(const std::string &name, LogLevel level, std::string pattern)
   : name_(name)
   , level_(level)
   , pFormatter_(new LogFormatter(pattern))
@@ -618,9 +618,9 @@ auto Logger::toYamlString() const -> std::string
   YAML::Node node;
 
   node["name"] = this->name_;
-  node["level"] = LogLevel::toString(this->level_);
+  node["level"] = this->level_.toString();
   if (!appenders_.empty()) {
-    for (auto appender : appenders_) {
+    for (const auto &appender : appenders_) {
       node["appenders"].push_back(appender->toYamlString());
     }
   }
@@ -670,6 +670,150 @@ LogManager::LogManager() {
   loggers_[root_->getName()] = root_;
 
   init();
+}
+
+/******************************************** LogIniter  *********************************************/
+Logger::ptr LogIniter::getLogger(const std::string& logName, LogLevel logLevel, const std::string& formatPattern,
+  bool write2file, const std::string& filename, bool async) {
+  auto pLogger = LogManager::instance()->getLogger(logName);
+  pLogger->setLevel(logLevel);
+  if (formatPattern != kDefaultFormatPattern)
+    pLogger->setFormatter(formatPattern);
+
+  if (write2file) {
+    if (async)
+      pLogger->addAppender(std::make_shared<AsyncFileLogAppender>(filename));
+    else
+      pLogger->addAppender(std::make_shared<FileLogAppender>(filename));
+  } else {
+    pLogger->addAppender(std::make_shared<StdoutLogAppender>());
+  }
+
+  return pLogger;
+}
+
+void LogIniter::loadYamlFile(std::string_view filename) {
+  auto node = YAML::LoadFile(filename.data());
+  if (!node["logger"].IsDefined()) return;
+
+  for (auto it = node["logger"].begin(); it != node["logger"].end(); ++it) {
+    YAML::Node cur = *it;
+    // parse logger
+    auto pLogger = std::make_shared<Logger>(cur["name"].as<std::string>(),
+                                            LogLevel::fromString(cur["level"].as<std::string>()),
+                                            cur["formatter"]["pattern"].as<std::string>());
+
+    if (!cur["appenders"].IsDefined() || node.IsNull())
+    { continue; }
+
+    for (auto appender : node["appenders"]) {
+      auto app_node = YAML::Load(appender.as<std::string>());
+      auto &&app_type = app_node["type"].as<std::string>();
+      if (app_type == "StdoutLogAppender") {
+        auto pAppender =
+          std::make_shared<StdoutLogAppender>();
+        pAppender->setLevel(
+          LogLevel::fromString(app_node["level"].as<std::string>()));
+        if (app_node["formatter"].IsDefined()
+          && !app_node["formatter"].IsNull()) {
+          pAppender->setFormatter(
+            std::make_shared<LogFormatter>(
+              app_node["formatter"]["pattern"].as<std::string>()
+            ));
+        }
+        pLogger->addAppender(pAppender);
+      }
+      else if (app_type == "SyncFileLogAppender") {
+        auto pAppender = std::make_shared<FileLogAppender>(
+          app_node["filename"].as<std::string>());
+        pAppender->setLevel(
+          LogLevel::fromString(app_node["level"].as<std::string>()));
+        if (app_node["formatter"].IsDefined()
+          && !app_node["formatter"].IsNull())
+        {
+          pAppender->setFormatter(std::make_shared<LogFormatter>(
+            app_node["formatter"]["pattern"].as<std::string>()));
+        }
+        pLogger->addAppender(pAppender);
+      }
+      else if (app_type == "AsyncFileLogAppender") {
+        auto pAppender = std::make_shared<AsyncFileLogAppender>(
+          app_node["filename"].as<std::string>());
+        pAppender->setLevel(
+          LogLevel::fromString(app_node["level"].as<std::string>()));
+        if (app_node["formatter"].IsDefined()
+          && !app_node["formatter"].IsNull())
+        {
+          pAppender->setFormatter(std::make_shared<LogFormatter>(
+            app_node["formatter"]["pattern"].as<std::string>()));
+        }
+        pLogger->addAppender(pAppender);
+      }
+    }
+    LogManager::instance()->putLogger(pLogger);
+  }
+}
+
+void LogIniter::loadYamlNode(YAML::Node node) {
+  for (auto it = node["logger"].begin(); it != node["logger"].end(); ++it)
+  {
+    YAML::Node cur = *it;
+    // parse logger
+    auto pLogger = std::make_shared<Logger>(cur["name"].as<std::string>(),
+                                            LogLevel::fromString(cur["level"].as<std::string>()),
+                                            cur["formatter"]["pattern"].as<std::string>());
+
+    if (!cur["appenders"].IsDefined() || node.IsNull())
+    { continue; }
+
+    for (auto appender : node["appenders"])
+    {
+      auto app_node = YAML::Load(appender.as<std::string>());
+      auto &&app_type = app_node["type"].as<std::string>();
+      if (app_type == "StdoutLogAppender")
+      {
+        auto pAppender = std::make_shared<StdoutLogAppender>();
+        pAppender->setLevel(
+          LogLevel::fromString(app_node["level"].as<std::string>()));
+        if (app_node["formatter"].IsDefined()
+          && !app_node["formatter"].IsNull())
+        {
+          pAppender->setFormatter(std::make_shared<LogFormatter>(
+            app_node["formatter"]["pattern"].as<std::string>()));
+        }
+        pLogger->addAppender(pAppender);
+      }
+      else if (app_type == "SyncFileLogAppender")
+      {
+        auto pAppender = std::make_shared<FileLogAppender>(
+          app_node["filename"].as<std::string>());
+        pAppender->setLevel(
+          LogLevel::fromString(app_node["level"].as<std::string>()));
+        if (app_node["formatter"].IsDefined()
+          && !app_node["formatter"].IsNull())
+        {
+          pAppender->setFormatter(std::make_shared<LogFormatter>(
+            app_node["formatter"]["pattern"].as<std::string>()));
+        }
+        pLogger->addAppender(pAppender);
+      }
+      else if (app_type == "AsyncFileLogAppender")
+      {
+        auto pAppender = std::make_shared<AsyncFileLogAppender>(
+          app_node["filename"].as<std::string>());
+        pAppender->setLevel(
+          LogLevel::fromString(app_node["level"].as<std::string>()));
+        if (app_node["formatter"].IsDefined()
+          && !app_node["formatter"].IsNull())
+        {
+          pAppender->setFormatter(std::make_shared<LogFormatter>(
+            app_node["formatter"]["pattern"].as<std::string>()));
+        }
+        pLogger->addAppender(pAppender);
+      }
+    }
+    LogManager::instance()->putLogger(pLogger);
+  }
 }
 
 auto LogManager::toYamlString() const -> std::string 

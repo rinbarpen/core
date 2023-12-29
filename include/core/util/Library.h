@@ -1,6 +1,5 @@
 #pragma once
 
-#include <core/util/platform.h>
 #include <core/util/marcos.h>
 
 #if defined(__LINUX__)
@@ -9,9 +8,8 @@
 #include <Windows.h>
 #endif
 #include <string>
-#include <unordered_map>
 
-
+LY_NAMESPACE_BEGIN
 // TODO: Add a Library Manager
 // TODO: Test me!
 class Library
@@ -41,3 +39,5 @@ private:
 #endif
   bool hasModel_{false};
 };
+
+LY_NAMESPACE_END

@@ -2,24 +2,19 @@
 
 #include <array>
 #include <string>
-#include <string_view>
-
-#include <vector>
-#include <unordered_map>
 #include <map>
-#include <unordered_set>
-#include <set>
-#include <list>
 #include <optional>
-#include <regex>
-
-#include "marcos.h"
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+#include <core/util/marcos.h>
 
 LY_NAMESPACE_BEGIN
 
 NAMESPACE_BEGIN(string_util)
 
-#if __CXX17_ENABLED
+#ifdef __CXX17
+# include <string_view>
 #define const_string_ref ::std::string_view
 #else // since cxx17
 #define const_string_ref const ::std::string &
@@ -259,8 +254,6 @@ static auto split(const_string_ref s,
 }
 
 
-NAMESPACE_BEGIN(net)
-
 static auto parse_url_params(const_string_ref url)
   -> std::unordered_map<std::string, std::string>
 {
@@ -319,8 +312,6 @@ static auto split_httplike_header(const_string_ref header)
   return std::make_pair(trim(header.substr(0, mid)), trim(header.substr(mid + 1)));
 }
 
-NAMESPACE_END(net)
-
 NAMESPACE_BEGIN(literals)
 
 static auto operator*(const_string_ref s, size_t n)
@@ -338,13 +329,12 @@ NAMESPACE_END(literals)
 
 NAMESPACE_END(string_util)
 
-inline 
-NAMESPACE_BEGIN()
+inline
+EMPTY_NAMESPACE_BEGIN
 
 namespace literals = string_util::literals;
-namespace net = string_util::net;
 
-NAMESPACE_END()
+EMPTY_NAMESPACE_END
 
 
 LY_NAMESPACE_END

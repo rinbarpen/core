@@ -4,33 +4,23 @@
 //                            confirm cxx version
 /*********************************************************************************/
 #if defined(__clang__) || defined(__GNUC__)
-#define __CXX_STANDARD __cplusplus
+# define __CXX_STANDARD __cplusplus
 #elif defined(_MSC_VER)
-#define __CXX_STANDARD _MSVC_LANG
+# define __CXX_STANDARD _MSVC_LANG
 #endif
 
 #if __CXX_STANDARD >= 201703L
-#define __CXX17_ENABLED 1
+# define __CXX17
 #elif __CXX_STANDARD >= 201402L
-#define __CXX14_ENABLED 1
+# define __CXX14
 #elif __CXX_STANDARD >= 201103L
-#define __CXX11_ENABLED 1
-#endif
-
-#ifndef __CXX17_ENABLED
-#define __CXX17_ENABLED 0
-#endif
-#ifndef __CXX14_ENABLED
-#define __CXX14_ENABLED 0
-#endif
-#ifndef __CXX11_ENABLED
-#define __CXX11_ENABLED 0
+# define __CXX11
 #endif
 
 #if (defined(WIN32) || defined(_WIN32)) && !defined(__WIN__)
-#define __WIN__
+# define __WIN__
 #elif (defined(__linux) || defined(__linux__)) && !defined(__LINUX__)
-#define __LINUX__
+# define __LINUX__
 #endif
 
 #include <cassert>
@@ -131,7 +121,7 @@ public:
   UNIQUE_PTR_USING(CLS, uptr); \
   MAKE_UNIQUE(CLS)
 
-#if __CXX17_ENABLED
+#ifdef __CXX17
 #define LY_UNWARP(TYPE, WRAPPER, ...) \
   auto TYPE[__VA_ARGS__] = WRAPPER
 #endif
@@ -169,7 +159,7 @@ public:
 template <class QStringLike>
 inline constexpr bool is_qstring_like_v = is_qstring_like<QStringLike>::value;
 
-#if __HAS_CXX20
+#ifdef __CXX20
 template <typename T>
 concept QStringLike = requires(T a) {
   { a.toStdString() } -> std::convertible_to<std::string>;

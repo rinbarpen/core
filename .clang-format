@@ -61,7 +61,7 @@ BraceWrapping: {
   AfterClass: true,                               # class {  的 { 另起一行
   AfterControlStatement: true,                    # if { 的 { 另起一行
   AfterEnum: true,                                # enum { 的 { 另起一行
-  AfterFunction: true,                            # aFunc { 的 { 另起一行
+  AfterFunction: false,                            # aFunc { 的 { 另起一行
   AfterNamespace: true,                           # aNamespaece { 的 { 另起一行
   AfterStruct: true,
   AfterUnion: true,

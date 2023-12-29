@@ -4,7 +4,6 @@
 #include <core/util/time/TimestampDuration.h>
 
 LY_NAMESPACE_BEGIN
-
 template <class ClockType>
 class Clock
 {
@@ -13,13 +12,17 @@ public:
   static auto tp() -> typename Timestamp<ClockType>::time_point {
     return ClockType::now();
   }
-  static auto now() -> int64_t {
-    return ClockType::now().time_since_epoch().count();
+  static auto now() -> Timestamp<ClockType> {
+    return Timestamp<ClockType>();
   }
   static auto infinity() -> int64_t { return -1; }
   static auto zero() -> int64_t { return 0; }
 
 };
+
+template class Clock<T_high_resolution_clock>;
+template class Clock<T_steady_clock>;
+template class Clock<T_system_clock>;
 
 static std::string time2datetime(::std::time_t t, const char *dateFmt = "%Y-%m-%d %H:%M:%S") 
 {

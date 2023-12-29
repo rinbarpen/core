@@ -1,8 +1,10 @@
 #pragma once
 
-#include "marcos.h"
+#include <core/util/marcos.h>
 
 #include <type_traits>
+
+LY_NAMESPACE_BEGIN
 
 class Translator 
 {
@@ -18,3 +20,5 @@ public:
     return fn(qstr.toStdString(), std::forward<Args>(args)...);
   }
 };
+
+LY_NAMESPACE_END
