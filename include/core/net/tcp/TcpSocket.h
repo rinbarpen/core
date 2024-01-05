@@ -11,7 +11,7 @@ public:
 
   int setNoDelay(int on = 1);
 
-  std::string type() const override { return "TcpSocket"; }
+  auto type() const -> std::string override { return "TcpSocket"; }
 
   LY_NONCOPYABLE(TcpSocket);
 };

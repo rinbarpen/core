@@ -13,24 +13,43 @@ struct ThreadContext
   std::thread::id id;
   std::string name;
 
+  explicit ThreadContext(std::string_view threadName)
+    : name(threadName)
+  {}
 
-  void reset()
+  void reset(std::string_view threadName)
   {
     id = std::thread::id{};
-    name = "Unknown";
+    name = threadName;
   }
 };
 
 class Thread
 {
 public:
-  Thread();
+  explicit Thread(const ThreadContext &context);
   ~Thread();
 
   template <typename Fn, typename... Args>
-  void dispatch(Fn&& fn, Args&&... args);
+  void dispatch(Fn&& fn, Args&&... args)
+  {
+    if (running_) return;
+
+    running_ = true;
+    thread_ = std::thread(std::forward<Fn>(fn), std::forward<Args>(args)...);
+    this->fillContext();
+  }
   template <typename Fn, typename... Args>
-  void dispatch(FunctionWrapper<Fn, Args...>&& fn);
+  void dispatch(FunctionWrapper<Fn, Args...>&& fn)
+  {
+    if (running_) return;
+
+    running_ = true;
+    thread_ = std::thread([=]() {
+      (void)fn();
+    });
+    this->fillContext();
+  }
   void destroy();
 
   ThreadContext context() const;

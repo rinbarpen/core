@@ -15,6 +15,9 @@ public:
   virtual bool start(const char *ip, uint16_t port);
   virtual bool stop();
 
+  virtual auto type() const -> std::string { return "TcpClient"; }
+
+  LY_NONCOPYABLE(TcpClient);
 protected:
   virtual TcpConnection::ptr onConnect(sockfd_t fd);
 

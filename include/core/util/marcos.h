@@ -32,7 +32,7 @@
 
 
 #define LY_AUTHOR  LpoutYoumu
-#define LY_VERSION 01L
+#define LY_VERSION 0.1
 
 #define LY_ASSERT(x) assert(x)
 #define LY_CHECK(x, err_msg) static_assert(x, err_msg)
@@ -167,7 +167,10 @@ concept QStringLike = requires(T a) {
 };
 #endif
 
+NAMESPACE_BEGIN(net)
+NAMESPACE_END(net)
 LY_NAMESPACE_END
+namespace lynet = ::ly::net;
 
 /*********************************************************************************/
 //                                cxx dependencies

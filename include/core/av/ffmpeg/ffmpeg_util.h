@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdio>
 #include <memory>
 
 extern "C"
@@ -13,41 +14,54 @@ extern "C"
 #include <libswscale/swscale.h>
 }
 
+namespace ly
+{
 namespace ffmpeg
 {
-extern "C"
+enum RegFlag : int
 {
-static void version()
-{
-  printf("version:\n");
-  printf("\tlibavcodec   : %s\n", avcodec_version());
-  printf("\tlibavdevice  : %s\n", avdevice_version());
-  printf("\tlibavfilter  : %s\n", avfilter_version());
-  printf("\tlibavformat  : %s\n", avformat_version());
-  printf("\tlibavutil    : %s\n", avutil_version());
-  printf("\tlibswresample: %s\n", swresample_version());
-  printf("\tlibswscale   : %s\n", swscale_version());
+  NETWORK = 1,
+  DEVICE = 2,
+  ALL = ~0,
+};
+
+static void version() {
+  printf("ffmpeg version:\n");
+  printf("\tlibavcodec   : %u\n", avcodec_version());
+  printf("\tlibavdevice  : %u\n", avdevice_version());
+  printf("\tlibavfilter  : %u\n", avfilter_version());
+  printf("\tlibavformat  : %u\n", avformat_version());
+  printf("\tlibavutil    : %u\n", avutil_version());
+  printf("\tlibswresample: %u\n", swresample_version());
+  printf("\tlibswscale   : %u\n", swscale_version());
 }
-static void reg_ffmpeg() 
-{
-  // avformat_network_init();
-  avdevice_register_all();
-}
+static void reg_ffmpeg(int flags) {
+  if ((flags & RegFlag::NETWORK) == RegFlag::NETWORK)
+  {
+    printf("Initialize network...\n");
+    avformat_network_init();
+    printf("Finish to initialize network\n");
+  }
+  if ((flags & RegFlag::DEVICE) == RegFlag::DEVICE)
+  {
+    printf("Initialize device...\n");
+    avdevice_register_all();
+    printf("Finish to initialize device\n");
+  }
 }
 
 using AVPacketPtr = std::shared_ptr<AVPacket>;
-using AVFramePtr  = std::shared_ptr<AVFrame>;
+using AVFramePtr = std::shared_ptr<AVFrame>;
 
-static inline AVPacketPtr makePacketPtr()
-{
-  return AVPacketPtr(av_packet_alloc(), [](AVPacket *pkt) {
-    av_packet_free(&pkt);
-  });
+static inline AVPacketPtr makePacketPtr() {
+  return AVPacketPtr(
+    av_packet_alloc(), [](AVPacket *pkt) { av_packet_free(&pkt); });
 }
 static inline AVFramePtr makeFramePtr() {
-  return AVFramePtr(av_frame_alloc(), [](AVFrame *frame) {
-    av_frame_free(&frame);
-  });
+  return AVFramePtr(
+    av_frame_alloc(), [](AVFrame *frame) { av_frame_free(&frame); });
 }
 
 }  // namespace ffmpeg
+}  // namespace ly
+namespace lyffmpeg = ly::ffmpeg;

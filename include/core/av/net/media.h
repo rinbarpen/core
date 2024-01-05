@@ -2,7 +2,6 @@
 
 #include <core/util/ds/SharedString.h>
 
-/* 支持的音视频流编码 */
 enum MediaType
 {
   NONE = 0,

@@ -13,7 +13,7 @@ public:
   ~Bitmap();
 
   void add(size_t n);
-  void or(size_t n);
+  void oor(size_t n);
 
   auto at(size_t n) const -> bool;
   auto operator[](size_t n) const -> bool;

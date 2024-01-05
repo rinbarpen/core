@@ -17,8 +17,9 @@ public:
   virtual bool start(const char *ip, uint16_t port);
   virtual bool stop();
 
-  LY_NONCOPYABLE(UdpClient);
+  virtual auto type() const -> std::string { return "UdpClient"; }
 
+  LY_NONCOPYABLE(UdpClient);
 protected:
   virtual UdpConnection::ptr onConnect(sockfd_t fd);
 

@@ -9,21 +9,37 @@ template <class TimeDurationType>
 class TimestampDuration;
 
 template <class ClockType = T_steady_clock>
-class Timestamp 
+class Timestamp
 {
   LY_CHECK(is_clock_v<ClockType>, "Error ClockType");
 public:
   using time_point = typename ClockType::time_point;
 
-  Timestamp();
-  Timestamp(time_point tp);
+  Timestamp()
+    : tp_(ClockType::now())
+  {}
+  Timestamp(time_point tp)
+    : tp_(tp)
+  {}
 
-  static auto now() -> int64_t;
-  static auto tp() -> time_point;
+  static auto now() -> int64_t
+  {
+    return ClockType::now()
+    .time_since_epoch()
+    .count();
+  }
+  static auto tp() -> time_point
+  {
+    return ClockType::now();
+  }
 
-  void reset();
-  auto current() const -> time_point;
-  auto count() const -> int64_t;
+  void reset() { tp_ = ClockType::now(); }
+  LY_NODISCARD auto current() const -> time_point { return tp_; }
+  LY_NODISCARD auto count() const -> int64_t {
+    return tp_
+      .time_since_epoch()
+      .count();
+  }
 
   template <class TimeDurationType>
   auto duration(Timestamp begin) const -> TimestampDuration<TimeDurationType>
@@ -83,7 +99,7 @@ private:
   typename ClockType::time_point tp_;
 };
 
-template class Timestamp<T_high_resolution_clock>;
+// template class Timestamp<T_high_resolution_clock>;
 template class Timestamp<T_steady_clock>;
 template class Timestamp<T_system_clock>;
 

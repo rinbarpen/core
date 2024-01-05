@@ -20,13 +20,13 @@ public:
 
 };
 
-template class Clock<T_high_resolution_clock>;
+// template class Clock<T_high_resolution_clock>;
 template class Clock<T_steady_clock>;
 template class Clock<T_system_clock>;
 
-static std::string time2datetime(::std::time_t t, const char *dateFmt = "%Y-%m-%d %H:%M:%S") 
+static std::string time2datetime(::std::time_t t, const char *dateFmt = "%Y-%m-%d %H:%M:%S")
 {
-  char buffer[80]; 
+  char buffer[80];
   struct tm tm;
 
 #ifdef __WIN__
@@ -35,7 +35,7 @@ static std::string time2datetime(::std::time_t t, const char *dateFmt = "%Y-%m-%
   ::localtime_r(&t, &tm);
 #endif
 
-  ::std::strftime(buffer, 80, dateFmt, &tm); 
+  ::std::strftime(buffer, 80, dateFmt, &tm);
   return std::string(buffer);
 }
 

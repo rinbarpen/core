@@ -29,6 +29,7 @@ public:
 
 		data_[put_pos_] = x;
 		put_pos_ = (put_pos_ + 1) % capacity_;
+		return true;
 	}
 	bool push(T&& x)
 	{
@@ -51,7 +52,7 @@ public:
 
 		return true;
 	}
-	
+
 	bool full() const { Mutex::lock locker(mutex_); return fullInternal(); }
 	bool empty() const { Mutex::lock locker(mutex_); return emptyInternal(); }
 	size_t capacity() const { return capacity_; }

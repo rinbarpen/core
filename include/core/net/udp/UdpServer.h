@@ -17,8 +17,9 @@ public:
 
   void doEventLoop() const { event_loop_->start(); }
 
-  LY_NONCOPYABLE(UdpServer);
+  virtual auto type() const -> std::string { return "UdpServer"; }
 
+  LY_NONCOPYABLE(UdpServer);
 protected:
   virtual UdpConnection::ptr onConnect(sockfd_t fd);
   virtual void addConnection(sockfd_t fd, UdpConnection::ptr conn);

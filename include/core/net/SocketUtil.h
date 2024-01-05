@@ -36,6 +36,8 @@ struct NetDomain {
         return "IPV4";
       case IPV6:
         return "IPV6";
+      default:
+        return "NONE";
     }
 
     return "NONE";
@@ -72,6 +74,8 @@ struct NetProtocol {
         return "UDP";
       case TCP:
         return "TCP";
+      default:
+        return "NONE";
     }
 
     return "NONE";
@@ -147,7 +151,7 @@ static sockfd_t socket_bind_listen(int domain, int type, int protocol,
   return fd;
 }
 
-static int close(sockfd_t sockfd) 
+static int close(sockfd_t sockfd)
 {
 #ifdef _WIN32
   return ::closesocket(sockfd);

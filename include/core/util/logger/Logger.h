@@ -28,10 +28,10 @@
 #include <yaml-cpp/yaml.h>
 
 #define __LogEventGen(level, timestamp) \
-  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, __FUNCTION__, timestamp)
+  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, __PRETTY_FUNCTION__, timestamp)
 
 #define __LogEventGen2(level) \
-  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, __FUNCTION__, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
+  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, __PRETTY_FUNCTION__, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
 #define __LogEventWrapperGen(pLogger, level, timestamp) \
   std::make_shared<::ly::LogEventWrapper>(__LogEventGen(level, timestamp), pLogger)
@@ -43,7 +43,7 @@
   __LogEventWrapperGen2(pLogger, level)->getSS()
 
 #define LOG_ROOT() ::ly::LogManager::instance()->getRoot()
-#define GET_LOGGER(name) ::ly::LogManager::instance()->getLogger(name)  
+#define GET_LOGGER(name) ::ly::LogManager::instance()->getLogger(name)
 
 #define ILOG_TRACE_FMT(pLogger, fmt, ...) \
   __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LTRACE)->getEvent()->format(fmt, ##__VA_ARGS__)
@@ -112,7 +112,7 @@
 LY_NAMESPACE_BEGIN
 
 // 2023-03-01    root[DEBUG]    Logger.h:121    main    thanks for using lycore
-inline constexpr const char *kDefaultFormatPattern = 
+inline constexpr const char *kDefaultFormatPattern =
   "$DATETIME{%Y-%m-%d %H:%M:%S}"
   "$CHAR:\t$LOG_NAME$CHAR:[$LOG_LEVEL$CHAR:]"
   "$CHAR:\t$FILENAME$CHAR::$LINE"
@@ -131,7 +131,7 @@ inline constexpr const char *kCommon2FormatPattern =
   "$CHAR:\t$CHAR:[$LOG_LEVEL$CHAR:]"
   "$CHAR:\t$FUNCTION_NAME"
   "$CHAR:\t$MESSAGE$CHAR:\n";
-// 2023-03-01    [DEBUG]    thanks for using lycore 
+// 2023-03-01    [DEBUG]    thanks for using lycore
 inline constexpr const char *kBriefFormatPattern =
   "$DATETIME{%Y-%m-%d %H:%M:%S}"
   "$CHAR:\t$CHAR:[$LOG_LEVEL$CHAR:]"
@@ -139,18 +139,18 @@ inline constexpr const char *kBriefFormatPattern =
 
 
 /**
- * $MESSAGE      消息
- * $LOG_LEVEL    日志级别
- * $LOG_NAME     日志名称
- * $CHAR:\n      换行符 \n
- * $CHAR:\t      制表符 \t
- * $CHAR:[       括号[
- * $CHAR:]       括号]
- * $DATETIME     时间
- * $LINE         行号
- * $FILENAME     文件名
- * 
- * 默认格式：
+ * $MESSAGE
+ * $LOG_LEVEL
+ * $LOG_NAME
+ * $CHAR:\n
+ * $CHAR:\t
+ * $CHAR:[
+ * $CHAR:]
+ * $DATETIME
+ * $LINE
+ * $FILENAME
+ *
+ *
  *  "$DATETIME{%Y-%m-%d %H:%M:%S}"
  *  "$CHAR:\t$THREAD_NAME$CHAR:[$THREAD_ID:%FIBER_ID$CHAR:]"
  *  "$CHAR:\t$LOG_NAME$CHAR:[$LOG_LEVEL$CHAR:]"
@@ -167,9 +167,9 @@ public:
     LTRACE = 1,
     LDEBUG = 2,
     LINFO = 3,
-    LCRITICAL = 4,
-    LWARN = 5,
-    LERROR = 6,
+    LWARN = 4,
+    LERROR = 5,
+    LCRITICAL = 6,
     LFATAL = 7,
     LCLOSE = 8,
     /* CUSTOM */
@@ -392,7 +392,7 @@ public:
 
   virtual auto toYamlString() const -> std::string = 0;
 protected:
-  LogLevel level_{LogLevel::LDEBUG};
+  LogLevel level_{LogLevel::LTRACE};
   bool hasFormatter_{false};
   std::mutex mutex_;
   LogFormatter::ptr pFormatter_;
@@ -424,7 +424,7 @@ private:
   std::string filename_;
   std::ofstream filestream_;
   uint64_t lastAccessTime_{0};
-  uint64_t lines_{0}; 
+  uint64_t lines_{0};
   uint8_t cnt_{0};  // cnt_ incr when lines_ encounters kMaxLines
   int today_;
 };
@@ -468,10 +468,7 @@ public:
   virtual ~StdoutLogAppender() override = default;
 
   virtual void log(LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) override;
-
   auto toYamlString() const -> std::string override;
-
-private:
 
 };
 
@@ -524,8 +521,8 @@ public:
     pLogger_->log(pEvent_);
   }
 
-  LogEvent::ptr getEvent() const { return pEvent_; }
-  Logger::ptr getLogger() const { return pLogger_; }
+  LY_NODISCARD LogEvent::ptr getEvent() const { return pEvent_; }
+  LY_NODISCARD Logger::ptr getLogger() const { return pLogger_; }
   std::stringstream &getSS() { return pEvent_->getSS(); }
 
 private:
@@ -551,14 +548,12 @@ public:
 
   // TODO: For future do
   void init() {}
-  Logger::ptr getRoot() const { return root_; }
-
-  auto toYamlString() const -> std::string;
+  LY_NODISCARD Logger::ptr getRoot() const { return root_; }
+  LY_NODISCARD auto toYamlString() const -> std::string;
 
 private:
   LogManager();
 
-private:
   std::mutex mutex_;
   std::unordered_map<std::string, Logger::ptr> loggers_;
   Logger::ptr root_;
@@ -580,8 +575,6 @@ public:
   static void loadYamlFile(std::string_view filename);
 
   static void loadYamlNode(YAML::Node node);
-
-private:
 
 };
 

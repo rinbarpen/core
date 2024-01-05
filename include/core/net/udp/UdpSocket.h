@@ -13,12 +13,9 @@ public:
     : Socket(NetProtocol::UDP)
   {}
 
-  std::string type() const override { return "UdpSocket"; }
+  virtual auto type() const -> std::string override { return "UdpSocket"; }
 
   LY_NONCOPYABLE(UdpSocket);
-
-protected:
-
 };
 
 NAMESPACE_END(net)

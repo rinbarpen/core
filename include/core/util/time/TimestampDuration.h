@@ -13,11 +13,21 @@ class TimestampDuration
   LY_CHECK(is_time_duration_v<TimeDurationType>, "Error TimeDurationType");
 
 public:
-  TimestampDuration(TimeDurationType duration);
-  TimestampDuration(uint64_t duration);
+  TimestampDuration(TimeDurationType duration)
+    : duration_(duration)
+  {}
+  TimestampDuration(uint64_t duration)
+    : duration_(TimeDurationType(duration))
+  {}
 
-  auto duration() const -> TimeDurationType;
-  auto count() const -> int64_t;
+  auto duration() const -> TimeDurationType
+  {
+    return duration_;
+  }
+  auto count() const -> int64_t
+  {
+    return duration_.count();
+  }
   template <class U>
   auto cast() const -> U
   {

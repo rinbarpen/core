@@ -30,15 +30,14 @@ public:
   using EventCallbackFn = std::function<void()>;
 
   FdChannel(sockfd_t fd)
-    :
-    sockfd_(fd)
+    : sockfd_(fd)
   {}
   virtual ~FdChannel() = default;
 
   virtual void handleEvent() { handleEvent(events_); }
   virtual void handleEvent(int events)
   {
-    auto g_net_logger = GET_LOGGER("Net");
+    auto g_net_logger = GET_LOGGER("net");
     ILOG_DEBUG(g_net_logger) << "FdChannel handle events: " << events;
     if (events & (EVENT_PRI | EVENT_IN)) {
       ILOG_DEBUG(g_net_logger) << "FdChannel handle READ event";

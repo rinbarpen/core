@@ -19,6 +19,8 @@ public:
 
   void doEventLoop() const { event_loop_->start(); }
 
+  virtual auto type() const -> std::string { return "TcpServer"; }
+
   LY_NONCOPYABLE(TcpServer);
 protected:
   virtual TcpConnection::ptr onConnect(sockfd_t fd);

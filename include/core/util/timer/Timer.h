@@ -6,6 +6,7 @@
 #include <core/util/timer/TimerTask.h>
 
 #include <map>
+#include <thread>
 
 LY_NAMESPACE_BEGIN
 
@@ -17,7 +18,7 @@ public:
 
   static void sleep(std::chrono::milliseconds ms)
   {
-    return std::this_thread::sleep_for(ms);
+    return ::std::this_thread::sleep_for(ms);
   }
   static auto newTask(TimerTask::TaskCallback fn,
     std::chrono::milliseconds timeout, bool oneShot = true) -> TimerTask;
@@ -28,7 +29,7 @@ public:
 
   void run();
 
-  auto nextTimestamp() const -> TimerTimestampDuration;
+  LY_NODISCARD auto nextTimestamp() const -> TimerTimestampDuration;
 
   LY_NONCOPYABLE(Timer);
 private:

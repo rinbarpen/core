@@ -7,11 +7,21 @@ LY_NAMESPACE_BEGIN
 
 NAMESPACE_BEGIN(net)
 
-struct NetAddress 
+struct NetAddress
 {
   std::string ip;
   uint16_t port;
 };
+
+// namespace v2
+// {
+// struct NetAddress
+// {
+//   std::string ip;
+//   uint16_t port;
+//   bool ipv6;
+// };
+// }
 
 NAMESPACE_END(net)
 LY_NAMESPACE_END
@@ -24,4 +34,4 @@ struct fmt::formatter<::ly::net::NetAddress>
   auto format(const ::ly::net::NetAddress &obj, FormatContext &ctx) {
     return fmt::format_to(ctx.out(), "{}:{}", obj.ip, obj.port);
   }
-}
+};

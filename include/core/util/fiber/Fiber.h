@@ -5,9 +5,11 @@
 #include <core/util/fiber/FiberConstant.h>
 #include <core/util/fiber/FiberScheduler.h>
 
+#include <ucontext.h>
+
 LY_NAMESPACE_BEGIN
 
-enum class FiberStatus 
+enum class FiberStatus
 {
   NONE,     // uninitialized
   RUNNABLE, // initialized
@@ -15,7 +17,7 @@ enum class FiberStatus
   SUSPEND,  // from RUNNING or RUNABLE
   DEAD,     // complete, from SUSPEND
 };
-struct FiberContext 
+struct FiberContext
 {
   int buffer_size{0};
   char *buffer{};
@@ -25,12 +27,12 @@ struct FiberContext
   FiberStatus status{FiberStatus::NONE};
 };
 
-//class FiberScheduler;
-class Fiber 
+class FiberScheduler;
+class Fiber
 {
   friend class FiberScheduler;
 public:
-  
+
   SHARED_PTR_USING(Fiber, ptr);
 
   using InitializedCallback = std::function<void()>;
@@ -38,25 +40,25 @@ public:
   using RunningCallback = std::function<void()>;
   using YieldCallback = std::function<void()>;
 
-  Fiber(FiberScheduler *pSchduler);
+  Fiber(FiberScheduler *pScheduler);
   Fiber(InitializedCallback initializedCallback,
-        RunningCallback runningCallback, 
+        RunningCallback runningCallback,
         YieldCallback yieldCallback,
         DestroyedCallback destroyedCallback,
-        FiberScheduler *pSchduler);
+        FiberScheduler *pScheduler);
   virtual ~Fiber();
 
-  static Fiber::ptr newFiber(FiberScheduler *pSchduler)
+  static Fiber::ptr newFiber(FiberScheduler *pScheduler)
   {
-    return std::make_shared<Fiber>(pSchduler);
+    return std::make_shared<Fiber>(pScheduler);
   }
   static Fiber::ptr newFiber(InitializedCallback initializedCallback,
     RunningCallback runningCallback, YieldCallback yieldCallback,
-    DestroyedCallback destroyedCallback, 
-    FiberScheduler *pSchduler)
+    DestroyedCallback destroyedCallback,
+    FiberScheduler *pScheduler)
   {
-    auto pFiber = std::make_shared<Fiber>(pSchduler);
-    pFiber->set(std::move(initializedCallback), 
+    auto pFiber = std::make_shared<Fiber>(pScheduler);
+    pFiber->set(std::move(initializedCallback),
                 std::move(runningCallback),
                 std::move(yieldCallback),
                 std::move(destroyedCallback));
@@ -65,12 +67,12 @@ public:
 
   void resume();
   void yield();
-  
+
   virtual void run() {}
 
   // Callbacks
-  void set(InitializedCallback initializedCallback, 
-           RunningCallback runningCallback, 
+  void set(InitializedCallback initializedCallback,
+           RunningCallback runningCallback,
            YieldCallback yieldCallback,
            DestroyedCallback destroyedCallback);
   void setInitializedCallback(InitializedCallback callback);

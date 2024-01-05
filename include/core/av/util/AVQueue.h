@@ -1,11 +1,12 @@
 #pragma once
 
+#include <core/util/marcos.h>
 #include <core/util/Mutex.h>
 #include <optional>
 #include <queue>
 #include <core/av/ffmpeg/ffmpeg_util.h>
-namespace ly
-{
+
+LY_NAMESPACE_BEGIN
 template <class T>
 class AVQueue
 {
@@ -35,4 +36,4 @@ private:
 using AVFrameQueue = AVQueue<ffmpeg::AVFramePtr>;
 using AVPacketQueue = AVQueue<ffmpeg::AVPacketPtr>;
 
-}  // namespace ly
+LY_NAMESPACE_END

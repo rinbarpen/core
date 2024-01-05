@@ -12,7 +12,7 @@
 LY_NAMESPACE_BEGIN
 
 struct Config {
-  struct 
+  struct
   {
     /** common **/
     struct
@@ -22,18 +22,18 @@ struct Config {
     } threadpool;
     struct
     {
-      
+
     } logger;
-    
+
     struct
     {
       /** buffer **/
-      int max_buffer_size = 1024;           // 
-      
+      int max_buffer_size = 1024;           //
+
     } buffer;
   } common;
-  
-  struct 
+
+  struct
   {
     /** net **/
     int max_upload_rate = -1;
