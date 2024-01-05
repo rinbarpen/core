@@ -1,6 +1,5 @@
-#pragma once
-
 #include <core/util/buffer/LRUKReplacer.h>
+#include <algorithm>
 
 LY_NAMESPACE_BEGIN
 template <class K, class V>
@@ -59,7 +58,7 @@ auto LRUKReplacer<K, V>::access(const K &key) -> std::optional<V>
     caches_.emplace_front(key, value);
     return value;
   }
-  if (auto it = history_.find(key); 
+  if (auto it = history_.find(key);
       it != history_.end())
   {
     auto &tuple = it->second;
@@ -94,7 +93,7 @@ auto LRUKReplacer<K, V>::evite(const K &key) -> bool
     caches_.erase(it);
     return true;
   }
-  if (auto it = history_.find(key); 
+  if (auto it = history_.find(key);
       it != history_.end())
   {
     history_.erase(it);

@@ -18,24 +18,6 @@ LogEvent::LogEvent(LogLevel level,
 {
 }
 
-#if 0
-void LogEvent::format(const char *fmt, ...)
-{
-  va_list args;
-  char buf[256]{0};
-
-  va_start(args, fmt);
-  int len = vsnprintf(&buf[0], sizeof(buf), fmt, args);
-  if (len < 0) {
-    va_end(args);
-    return;
-  }
-
-  ss_ << std::string(buf, len);
-  va_end(args);
-}
-#endif
-
 /***************************************** LogFormatterItem *****************************************/
 class MessageFormatterItem final : public LogFormatterItem
 {
@@ -278,7 +260,7 @@ void LogFormatter::init() {
   }
 }
 
-auto LogFormatter::toYamlString() const -> std::string 
+auto LogFormatter::toYamlString() const -> std::string
 {
   YAML::Node node;
   node["pattern"] = pattern_;
@@ -407,7 +389,7 @@ AsyncFileLogAppender::AsyncFileLogAppender(const std::string &filename)
 void AsyncFileLogAppender::log(LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger)
 {
   if (pLogEvent->getLevel() >= level_) {
-    std::async(std::launch::async, [&]() {
+    (void)std::async(std::launch::async, [&]() {
       std::unique_lock<std::mutex> locker(mutex_);
 
       int64_t now = pLogEvent->getTimestamp();
@@ -613,7 +595,7 @@ LogFormatter::ptr Logger::getFormatter() const
   return pFormatter_;
 }
 
-auto Logger::toYamlString() const -> std::string 
+auto Logger::toYamlString() const -> std::string
 {
   YAML::Node node;
 
@@ -651,9 +633,9 @@ Logger::ptr LogManager::getLogger(const std::string &name)
   loggers_[name] = pLogger;
   return pLogger;
 }
-bool LogManager::putLogger(Logger::ptr pLogger) 
+bool LogManager::putLogger(Logger::ptr pLogger)
 {
-  if (auto it = loggers_.find(pLogger->getName()); 
+  if (auto it = loggers_.find(pLogger->getName());
       it != loggers_.end()) {
     return false;
   }
@@ -816,10 +798,10 @@ void LogIniter::loadYamlNode(YAML::Node node) {
   }
 }
 
-auto LogManager::toYamlString() const -> std::string 
+auto LogManager::toYamlString() const -> std::string
 {
   YAML::Node node;
-  
+
   for (auto &[k, v] : loggers_) {
     node["logger"].push_back(v->toYamlString());
   }

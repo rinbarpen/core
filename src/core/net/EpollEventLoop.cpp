@@ -69,7 +69,7 @@ bool EpollEventLoop::handleEvent(std::chrono::milliseconds timeout)
   struct epoll_event events[MAX_EVENTS];
 
   Mutex::lock locker(mutex_);
-  int num_events = ::epoll_wait(epfd_, events, MAX_EVENTS, ms_timeout);
+  int num_events = ::epoll_wait(epfd_, events, MAX_EVENTS, timeout.count());
   if (num_events < 0) {
     if (errno != EINTR) {
       return false;

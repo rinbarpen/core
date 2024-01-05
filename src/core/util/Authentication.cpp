@@ -1,8 +1,7 @@
 #include <core/util/Authentication.h>
-#include <openssl/md5.h>
+// #include <openssl/md5.h>
 #include <openssl/rand.h>
-#include <openssl/bio.h>
-#include <openssl/evp.h>
+#include <core/util/crypt/md5.h>
 
 Authentication::Authentication(std::string realm, std::string username, std::string password) :
   realm_(realm), username_(username), password_(password)

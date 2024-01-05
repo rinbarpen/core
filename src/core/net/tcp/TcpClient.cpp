@@ -11,7 +11,7 @@ TcpClient::TcpClient(EventLoop *eventLoop)
   connector_->setConnectCallback(
     [&](sockfd_t fd) { conn_ = this->onConnect(fd); });
   connector_->setDisconnectCallback([this]() {
-    ILOG_INFO_FMT(g_net_logger, "Leaving ...");
+    ILOG_INFO_FMT(g_net_logger, "{} is Leaving ...", this->type());
   });
 }
 TcpClient::~TcpClient()
@@ -22,7 +22,7 @@ TcpClient::~TcpClient()
 bool TcpClient::start(const char *ip, uint16_t port) {
   if (running_) return false;
 
-  ILOG_INFO(g_net_logger) << "Start TcpClient...";
+  ILOG_INFO_FMT(g_net_logger, "Start {} ...", this->type());
   connector_->connect(ip, port);
   running_ = true;
 
@@ -31,7 +31,7 @@ bool TcpClient::start(const char *ip, uint16_t port) {
 bool TcpClient::stop() {
   if (!running_) return false;
 
-  ILOG_DEBUG(g_net_logger) << "TcpClient is STOP";
+  ILOG_DEBUG_FMT(g_net_logger, "{} is STOPPING", this->type());
 
   running_ = false;
   conn_->disconnect();

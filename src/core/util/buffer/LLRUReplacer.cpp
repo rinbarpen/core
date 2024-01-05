@@ -1,5 +1,3 @@
-#pragma once
-
 #include <core/util/buffer/LLRUReplacer.h>
 
 LY_NAMESPACE_BEGIN

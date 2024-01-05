@@ -29,7 +29,7 @@ bool Library::load(const char *name)
   module_ = ::LoadLibrary(reinterpret_cast<LPCSTR>(reinterpret_cast<LPCWSTR>(dll_name_.c_str())));
   if (module_) hasModel_ = true;
 #endif
-  
+
   return hasModel_;
 }
 template<typename FnPtr>
@@ -58,7 +58,7 @@ void* Library::getModule(const char *name)
 void Library::close()
 {
 #if defined(__LINUX__)
-  ::dlclose(pModule_);
+  ::dlclose(module_);
 #elif defined(__WIN__)
   ::FreeLibrary(module_);
 #endif

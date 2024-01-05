@@ -2,46 +2,27 @@
 
 LY_NAMESPACE_BEGIN
 
-ThreadPool::ThreadPool(size_t nThread, bool autoRun)
+ThreadPool::ThreadPool(size_t nThread, bool autoRun) noexcept
   : capacity_(nThread)
 {
   threads_.reserve(nThread);
   for (size_t i = 0; i < nThread; ++i)
-    threads_.emplace_back(std::thread(&ThreadPool::work, this));
+    threads_.emplace_back(&ThreadPool::work, this);
 
-  if (autoRun) running_ = true;
+  if (autoRun) {
+    running_ = true;
+  }
 }
-ThreadPool::~ThreadPool() 
+ThreadPool::~ThreadPool() noexcept
 {
+  if (!running_) return;
+
   running_ = false;
-  
-  for (auto &th : threads_) 
+  cond_.notify_all();
+  for (auto &th : threads_)
   {
-    th.join();
+    if (th.joinable()) th.join();
   }
-}
-
-template<typename Fn, typename... Args>
-auto ThreadPool::submit(Fn &&fn, Args &&...args) -> std::future<std::result_of_t<Fn(Args...)>>
-{
-  using ReturnType = std::result_of_t<Fn(Args...)>;
-
-  std::packaged_task<ReturnType(Args...)> task(
-    std::forward<Fn>(fn), std::forward<Args>(args)...
-  );
-
-  auto res = task.get_future();
-  {
-    std::lock_guard<std::mutex> locker(queue_mutex_);
-    if (!running_) {
-      throw ThreadPoolException("Submit task when ThreadPool is stopping");
-    }
-
-    tasks_.emplace([task]() {task();});
-  }
-
-  cond_.notify_one();
-  return res;
 }
 
 void ThreadPool::start()
@@ -58,7 +39,7 @@ void ThreadPool::start()
 
   running_ = true;
 }
-void ThreadPool::stop() 
+void ThreadPool::stop()
 {
   if (!running_) {
     throw ThreadPoolException("ThreadPool has been stopped");
@@ -66,9 +47,10 @@ void ThreadPool::stop()
   }
 
   running_ = false;
+  cond_.notify_all();
   for (auto &th : threads_)
   {
-    th.join();
+    if (th.joinable()) th.join();
   }
 }
 
@@ -79,7 +61,7 @@ void ThreadPool::work()
     {
       std::unique_lock<std::mutex> locker(queue_mutex_);
       cond_.wait(locker, [this]() {
-        return !running_ && !tasks_.empty();
+        return !running_ || !tasks_.empty();
       });
       if (!running_ && tasks_.empty())
         return;

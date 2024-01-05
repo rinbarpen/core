@@ -1,7 +1,7 @@
 #include <core/av/util/AVQueue.h>
 
-namespace ly
-{
+LY_NAMESPACE_BEGIN
+
 template <typename T>
 AVQueue<T>::AVQueue() {}
 template <typename T>
@@ -63,4 +63,4 @@ auto AVQueue<T>::size() const -> size_t {
   return data_.size();
 }
 
-}  // namespace ly
+LY_NAMESPACE_END

@@ -1,20 +1,21 @@
 #include <core/util/fiber/Fiber.h>
+#include <cstring>
 
 LY_NAMESPACE_BEGIN
-Fiber::Fiber(FiberScheduler* pSchduler)
-  : scheduler_(pSchduler)
+Fiber::Fiber(FiberScheduler* pScheduler)
+  : scheduler_(pScheduler)
 {
   LY_ASSERT(scheduler_);
   context_.buffer = new char[kDefaultMaxFiberBufferSize];
   init();
 }
 
-Fiber::Fiber(InitializedCallback initializedCallback, 
-  RunningCallback runningCallback, 
+Fiber::Fiber(InitializedCallback initializedCallback,
+  RunningCallback runningCallback,
   YieldCallback yieldCallback,
-  DestroyedCallback destroyedCallback, 
-  FiberScheduler* pSchduler)
-  : scheduler_(pSchduler)
+  DestroyedCallback destroyedCallback,
+  FiberScheduler* pScheduler)
+  : scheduler_(pScheduler)
 {
   LY_ASSERT(scheduler_);
   this->set(std::move(initializedCallback), std::move(runningCallback),
@@ -31,7 +32,7 @@ Fiber::~Fiber()
 
 
 void Fiber::set(InitializedCallback initializedCallback,
-  RunningCallback runningCallback, 
+  RunningCallback runningCallback,
   YieldCallback yieldCallback,
   DestroyedCallback destroyedCallback)
 {
@@ -77,7 +78,7 @@ void Fiber::resume()
   {
     loadStack();
 #ifdef __LINUX__
-    ::swapcontext(&scheduler_->main_fiber_->context.ctx, &context_.ctx);
+    ::swapcontext(&scheduler_->main_fiber_->context_.ctx, &context_.ctx);
 #endif
     context_.status = FiberStatus::RUNNING;
     running_callback_();
@@ -92,7 +93,7 @@ void Fiber::yield()
     context_.status = FiberStatus::SUSPEND;
     saveStack();
 #ifdef __LINUX__
-    ::swapcontext(&context_.ctx, &scheduler_->main_fiber_->context.ctx);
+    ::swapcontext(&context_.ctx, &scheduler_->main_fiber_->context_.ctx);
 #endif
     yield_callback_();
     break;
@@ -115,7 +116,7 @@ void Fiber::loadStack()
 {
   void *p = scheduler_->main_fiber_->context_.buffer
             + kDefaultMaxFiberBufferSize - scheduler_->main_fiber_->context_.buffer_size;
-  ::memcpy(p, 
+  ::memcpy(p,
     scheduler_->main_fiber_->context_.buffer,
     scheduler_->main_fiber_->context_.buffer_size);
 }

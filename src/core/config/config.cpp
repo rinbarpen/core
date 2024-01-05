@@ -7,7 +7,7 @@ LY_NAMESPACE_BEGIN
 
 std::string Config::toString() const
 {
-  return toYamlString();  
+  return toYamlString();
 }
 void Config::toFile(const std::string &filename) const
 {
@@ -23,7 +23,7 @@ void Config::toFile(const std::string &filename) const
   }
 }
 
-Config Config::fromFile(const std::string &filename) 
+Config Config::fromFile(const std::string &filename)
 {
   Config config;
   YAML::Node root = YAML::LoadFile(filename);
@@ -36,11 +36,11 @@ Config Config::fromFile(const std::string &filename)
       LogIniter::loadYamlNode(logger);
 
     YAML::Node buffer = common["buffer"];
-    
+
     YAML::Node thread_pool = common["thread_pool"];
     config.common.threadpool.thread_num = thread_pool["thread_num"].as<int>();
 
-    
+
   }
 
   // parse net
@@ -53,6 +53,11 @@ Config Config::fromFile(const std::string &filename)
 
   }
   return config;
+}
+
+std::string Config::toYamlString() const
+{
+  return "";
 }
 
 LY_NAMESPACE_END

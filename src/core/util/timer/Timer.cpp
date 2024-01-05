@@ -1,4 +1,3 @@
-#include <windot11.h>
 #include <core/util/timer/Timer.h>
 #include <core/util/container_util.h>
 
@@ -13,7 +12,7 @@ auto Timer::newTask(TimerTask::TaskCallback fn,
 
 bool Timer::add(const TimerTask &task)
 {
-  if (auto it = std::find_if(task_map_.begin(), task_map_.end(), 
+  if (auto it = std::find_if(task_map_.begin(), task_map_.end(),
     [&](const auto &pair) { return pair.first.second == task.id;
   }); it == task_map_.end()) {
     KeyPair key = {task.expire_time, task.id};
@@ -26,7 +25,7 @@ bool Timer::modify(const TimerTaskId id, std::chrono::milliseconds newTimeout)
 {
   if (auto it = std::find_if(task_map_.begin(), task_map_.end(),
         [&](const auto &pair) { return pair.first.second == id;
-             }); 
+             });
       it != task_map_.end())
   {
     TimerTask task = it->second;
