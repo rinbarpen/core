@@ -28,7 +28,6 @@ ThreadPool::~ThreadPool() noexcept
 void ThreadPool::start()
 {
   if (running_) {
-    throw ThreadPoolException("ThreadPool has been started");
     return;
   }
 
@@ -42,7 +41,6 @@ void ThreadPool::start()
 void ThreadPool::stop()
 {
   if (!running_) {
-    throw ThreadPoolException("ThreadPool has been stopped");
     return;
   }
 

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <mutex>
+#include <thread>
 #include <tuple>
 
 #include <core/util/string_util.h>
@@ -9,16 +10,15 @@
 #include <core/util/time/Timestamp.h>
 #include <core/util/time/TimestampDuration.h>
 #include <core/util/time/Clock.h>
+#include "core/config/config.h"
+#include "core/net/EventLoop.h"
+#include "core/net/tcp/TcpServer.h"
 #include "core/util/Library.h"
 #include "core/util/thread/ThreadPool.h"
-#include "range/v3/range/concepts.hpp"
 #include <core/util/Record.h>
-#include <core/xmarco/xmarco.h>
-#include <core/av/ffmpeg/ffmpeg_util.h>
+#include <core/multimedia/ffmpeg/ffmpeg_util.h>
 
 #include <fmt/core.h>
-#include <range/v3/range.hpp>
-// #include <tl/expected.hpp>
 
 using namespace ly;
 using namespace ly::literals;
@@ -114,22 +114,58 @@ void test_range()
   }
 }
 
+void test_tcp()
+{
+  LogIniter::getLogger("net", LogLevel::LDEBUG, kDefaultFormatPattern, false);
+
+  // LogIniter::loadYamlFile("./config/log.yml");
+  // g_config = Config::fromFile("./config/config.yml");
+
+  lynet::EventLoop eventLoop(g_config.common.threadpool.thread_num);
+
+  lynet::TcpServer tcp_server(&eventLoop);
+  tcp_server.start("192.168.146.136", 8080, 10);
+
+  while(true)
+    ;
+}
+
+#include <libyuv.h>
+#include <GLFW/glfw3.h>
+
+void init()
+{
+  // ffmpeg init
+  lyffmpeg::reg_ffmpeg(lyffmpeg::RegFlag::ALL);
+  //
+  log_load_config();
+}
+
+
 int main()
 {
-  std::once_flag once;
-  std::call_once(once, &lyffmpeg::reg_ffmpeg, lyffmpeg::RegFlag::ALL);
-  ffmpeg::version();
-  try {
-    ThreadPool pool;
-    (void)pool.submit([&](){
-      Record::record("test_logger", &test_logger);
-      fmt::println("");
-    });
-    (void)pool.submit([&](){
-      Record::record("test_time", &test_time);
-      fmt::println("");
-    });
-  } catch(std::exception &e) {
-    LOG_FATAL() << e.what();
-  }
+#ifdef LIBYUV_VERSION
+  fmt::println("Libyuv is loaded");
+#endif
+#ifdef GLFW_VERSION_MAJOR
+  fmt::println("GLFW is loaded");
+#endif
+
+  // try {
+  //   ThreadPool pool;
+  //   (void)pool.submit([&](){
+  //     Record::record("test_logger", &test_logger);
+  //     fmt::println("");
+  //   });
+  //   (void)pool.submit([&](){
+  //     Record::record("test_time", &test_time);
+  //     fmt::println("");
+  //   });
+  // } catch(std::exception &e) {
+  //   LOG_FATAL() << e.what();
+  // }
+
+  // LogIniter::loadYamlFile("log/config.yml");
+  // fmt::println("{}", LogManager::instance()->toYamlString());
+  // LogManager::instance()->toYamlFile("log/x.yml");
 }

@@ -10,13 +10,12 @@ TcpServer::TcpServer(EventLoop *eventLoop) : event_loop_(eventLoop) {
     std::make_unique<Acceptor>(eventLoop);
   acceptor_->setNewConnectionCallback([this](sockfd_t fd) {
     TcpConnection::ptr conn = this->onConnect(fd);
-    if (conn)
-    {
+    if (conn) {
       ILOG_INFO(g_net_logger) << "A new comer: " << fd;
       this->addConnection(fd, conn);
       conn->setDisconnectCallback([this](TcpConnection::ptr conn) {
         ILOG_INFO_FMT(g_net_logger, "{} is Leaving...", this->type());
-        auto scheduler = conn->getEventLoop();
+        auto scheduler = conn->getTaskScheduler();
         sockfd_t sockfd = conn->getSockfd();
         scheduler->addTriggerEventForce(
           [this, sockfd] { this->removeConnection(sockfd); },
@@ -29,19 +28,19 @@ TcpServer::TcpServer(EventLoop *eventLoop) : event_loop_(eventLoop) {
       });
 
       // TODO: Remove it
-      conn->setReadCallback(
-        [this](TcpConnection::ptr read_conn, BufferReader &reader) {
-          std::string buf{};
-          const int readBytes = reader.readAll(buf);
-          if (readBytes <= 0 || buf.empty()) return false;
+      // conn->setReadCallback(
+      //   [this](TcpConnection::ptr read_conn, BufferReader &reader) {
+      //     std::string buf{};
+      //     const int readBytes = reader.readAll(buf);
+      //     if (readBytes <= 0 || buf.empty()) return false;
 
-          buf = "Server Echo: you sent " + buf + "recently.\n";
-          buf += "Thanks for your response.";
-          ILOG_INFO(g_net_logger) << buf;
-          read_conn->send(buf.c_str(), buf.length());
+      //     buf = "Server Echo: you sent " + buf + "recently.\n";
+      //     buf += "Thanks for your response.";
+      //     ILOG_INFO(g_net_logger) << buf;
+      //     read_conn->send(buf.c_str(), buf.length());
 
-          return true;
-        });
+      //     return true;
+      //   });
     }
   });
 }
@@ -82,7 +81,7 @@ bool TcpServer::stop() {
 
 TcpConnection::ptr TcpServer::onConnect(sockfd_t fd) {
   return std::make_shared<TcpConnection>(
-    event_loop_, fd);
+    event_loop_->getTaskScheduler().get(), fd);
 }
 
 void TcpServer::addConnection(sockfd_t fd, TcpConnection::ptr conn) {

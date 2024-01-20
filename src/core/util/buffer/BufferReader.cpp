@@ -1,78 +1,11 @@
-#include "core/util/buffer/BufferReader.h"
+#include "core/net/SocketUtil.h"
+#include "core/util/marcos.h"
+#include <core/util/buffer/BufferReader.h>
+#include <core/config/config.h>
+#include <cstring>
+#include <memory>
 
 LY_NAMESPACE_BEGIN
-
-int BufferReader::append(const char *data, size_t len)
-{
-  int write_len = buffer_.writableBytes();
-  if (write_len < Buffer::kMaxBytesPerRead) {
-    buffer_.reset(buffer_.capacity() * 2);
-  }
-
-  buffer_.write(data, len);
-  
-  return len;
-}
-int BufferReader::read(size_t n, std::string &data)
-{
-  int bytesRead = buffer_.readableBytes();
-  if (n > 0 && n <= bytesRead) {
-    int len = buffer_.read(data.data(), n);
-    return len;
-  }
-
-  return 0;
-}
-
-int BufferReader::findFirst(const char* matchStr)
-{
-  return buffer_.find(matchStr);
-}
-
-int BufferReader::findAndSkip(const char* matchStr)
-{
-  int len = buffer_.find(matchStr);
-  if (len < 0) return len;
-
-  buffer_.read(nullptr, len + strlen(matchStr));
-  return len + strlen(matchStr);
-}
-
-int BufferReader::read(sockfd_t fd)
-{
-  int write_len = writableBytes();
-  // ÈÝÁ¿²»×ã
-  if (write_len < Buffer::kMaxBytesPerRead) {
-    buffer_.reset(buffer_.capacity() * 2);
-  }
-
-  int len = buffer_.write(fd, Buffer::kMaxBytesPerRead);
-  if (len <= 0) return 0;
-
-  return len;
-}
-
-int BufferReader::readAll(std::string &data)
-{
-  int size = buffer_.readableBytes();
-  buffer_.read(data.data(), size);
-
-  return size;
-}
-void BufferReader::advance(size_t n)
-{
-  buffer_.read(nullptr, n);
-}
-void BufferReader::advanceTo(const char *target)
-{
-  int n = buffer_.find(target);
-  buffer_.read(nullptr, n);
-}
-void BufferReader::clear()
-{
-  buffer_.clear();
-}
-
 uint16_t readU16Forward(const char *p)
 {
   uint16_t res = 0;
@@ -128,4 +61,115 @@ uint32_t readU32Reverse(const char *p)
   return res;
 }
 
+auto BufferReader::read(size_t nBytes) -> std::string
+{
+  size_t bytesRead = this->readableBytes();
+  if (nBytes > bytesRead) {
+    nBytes = bytesRead;
+  }
+  char out[nBytes];
+  std::memcpy(out, data_, nBytes);
+  return std::string(out, nBytes);
+}
+auto BufferReader::read(sockfd_t sockfd) -> int
+{
+  int writeBytes = writableBytes();
+
+  if (writeBytes < g_config.common.buffer.max_buffer_size) {
+    this->reset();
+  }
+
+  char buffer[g_config.common.buffer.max_bytes_per_read];
+  int len = net::socket_api::recv(sockfd, buffer, writeBytes);
+  if (len <= 0) return 0;
+
+  std::memcpy(data_, buffer, len);
+  return len;
+}
+auto BufferReader::readAll() -> std::string
+{
+  return this->read(this->readableBytes());
+}
+
+auto BufferReader::append(std::string_view data) -> int
+{
+  int writeBytes = this->writableBytes();
+  if (writeBytes < g_config.common.buffer.max_buffer_size) {
+    this->reset();
+  }
+
+  std::memcpy(peek(), data.data(), data.length());
+
+  return data.length();
+}
+
+int BufferReader::findFirst(std::string_view matchStr)
+{
+  int begin = get_pos_;
+  while (begin < put_pos_) {
+    if (0 == std::strncmp(peek() + begin, matchStr.data(), matchStr.length())) {
+      return begin - get_pos_;
+    }
+    advance(begin, 1);
+  }
+  return -1;
+}
+int BufferReader::findAndSkip(std::string_view matchStr)
+{
+  auto len = this->findFirst(matchStr);
+  if (len < 0) {
+    return -1;
+  }
+  this->advance(len + matchStr.length());
+
+  return len + matchStr.length();
+}
+int BufferReader::findLast(std::string_view matchStr)
+{
+  int rbegin = put_pos_ - matchStr.length();
+  while (rbegin >= (int)get_pos_) {
+    if (0 == std::strncmp(peek() + rbegin, matchStr.data(), matchStr.length())) {
+      return rbegin - get_pos_;
+    }
+    --rbegin;
+  }
+  return -1;
+}
+
+void BufferReader::advance(int n)
+{
+  advance(get_pos_, n);
+  if (put_pos_ <= get_pos_ || readableBytes() <= n) {
+    clear();
+    return;
+  }
+}
+void BufferReader::advanceTo(const char *target)
+{
+  int len = ::strlen(target);
+  int begin = get_pos_;
+  while (begin < put_pos_) {
+    if (0 == ::strcmp(peek() + begin, target)) {
+      // found
+      get_pos_ = begin;
+      return ;
+    }
+    advance(begin, 1);
+  }
+
+  // not found
+}
+
+void BufferReader::advance(int &pos, int n)
+{
+  pos += n;
+}
+void BufferReader::reset()
+{
+  char *buffer = new char[capacity_ * 2];
+  std::uninitialized_copy_n(data_, capacity_, buffer);
+  delete[] data_;
+  data_ = buffer;
+  capacity_ *= 2;
+}
 LY_NAMESPACE_END

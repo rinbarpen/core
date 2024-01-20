@@ -1,20 +1,18 @@
-#include <core/config/config.h>
-
 #include <fstream>
+#include <sstream>
+#include <string_view>
+
 #include <core/util/logger/Logger.h>
+#include <core/config/config.h>
 
 LY_NAMESPACE_BEGIN
 
-std::string Config::toString() const
-{
-  return toYamlString();
-}
 void Config::toFile(const std::string &filename) const
 {
   std::ofstream out(filename);
   if (out.is_open())
   {
-    out << this->toString();
+    out << this->toYamlNode();
     out.flush();
   }
   else
@@ -23,7 +21,7 @@ void Config::toFile(const std::string &filename) const
   }
 }
 
-Config Config::fromFile(const std::string &filename)
+auto Config::fromFile(const std::string &filename) -> Config
 {
   Config config;
   YAML::Node root = YAML::LoadFile(filename);
@@ -48,16 +46,44 @@ Config Config::fromFile(const std::string &filename)
 
   }
 
-  // parse av
+  // parse multimedia
   {
 
   }
   return config;
 }
 
-std::string Config::toYamlString() const
+
+auto Config::toYamlNode() const -> YAML::Node
 {
-  return "";
+  YAML::Node root;
+  // parse common
+  {
+    YAML::Node common = root["common"];
+    /** logger **/
+    YAML::Node logger = common["logger"];
+    logger["max_file_line"] = g_config.common.logger.max_file_line;
+    /** buffer **/
+    YAML::Node buffer = common["buffer"];
+    buffer["max_buffer_size"] = g_config.common.buffer.max_buffer_size;
+    buffer["max_bytes_per_read"] = g_config.common.buffer.max_bytes_per_read;
+    /** threadpool **/
+    YAML::Node threadpool = common["threadpool"];
+    threadpool["thread_num"] = g_config.common.threadpool.thread_num;
+  }
+
+  // parse net
+  {
+    YAML::Node net = root["net"];
+    YAML::Node logger = net["rtp"];
+  }
+
+  // parse multimedia
+  {
+
+  }
+
+  return root;
 }
 
 LY_NAMESPACE_END

@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <core/util/logger/Logger.h>
 
@@ -260,11 +261,11 @@ void LogFormatter::init() {
   }
 }
 
-auto LogFormatter::toYamlString() const -> std::string
+auto LogFormatter::toYaml() const -> YAML::Node
 {
   YAML::Node node;
   node["pattern"] = pattern_;
-  return (std::ostringstream{} << node).str();
+  return node;
 }
 
 
@@ -330,7 +331,7 @@ bool FileLogAppender::reopen()
   return filestream_.is_open();
 }
 
-auto FileLogAppender::toYamlString() const -> std::string
+auto FileLogAppender::toYaml() const -> YAML::Node
 {
   YAML::Node node;
   node["type"] = "SyncFileLogAppender";
@@ -342,10 +343,10 @@ auto FileLogAppender::toYamlString() const -> std::string
   node["level"] = level_.toString();
   if (hasFormatter_)
   {
-    node["formatter"] = pFormatter_->toYamlString();
+    node["formatter"] = pFormatter_->toYaml();
   }
 
-  return (std::ostringstream{} << node).str();
+  return node;
 }
 
 std::string FileLogAppender::getWholeFilename()
@@ -406,7 +407,7 @@ void AsyncFileLogAppender::log(LogEvent::ptr pLogEvent, std::shared_ptr<Logger> 
   }
 }
 
-auto AsyncFileLogAppender::toYamlString() const -> std::string
+auto AsyncFileLogAppender::toYaml() const -> YAML::Node
 {
   YAML::Node node;
   node["type"] = "AsyncFileLogAppender";
@@ -418,10 +419,10 @@ auto AsyncFileLogAppender::toYamlString() const -> std::string
   node["level"] = level_.toString();
   if (hasFormatter_)
   {
-    node["formatter"] = pFormatter_->toYamlString();
+    node["formatter"] = pFormatter_->toYaml();
   }
 
-  return (std::ostringstream{} << node).str();
+  return node;
 }
 
 bool AsyncFileLogAppender::reopen(tm *tm)
@@ -516,7 +517,7 @@ void StdoutLogAppender::log(LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLo
   }
 }
 
-auto StdoutLogAppender::toYamlString() const -> std::string
+auto StdoutLogAppender::toYaml() const -> YAML::Node
 {
   YAML::Node node;
   node["type"] = "StdoutLogAppender";
@@ -524,10 +525,10 @@ auto StdoutLogAppender::toYamlString() const -> std::string
   node["level"] = level_.toString();
   if (hasFormatter_)
   {
-    node["formatter"] = pFormatter_->toYamlString();
+    node["formatter"] = pFormatter_->toYaml();
   }
 
-  return (std::ostringstream{} << node).str();
+  return node;
 }
 
 /********************************************** Logger **********************************************/
@@ -595,7 +596,7 @@ LogFormatter::ptr Logger::getFormatter() const
   return pFormatter_;
 }
 
-auto Logger::toYamlString() const -> std::string
+auto Logger::toYaml() const -> YAML::Node
 {
   YAML::Node node;
 
@@ -603,12 +604,12 @@ auto Logger::toYamlString() const -> std::string
   node["level"] = this->level_.toString();
   if (!appenders_.empty()) {
     for (const auto &appender : appenders_) {
-      node["appenders"].push_back(appender->toYamlString());
+      node["appenders"].push_back(appender->toYaml());
     }
   }
-  node["formatter"] = pFormatter_->toYamlString();
+  node["formatter"] = pFormatter_->toYaml();
 
-  return (std::stringstream{} << node).str();
+  return node;
 }
 
 /***************************************** LogEventWrapper ******************************************/
@@ -620,6 +621,17 @@ LogEventWrapper::LogEventWrapper(LogEvent::ptr pEvent, Logger::ptr pLogger)
 }
 
 /******************************************** LogManager ********************************************/
+LogManager::LogManager() {
+  root_.reset(new Logger());
+  auto pAppender = std::make_shared<StdoutLogAppender>();
+  // pAppender->setFormatter(root_->getFormatter());
+  root_->addAppender(pAppender);
+
+  loggers_[root_->getName()] = root_;
+
+  init();
+}
+
 Logger::ptr LogManager::getLogger(const std::string &name)
 {
   std::lock_guard<std::mutex> locker(mutex_);
@@ -643,15 +655,26 @@ bool LogManager::putLogger(Logger::ptr pLogger)
   return true;
 }
 
-LogManager::LogManager() {
-  root_.reset(new Logger());
-  auto pAppender = std::make_shared<StdoutLogAppender>();
-  // pAppender->setFormatter(root_->getFormatter());
-  root_->addAppender(pAppender);
+auto LogManager::toYamlString() const -> std::string
+{
+  YAML::Node node;
 
-  loggers_[root_->getName()] = root_;
+  for (auto &[k, v] : loggers_) {
+    node["logger"].push_back(v->toYaml());
+  }
 
-  init();
+  return (std::ostringstream{} << node).str();
+}
+
+void LogManager::toYamlFile(std::string_view filename) const
+{
+  YAML::Node node;
+
+  for (auto &[k, v] : loggers_) {
+    node["logger"].push_back(v->toYaml());
+  }
+
+  std::ofstream{filename.data()} << node;
 }
 
 /******************************************** LogIniter  *********************************************/
@@ -796,17 +819,6 @@ void LogIniter::loadYamlNode(YAML::Node node) {
     }
     LogManager::instance()->putLogger(pLogger);
   }
-}
-
-auto LogManager::toYamlString() const -> std::string
-{
-  YAML::Node node;
-
-  for (auto &[k, v] : loggers_) {
-    node["logger"].push_back(v->toYamlString());
-  }
-
-  return (std::ostringstream{} << node).str();
 }
 
 LY_NAMESPACE_END

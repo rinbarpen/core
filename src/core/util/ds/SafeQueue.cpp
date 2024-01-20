@@ -3,34 +3,36 @@
 namespace ly
 {
 template <typename T>
-SafeQueue<T>::SafeQueue()
-{}
-template <typename T>
-SafeQueue<T>::~SafeQueue() 
+SafeQueue<T>::SafeQueue(bool autoOpen)
 {
-  this->close();
+  if (autoOpen) opening_ = true;
 }
 template <typename T>
-void SafeQueue<T>::open() 
+SafeQueue<T>::~SafeQueue()
+{
+  if (opening_) opening_ = false;
+}
+template <typename T>
+void SafeQueue<T>::open()
 {
   opening_ = true;
 }
 template <typename T>
-void SafeQueue<T>::close() 
+void SafeQueue<T>::close()
 {
   opening_ = false;
 }
 
 template <typename T>
-auto SafeQueue<T>::push(const T &x) -> bool 
+auto SafeQueue<T>::push(const T &x) -> bool
 {
   if (!opening_) return false;
-  
+
   Mutex::lock locker(mutex_);
   data_.push(x);
 }
 template <typename T>
-auto SafeQueue<T>::push(T &&x) -> bool 
+auto SafeQueue<T>::push(T &&x) -> bool
 {
   if (!opening_) return false;
 
@@ -43,13 +45,13 @@ auto SafeQueue<T>::pop() -> std::optional<T>
   if (!opening_) return {};
 
   Mutex::lock locker(mutex_);
-  
+
   T x = std::move(data_.front());
-  data_.pop(); 
+  data_.pop();
   return x;
 }
 template <typename T>
-auto SafeQueue<T>::pop(T &x) -> bool 
+auto SafeQueue<T>::pop(T &x) -> bool
 {
   if (!opening_) return false;
 

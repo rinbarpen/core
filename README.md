@@ -1,5 +1,5 @@
 # TODO
- - [ ] add sqlite3
+ - [x] add sqlite3
  - [ ] add more ffmpeg functions
  - [ ] add optimization for socket buffer
  - [ ] add udp support
@@ -14,5 +14,5 @@
  - [ ] use ByteSteam instead of BufferWriter, BufferReader
  - [ ] support ipv6
  - [ ] support msvc and windows
- - [ ] support xmarco
-
+ - [ ] support camera and microphone
+ - [ ] add opengl and libyuv

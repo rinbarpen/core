@@ -1,15 +1,15 @@
-#include <core/net/SelectEventLoop.h>
-#include <forward_list>
+#include <core/net/SelectTaskScheduler.h>
 #include <core/util/timer/Timer.h>
 #include <core/util/logger/Logger.h>
+#include <forward_list>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
 
 static auto g_net_logger = GET_LOGGER("net");
 
-SelectEventLoop::SelectEventLoop(EventLoopId id) :
-  EventLoop(id)
+SelectTaskScheduler::SelectTaskScheduler(TaskSchedulerId id) :
+  TaskScheduler(id)
 {
   FD_ZERO(&fd_read_backup_);
   FD_ZERO(&fd_write_backup_);
@@ -17,12 +17,12 @@ SelectEventLoop::SelectEventLoop(EventLoopId id) :
 
   this->updateChannel(wakeup_channel_);
 }
-SelectEventLoop::~SelectEventLoop()
+SelectTaskScheduler::~SelectTaskScheduler()
 {
-  
+
 }
 
-void SelectEventLoop::updateChannel(FdChannel::ptr pChannel)
+void SelectTaskScheduler::updateChannel(FdChannel::ptr pChannel)
 {
 	Mutex::lock locker(mutex_);
 
@@ -50,7 +50,7 @@ void SelectEventLoop::updateChannel(FdChannel::ptr pChannel)
 	}
 }
 
-void SelectEventLoop::removeChannel(sockfd_t fd)
+void SelectTaskScheduler::removeChannel(sockfd_t fd)
 {
 	Mutex::lock locker(mutex_);
 
@@ -62,9 +62,9 @@ void SelectEventLoop::removeChannel(sockfd_t fd)
 	}
 }
 
-bool SelectEventLoop::handleEvent(std::chrono::milliseconds timeout)
+bool SelectTaskScheduler::handleEvent(std::chrono::milliseconds timeout)
 {
-  ILOG_DEBUG(g_net_logger) << "Handle events in SelectEventLoop";
+  ILOG_DEBUG(g_net_logger) << "Handle events in SelectTaskScheduler";
   ILOG_DEBUG(g_net_logger) << "The count of event FdChannel is " << channels_.size();
 	if (channels_.empty()) {
 		ILOG_DEBUG(g_net_logger) << "Sleep " << timeout.count() << "(ms)";

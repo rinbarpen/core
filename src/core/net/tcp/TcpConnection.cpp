@@ -1,11 +1,12 @@
+#include "core/net/TaskScheduler.h"
 #include <core/net/tcp/TcpConnection.h>
 
 LY_NAMESPACE_BEGIN
 
 NAMESPACE_BEGIN(net)
 
-TcpConnection::TcpConnection(EventLoop *pEventLoop, sockfd_t fd)
-  : event_loop_(pEventLoop),
+TcpConnection::TcpConnection(TaskScheduler *pTaskScheduler, sockfd_t fd)
+  : task_scheduler_(pTaskScheduler),
   read_buffer_(new BufferReader(kMaxBufferSize)),
   write_buffer_(new BufferWriter(kMaxBufferSize)),
   channel_(new FdChannel(fd))
@@ -20,7 +21,7 @@ TcpConnection::TcpConnection(EventLoop *pEventLoop, sockfd_t fd)
   socket_api::setKeepAlive(fd);
 
   channel_->enableReading();
-  event_loop_->updateChannel(channel_);
+  task_scheduler_->updateChannel(channel_);
 }
 
 TcpConnection::~TcpConnection()
@@ -44,7 +45,7 @@ void TcpConnection::disconnect()
 {
   auto conn = shared_from_this();
   Mutex::lock locker(mutex_);
-  event_loop_->addTriggerEventForce([conn]() {
+  task_scheduler_->addTriggerEventForce([conn]() {
     conn->close();
   }, 0ms);
 
@@ -61,8 +62,8 @@ void TcpConnection::onRead()
     return;
   }
 
-  if (read_cb_) {
-    bool ret = read_cb_(shared_from_this(), *read_buffer_);
+  if (read_callback_) {
+    bool ret = read_callback_(shared_from_this(), *read_buffer_);
     if (false == ret) {
       this->close();
       return;
@@ -85,12 +86,12 @@ void TcpConnection::onWrite()
   if (write_buffer_->empty()) {
     if (channel_->isWriting()) {
       channel_->disableWriting();
-      event_loop_->updateChannel(channel_);
+      task_scheduler_->updateChannel(channel_);
     }
   }
   else if (!channel_->isWriting()) {
     channel_->enableWriting();
-    event_loop_->updateChannel(channel_);
+    task_scheduler_->updateChannel(channel_);
   }
 }
 void TcpConnection::onClose()
@@ -113,14 +114,14 @@ void TcpConnection::close()
 {
   if (running_) {
     running_ = false;
-    event_loop_->removeChannel(channel_->getSockfd());
+    task_scheduler_->removeChannel(channel_->getSockfd());
 
-    if (close_cb_) {
-      close_cb_(shared_from_this());
+    if (close_callback_) {
+      close_callback_(shared_from_this());
     }
 
-    if (disconnect_cb_) {
-      disconnect_cb_(shared_from_this());
+    if (disconnect_callback_) {
+      disconnect_callback_(shared_from_this());
     }
   }
 }

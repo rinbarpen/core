@@ -20,8 +20,9 @@ void Acceptor::listen(const char* ip, uint16_t port, int backlog)
 }
 void Acceptor::listen(const NetAddress& addr, int backlog)
 {
-  ILOG_INFO(g_net_logger) << "Acceptor is listening(" << backlog << ") "
-              << "on " << addr.ip << ": " << addr.port;
+  ILOG_INFO_FMT(g_net_logger,
+   "Acceptor is listening({}) on {}",
+   backlog, addr);
   Mutex::lock locker(mutex_);
   socket_.reset(new TcpSocket());
 

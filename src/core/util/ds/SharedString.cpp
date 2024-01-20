@@ -3,6 +3,7 @@
 #include <cstring>
 #include <memory>
 
+LY_NAMESPACE_BEGIN
 SharedString::SharedString()
 {
 
@@ -60,6 +61,22 @@ void SharedString::append(const char* data, size_t len)
     size_ += len;
   }
 }
+void SharedString::append(std::string_view data)
+{
+  this->append(data.data(), data.length());
+}
+void SharedString::fill(const char *data, size_t len, size_t startPos)
+{
+  if (startPos + len > size_) {
+    return;
+  }
+
+  memcpy(data_.get() + startPos, data, len);
+}
+void SharedString::fill(std::string_view data, size_t startPos)
+{
+  this->fill(data.data(), data.length(), startPos);
+}
 
 SharedString SharedString::clone()
 {
@@ -67,3 +84,4 @@ SharedString SharedString::clone()
   cloned.append(data_.get(), size_);
   return cloned;
 }
+LY_NAMESPACE_END

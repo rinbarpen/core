@@ -42,7 +42,7 @@ bool TcpClient::stop() {
 
 TcpConnection::ptr TcpClient::onConnect(sockfd_t fd) {
   return std::make_shared<TcpConnection>(
-    event_loop_, fd);
+    event_loop_->getTaskScheduler().get(), fd);
 }
 
 NAMESPACE_END(net)

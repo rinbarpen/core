@@ -11,9 +11,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message("Build ${PROJECT_NAME} with ${CMAKE_BUILD_TYPE}")
 
-set(CMAKE_EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
 
 ######################################### Requirments Begin ########################################
 # add_subdirectory("3rdparty")
@@ -24,15 +24,18 @@ include_directories("3rdparty/googletest/googletest/include")
 include_directories("3rdparty/googletest/googlemock/include")
 add_subdirectory("3rdparty/fmt")
 include_directories("3rdparty/fmt/include")
-add_subdirectory("3rdparty/expected")
-include_directories("3rdparty/expected/include")
-add_subdirectory("3rdparty/range-v3")
-include_directories("3rdparty/range-v3/include")
+# add_subdirectory("3rdparty/expected")
+# include_directories("3rdparty/expected/include")
+# add_subdirectory("3rdparty/range-v3")
+# include_directories("3rdparty/range-v3/include")
+add_subdirectory("3rdparty/glfw")
+include_directories("3rdparty/glfw/include")
+add_subdirectory("3rdparty/libyuv")
+include_directories("3rdparty/libyuv/include")
 ######################################### Requirments End   ########################################
 
 ######################################### Library Begin ############################################
-set(LIB_DIR "lib")
-set(FFMPEG_DIR "${LIB_DIR}/ffmpeg")
+set(FFMPEG_DIR "3rdparty/ffmpeg")
 
 ######################################### Library End   ############################################
 find_package(OpenSSL COMPONENTS SSL Crypto REQUIRED)
@@ -41,8 +44,8 @@ if (OPENSSL_FOUND)
 else()
     message(FATAL_ERROR "OpenSSL not found")
 endif()
-set(FFMPEG_LIBRARIES_DIR "${PROJECT_SOURCE_DIR}/lib/ffmpeg/lib")
-set(FFMPEG_INCLUDE "${PROJECT_SOURCE_DIR}/lib/ffmpeg/include")
+set(FFMPEG_LIBRARIES_DIR "${FFMPEG_DIR}/ffmpeg/lib")
+set(FFMPEG_INCLUDE "${FFMPEG_DIR}/ffmpeg/include")
 set(FFMPEG_LIBRARIES "avcodec" "avformat" "avutil" "avdevice" "avfilter" "postproc" "swresample" "swscale")
 
 #find_package(Qt5 REQUIRED COMPONENTS Widgets Gui Core Sql REQUIRED)
@@ -52,7 +55,7 @@ file(GLOB_RECURSE
         CONFIGURE_DEPENDS
         "src/core/net/*.cpp"
         "src/core/util/*.cpp"
-        "src/core/av/*.cpp"
+        # "src/core/multimedia/*.cpp"
         "src/core/config/*.cpp"
 )
 message(STATUS "SRC FILES: ${CoreSrcs}")
@@ -64,8 +67,9 @@ add_executable (${PROJECT_NAME} "src/main.cpp" ${CoreSrcs})
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
-        "${CMAKE_SOURCE_DIR}/include"
+        "${PROJECT_SOURCE_DIR}/src/include"
         "${FFMPEG_INCLUDE}"
+        # "3rdparty/sqlite3pp/include"
 )
 target_link_directories(${PROJECT_NAME}
     PUBLIC
@@ -78,8 +82,7 @@ target_link_libraries(${PROJECT_NAME}
         OpenSSL::SSL
         OpenSSL::Crypto
         ${FFMPEG_LIBRARIES}
-        range-v3
-        # tl::expected
+        # range-v3
 )
 
 target_compile_features(${PROJECT_NAME}

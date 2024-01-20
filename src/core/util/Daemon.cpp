@@ -1,19 +1,18 @@
 #include <core/util/Deamon.h>
+#include <unistd.h>
 
 
 LY_NAMESPACE_BEGIN
-
-Deamon::Deamon()
+Deamon::Deamon(const char *path)
+  : exec_(path)
 {
-
+  pid_ = getpid();
 }
+Deamon::~Deamon() { }
 
-void Deamon::run()
+void Deamon::run(char *const* cmd)
 {
-  for (;;) {
-        
-  }
+  ::execvp(exec_.c_str(), cmd);
 }
-
 
 LY_NAMESPACE_END

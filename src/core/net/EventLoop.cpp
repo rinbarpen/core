@@ -1,92 +1,84 @@
+#include "core/util/thread/ThreadPool.h"
 #include <core/net/EventLoop.h>
-#include <core/util/Mutex.h>
+#include <memory>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
-
-static auto g_net_logger = GET_LOGGER("net");
-
-EventLoop::EventLoop(EventLoopId id) :
-  id_(id),
-	wakeup_pipe_(new Pipe()),
-	trigger_events_(new RingBuffer<TriggerEvent>(kMaxTriggetEvents))
+EventLoop::EventLoop(size_t nThreads)
+  : capacity_(nThreads > 0 ? nThreads : 1)
 {
-	if (wakeup_pipe_->create()) {
-		wakeup_channel_.reset(new FdChannel(wakeup_pipe_->readFd()));
-		wakeup_channel_->enableReading();
-		wakeup_channel_->setReadCallback([this]() { this->wake(); });
-	}
+  this->start();
+}
+EventLoop::~EventLoop()
+{
+  this->stop();
 }
 
 void EventLoop::start()
 {
-	if (running_) return;
+  pool_ = std::make_unique<ThreadPool>(capacity_);
 
-	ILOG_INFO(g_net_logger) << "EventLoop is starting...";
-  running_ = true;
-
-	while (running_) {
-		this->handleTriggerEvent();
-	  this->timers_.run();
-    auto timeout = timers_.nextTimestamp();
-		ILOG_TRACE(g_net_logger) << "timeout(ms): " << timeout.count();
-	  this->handleEvent(timeout.duration());
-	}
+  for (size_t i = 0; i < capacity_; ++i) {
+#ifdef __LINUX__
+    auto pTaskScheduler = EpollTaskScheduler::make_shared(std::to_string(i));
+#elif defined(__WIN__)
+    auto pTaskScheduler = SelectTaskScheduler::make_shared(std::to_string(i));
+#endif
+    task_schedulers_.push_back(pTaskScheduler);
+    (void)pool_->submit(&TaskScheduler::start, pTaskScheduler.get());
+  }
 }
-
 void EventLoop::stop()
 {
-	if (!running_) return;
-
-	running_ = false;
-	char event = kTriggetEvent;
-	wakeup_pipe_->write(&event, 1);
-}
-
-auto EventLoop::addTimer(TimerTask task) -> TimerTaskId
-{
-	Mutex::lock locker(mutex_);
-  if (timers_.add(task)) {
-    return task.id;
+  for (auto pTaskScheduler : task_schedulers_) {
+    pTaskScheduler->stop();
   }
+  pool_->stop();
 
-	return kInvalidTimerId;
+  task_schedulers_.clear();
+  pool_ = nullptr;
 }
 
-void EventLoop::removeTimer(TimerTaskId timerId)
+auto EventLoop::getTaskScheduler() -> TaskScheduler::ptr
 {
 	Mutex::lock locker(mutex_);
-	timers_.remove(timerId);
+  auto task_scheduler = task_schedulers_[current_task_scheduler_];
+  current_task_scheduler_ = (current_task_scheduler_ + 1) % task_schedulers_.size();
+  return task_scheduler;
 }
 
 bool EventLoop::addTriggerEvent(TriggerEvent callback)
 {
-	if (trigger_events_->size() < kMaxTriggetEvents) {
-		Mutex::lock locker(mutex_);
-		trigger_events_->push(callback);
-		char event = EventLoop::kTriggetEvent;
-		wakeup_pipe_->write(&event, 1);
-		return true;
-	}
-
+	Mutex::lock locker(mutex_);
+  return task_schedulers_[current_task_scheduler_]->addTriggerEvent(callback);
 	return false;
 }
-
-bool EventLoop::addTriggerEventForce(TriggerEvent cb, std::chrono::milliseconds timeout)
+bool EventLoop::addTriggerEventForce(TriggerEvent callback, std::chrono::milliseconds timeout)
 {
-	if (trigger_events_->size() < kMaxTriggetEvents) {
-		Mutex::lock locker(mutex_);
-		trigger_events_->push(cb);
-		// TODO:
-		char event = kTriggetEvent;
-		wakeup_pipe_->write(&event, 1);
-		return true;
-	}
-
-	return kInvalidTimerId != this->addTimer(Timer::newTask([cb] {
-		cb();
-	}, timeout));
+	Mutex::lock locker(mutex_);
+  return task_schedulers_[current_task_scheduler_]->addTriggerEventForce(callback, timeout);
+	return false;
 }
-
+TimerTaskId EventLoop::addTimer(TimerTask timerTask)
+{
+	Mutex::lock locker(mutex_);
+  return task_schedulers_[current_task_scheduler_]->addTimer(timerTask);
+	return kInvalidTimerId;
+}
+void EventLoop::removeTimer(TimerTaskId timerTaskId)
+{
+	Mutex::lock locker(mutex_);
+  task_schedulers_[current_task_scheduler_]->removeTimer(timerTaskId);
+}
+void EventLoop::updateChannel(FdChannel::ptr pChannel)
+{
+	Mutex::lock locker(mutex_);
+  task_schedulers_[current_task_scheduler_]->updateChannel(pChannel);
+}
+void EventLoop::removeChannel(sockfd_t sockfd)
+{
+	Mutex::lock locker(mutex_);
+  task_schedulers_[current_task_scheduler_]->removeChannel(sockfd);
+}
 NAMESPACE_END(net)
 LY_NAMESPACE_END
