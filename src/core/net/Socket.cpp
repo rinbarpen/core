@@ -33,10 +33,15 @@ int Socket::listen(int backlog)
   return r;
 }
 
-int Socket::connect(const NetAddress &addr)
+int Socket::connect(const NetAddress &addr, std::chrono::milliseconds msec)
 {
   int r;
+  auto ms = msec.count();
+  if (ms > 0)
+    socket_api::setBlocking(sockfd_, msec.count());
   r = socket_api::connect(sockfd_, addr.ip.c_str(), addr.port);
+  if (ms > 0)
+    socket_api::setNonBlocking(sockfd_);
   return r;
 }
 SockfdAddressPair Socket::accept()

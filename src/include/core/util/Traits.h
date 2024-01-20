@@ -1,3 +1,5 @@
+#pragma once
+
 #include <type_traits>
 
 #include <core/util/marcos.h>

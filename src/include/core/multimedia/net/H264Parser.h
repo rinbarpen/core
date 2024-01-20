@@ -1,6 +1,10 @@
 #pragma once
-#include <string>
+#include <cstdint>
 
+#include <core/util/marcos.h>
+
+LY_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(net)
 struct Nal
 {
   uint8_t *start_pos, *end_pos;
@@ -13,4 +17,5 @@ public:
 
 private:
 };
-
+NAMESPACE_END(net)
+LY_NAMESPACE_END

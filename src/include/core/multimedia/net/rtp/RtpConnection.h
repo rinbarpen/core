@@ -66,11 +66,11 @@ public:
   void teardown();
 
   std::string getRtpInfo(const std::string &rtspUrl);
-  int sendRtpPacket(MediaChannelId channelId, RtpPacket pkt);
+  bool sendRtpPacket(MediaChannelId channelId, RtpPacket pkt);
 
   bool isRunning() const { return running_; }
 
-  int getId() const { return rtsp_connection_->getId(); }
+  auto getId() const -> TaskSchedulerId;
 
   bool hasKeyFrame() const { return has_key_frame_; }
 

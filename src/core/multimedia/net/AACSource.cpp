@@ -1,10 +1,10 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <iterator>
 
-#include <core/multimedia/net/AACSource.h>
 #include <core/util/time/Clock.h>
+#include <core/multimedia/net/rtp/rtp.h>
+#include <core/multimedia/net/AACSource.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -25,9 +25,8 @@ AACSource* AACSource::createNew(uint32_t sample_rate, uint32_t channels, bool ad
 
 uint32_t AACSource::getTimestamp(uint32_t sample_rate)
 {
-  auto timestamp = Clock<T_steady_clock>::now();
-
-	return (tp + 500) / 1000 * sample_rate / 1000;
+  auto now = Timestamp<T_steady_clock>::now<std::chrono::milliseconds>();
+	return (now + 500) / 1000 * sample_rate / 1000;
 }
 
 std::string AACSource::getAttribute()
@@ -89,7 +88,8 @@ bool AACSource::handleFrame(MediaChannelId channel_id, SimAVFrame frame)
 	AU[2] = (frame_size & 0x1fe0) >> 5;
 	AU[3] = (frame_size & 0x1f) << 3;
 
-	RtpPacket rtp_pkt(frame_size + 4 + RTP_HEADER_SIZE + AU_SIZE);
+	RtpPacket rtp_pkt;
+	rtp_pkt.size = (frame_size + 4 + RTP_HEADER_SIZE + AU_SIZE);
 	rtp_pkt.type = frame.type;
 	rtp_pkt.timestamp = frame.timestamp;
 	rtp_pkt.last = 1;

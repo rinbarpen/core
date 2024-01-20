@@ -1,15 +1,58 @@
 #pragma once
 
-#include "core/net/SocketUtil.h"
 #include <algorithm>
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <unordered_set>
+#include <random>
 
 #include <core/util/marcos.h>
+#include <core/util/Mutex.h>
+#include <core/net/SocketUtil.h>
+#include <core/util/Singleton.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
+
+class GlobalMultiAddress
+{
+public:
+  auto getAddr() -> std::string
+  {
+		Mutex::lock locker(mutex_);
+		std::string ip;
+		struct sockaddr_in addr = { 0 };
+		std::random_device rd;
+
+		for (int n = 0; n <= 10; n++) {
+			uint32_t range = 0xE8FFFFFF - 0xE8000100;
+			addr.sin_addr.s_addr = ::htonl(0xE8000100 + (rd()) % range);
+			ip = ::inet_ntoa(addr.sin_addr);  // ip
+
+			if (ips_.find(ip) != ips_.end()) {
+				ip.clear();
+			}
+			else {
+				ips_.insert(ip);
+				break;
+			}
+		}
+
+		return ip;
+  }
+
+  void release(std::string ip)
+  {
+		Mutex::lock locker(mutex_);
+		ips_.erase(ip);
+  }
+private:
+  Mutex::type mutex_;
+  std::unordered_set<std::string> ips_;
+};
+
+using SingleMultiAddress = Singleton<GlobalMultiAddress>;
 
 class MulticastAddress
 {
@@ -41,10 +84,14 @@ public:
     ports_.push_back(newPort);
     return true;
   }
+  void clear()
+  {
+    ports_.clear();
+  }
 
   void release()
   {
-    socket_api::close();
+    SingleMultiAddress::instance()->release(ip_);
   }
 
 private:
@@ -52,6 +99,8 @@ private:
   std::vector<uint16_t> ports_;
   // std::vector<std::pair<uint16_t, uint16_t>> ports_;
 };
+
+
 
 NAMESPACE_END(net)
 LY_NAMESPACE_END

@@ -33,10 +33,10 @@ bool MediaSession::addSource(MediaChannelId channel_id, MediaSource* source)
 			  }
 
 				auto id = conn->getId();
-				if (id != "") {
+				if (!id.empty()) {
 					if (packets.find(id) == packets.end()) {
 						RtpPacket tmp_pkt;
-						tmp_pkt.data.append(pkt.data.get(), pkt.data.size());
+						std::memcpy(tmp_pkt.data.get(), pkt.data.get(), pkt.size);
 						tmp_pkt.last = pkt.last;
 						tmp_pkt.timestamp = pkt.timestamp;
 						tmp_pkt.type = pkt.type;
@@ -79,14 +79,14 @@ bool MediaSession::startMulticast()
 	if (multicasting_) {
 		return true;
 	}
-
 	if (multicast_address_.ip().empty()) {
 		return false;
 	}
 
+	multicast_address_.clear();
 	std::random_device rd;
-	multicast_address_ = MulticastAddress{SingleMulticastAddress::instance()->getAddr(),
-												{htons(rd() & 0xFFFE), htons(rd() & 0xFFFE)}};
+	multicast_address_.addPort(htons(rd() & 0xFFFE));
+	multicast_address_.addPort(htons(rd() & 0xFFFE));
 
 	multicasting_ = true;
 	return true;
@@ -195,7 +195,7 @@ bool MediaSession::addClient(sockfd_t rtspfd, std::shared_ptr<RtpConnection> rtp
 
   clients_.emplace(rtspfd, rtpConn);
   for (auto &callback : notify_connected_callbacks_) {
-    callback(session_id_, rtpConn->getRtspIp(), rtpConn->getRtspPort());
+    callback(session_id_, rtpConn->getRtspAddress().ip, rtpConn->getRtspAddress().port);
   }
   has_new_client_ = true;
   return true;
@@ -209,7 +209,7 @@ bool MediaSession::removeClient(sockfd_t rtspfd)
     auto rtpConn = clients_.at(rtspfd).lock();
     if (rtpConn) {
       for (auto &callback : notify_disconnected_callbacks_) {
-        callback(session_id_, rtpConn->getRtspIp(), rtpConn->getRtspPort());
+        callback(session_id_, rtpConn->getRtspAddress().ip, rtpConn->getRtspAddress().port);
       }
     }
     clients_.erase(it);

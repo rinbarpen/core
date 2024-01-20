@@ -139,7 +139,7 @@ int BufferReader::findLast(std::string_view matchStr)
 void BufferReader::advance(int n)
 {
   advance(get_pos_, n);
-  if (put_pos_ <= get_pos_ || readableBytes() <= n) {
+  if (put_pos_ <= get_pos_) {
     clear();
     return;
   }

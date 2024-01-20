@@ -64,9 +64,16 @@ static constexpr int kRtpPacketBufferSize = 1600;
 
 struct RtpPacket
 {
-  SharedString data{kRtpPacketBufferSize};
+	RtpPacket()
+		: data(new uint8_t[kRtpPacketBufferSize], std::default_delete<uint8_t[]>())
+	{
+		type = 0;
+	}
+
+	std::shared_ptr<uint8_t> data;
+	uint32_t size;
 	uint32_t timestamp;
-	uint8_t  type{0};
+	uint8_t  type;
 	uint8_t  last;
 };
 

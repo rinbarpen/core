@@ -8,6 +8,7 @@ LY_NAMESPACE_BEGIN
 
 NAMESPACE_BEGIN(net)
 
+using namespace std::literals;
 using SockfdAddressPair = std::pair<sockfd_t, NetAddress>;
 
 struct NetDomain;
@@ -24,7 +25,7 @@ public:
 
     /**
    * \brief warp the socket_api::bind
-   * \param[in] addr 
+   * \param[in] addr
    */
   int bind(const NetAddress &addr);
   /**
@@ -34,9 +35,9 @@ public:
   int listen(int backlog);
   /**
    * \brief warp the socket_api::connect, use NetAddress instead of the raw data
-   * \param[in] addr 
+   * \param[in] addr
    */
-  int connect(const NetAddress &addr);
+  int connect(const NetAddress &addr, std::chrono::milliseconds msec = 0ms);
   /**
    * \brief warp the socket_api::accept
    * \return the accepted socket

@@ -1,5 +1,9 @@
+#include <cstring>
+
 #include <core/multimedia/net/H264Parser.h>
 
+LY_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(net)
 Nal H264Parser::findNal(const uint8_t* data, uint32_t size)
 {
   if (size < 5) { return {}; }
@@ -9,7 +13,7 @@ Nal H264Parser::findNal(const uint8_t* data, uint32_t size)
   uint32_t startCode = 0;
   uint32_t pos = 0;
   uint8_t prefix[3] = {0};
-  memcpy(prefix, data, 3);
+  std::memcpy(prefix, data, 3);
   size -= 3;
   data += 2;
 
@@ -48,3 +52,5 @@ Nal H264Parser::findNal(const uint8_t* data, uint32_t size)
 
   return nal;
 }
+NAMESPACE_END(net)
+LY_NAMESPACE_END

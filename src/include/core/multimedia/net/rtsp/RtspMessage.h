@@ -105,7 +105,7 @@ public:
     uint16_t rtcp_chn, uint32_t session_id);
   int buildPlayRes(char *buf, int buf_size, const char *rtp_info, uint32_t session_id);
   int buildTeardownRes(char *buf, int buf_size, uint32_t session_id);
-  int buildGetParamterRes(char *buf, int buf_size, uint32_t session_id);
+  int buildGetParameterRes(char *buf, int buf_size, uint32_t session_id);
   int buildNotFoundRes(char *buf, int buf_size);
   int buildServerErrorRes(char *buf, int buf_size);
   int buildUnsupportedRes(char *buf, int buf_size);

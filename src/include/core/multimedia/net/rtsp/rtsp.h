@@ -14,10 +14,6 @@
 
 LY_NAMESPACE_BEGIN
 
-LY_GLOBAL_BLOCK(
-  static auto rtsp_logger = GET_LOGGER("multimedia");
-)
-
 NAMESPACE_BEGIN(net)
 
 struct RtspUrlInfo
@@ -32,6 +28,8 @@ class Rtsp : public std::enable_shared_from_this<Rtsp>
 {
   friend class RtspConnection;
 public:
+  SHARED_REG(Rtsp);
+
   Rtsp() = default;
   virtual ~Rtsp() = default;
 
@@ -39,6 +37,8 @@ public:
   {
     auth_ = Authentication(realm, username, passwd);
   }
+  auto auth() const -> const Authentication& { return auth_; }
+  auto hasAuthInfo() const -> bool { return auth_.hasAuthInfo(); }
 
   // sdp session name
   virtual void setVersion(std::string_view version) { version_ = version; }
@@ -47,6 +47,7 @@ public:
 
   virtual auto parseRtspUrl(std::string_view url) -> bool
   {
+    static auto rtsp_logger = GET_LOGGER("multimedia");
     char ip[100]{};
     char suffix[100]{};
     uint16_t port{};
@@ -56,24 +57,24 @@ public:
     // skip rtsp://
     // match rtsp://{ip:[port]}/{suffix}
     if (3 == std::sscanf(url.data() + 7, "%[^:]:%hu/%s", ip, &port, suffix)) {
-      ILOG_DEBUG_FMT(global::rtsp_logger, "{} matches rtsp://{ip:[port]}/{suffix}", url);
+      ILOG_DEBUG_FMT(rtsp_logger, "{} matches rtsp://{ip:[port]}/{suffix}", url);
     }
     // match rtsp://{ip}/{suffix}
     else if (2 == std::sscanf(url.data(), "%[^/]/%s", ip, suffix)) {
       port = 554;
-      ILOG_DEBUG_FMT(global::rtsp_logger, "{} matches rtsp://{ip}/{suffix}", url);
+      ILOG_DEBUG_FMT(rtsp_logger, "{} matches rtsp://{ip}/{suffix}", url);
     }
     // match rtsp://[username:password@]{ip[:port]}/{suffix}
     else if (5 == std::sscanf(url.data() + 7, "%[^:]:%[^@]@%[^:]:%hu/%s", username, password, ip, &port, suffix)) {
-      ILOG_DEBUG_FMT(global::rtsp_logger, "{} matches rtsp://[username:password@]{ip[:port]}/{suffix}", url);
+      ILOG_DEBUG_FMT(rtsp_logger, "{} matches rtsp://[username:password@]{ip[:port]}/{suffix}", url);
     }
     // match rtsp://[username:password@]{ip}/{suffix}
     else if (4 == std::sscanf(url.data() + 7, "%[^:]:%[^@]@%[^/]/%s", username, password, ip, suffix)) {
       port = 554;
-      ILOG_DEBUG_FMT(global::rtsp_logger, "{} matches rtsp://[username:password@]{ip}/{suffix}", url);
+      ILOG_DEBUG_FMT(rtsp_logger, "{} matches rtsp://[username:password@]{ip}/{suffix}", url);
     }
     else {
-      ILOG_WARN_FMT(global::rtsp_logger, "RTSP url[{}] is INVALID", url);
+      ILOG_WARN_FMT(rtsp_logger, "RTSP url[{}] is INVALID", url);
       return false;
     }
 

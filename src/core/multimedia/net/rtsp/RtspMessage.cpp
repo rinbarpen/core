@@ -506,7 +506,7 @@ int RtspRequest::buildTeardownRes(char *buf, int buf_size, uint32_t session_id)
 
 	return (int)strlen(buf);
 }
-int RtspRequest::buildGetParamterRes(char *buf, int buf_size, uint32_t session_id)
+int RtspRequest::buildGetParameterRes(char *buf, int buf_size, uint32_t session_id)
 {
 	memset(buf, 0, buf_size);
 	snprintf(buf, buf_size,

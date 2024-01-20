@@ -38,7 +38,8 @@ bool H264Source::handleFrame(MediaChannelId channel_id, SimAVFrame frame)
   }
 
   if (frame_size <= MAX_RTP_PAYLOAD_SIZE) {
-    RtpPacket rtp_pkt(frame_size + 4 + RTP_HEADER_SIZE);
+    RtpPacket rtp_pkt;
+    rtp_pkt.size = frame_size + 4 + RTP_HEADER_SIZE;
     rtp_pkt.type = frame.type;
     rtp_pkt.timestamp = frame.timestamp;
     rtp_pkt.last = 1;
@@ -60,7 +61,8 @@ bool H264Source::handleFrame(MediaChannelId channel_id, SimAVFrame frame)
     frame_size -= 1;
 
     while (frame_size + 2 > MAX_RTP_PAYLOAD_SIZE) {
-      RtpPacket rtp_pkt(4 + RTP_HEADER_SIZE + MAX_RTP_PAYLOAD_SIZE);
+      RtpPacket rtp_pkt;
+      rtp_pkt.size = (4 + RTP_HEADER_SIZE + MAX_RTP_PAYLOAD_SIZE);
       rtp_pkt.type = frame.type;
       rtp_pkt.timestamp = frame.timestamp;
       rtp_pkt.last = 0;
@@ -81,7 +83,8 @@ bool H264Source::handleFrame(MediaChannelId channel_id, SimAVFrame frame)
     }
 
     {
-      RtpPacket rtp_pkt(4 + RTP_HEADER_SIZE + 2 + frame_size);
+      RtpPacket rtp_pkt;
+      rtp_pkt.size = (4 + RTP_HEADER_SIZE + 2 + frame_size);
       rtp_pkt.type = frame.type;
       rtp_pkt.timestamp = frame.timestamp;
       rtp_pkt.last = 1;

@@ -1,19 +1,18 @@
-#include <arpa/inet.h>
 #include <chrono>
+#include <memory>
+#include <random>
+#include <string>
+
 #include <core/multimedia/net/rtp/RtpConnection.h>
 #include <core/multimedia/net/rtsp/RtspConnection.h>
 #include "core/multimedia/net/media.h"
 #include "core/net/NetAddress.h"
 #include "core/net/SocketUtil.h"
+#include "core/net/TaskScheduler.h"
 #include "core/util/time/Timestamp.h"
 #include "core/util/time/time.h"
 #include "fmt/core.h"
 
-#include <memory>
-#include <netinet/in.h>
-#include <random>
-#include <string>
-#include <sys/socket.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -56,14 +55,11 @@ RtpConnection::~RtpConnection() {
   }
 }
 
-int RtpConnection::getId() const {
+auto RtpConnection::getId() const -> TaskSchedulerId {
   auto conn = rtsp_connection_.lock();
-  if (!conn)
-  {
-    return -1;
-  }
+  if (!conn) return {};
 
-  auto rtspConn = std::dynamic_pointer_cast<RtspConnection *>(conn);
+  auto rtspConn = std::dynamic_pointer_cast<RtspConnection>(conn);
   return rtspConn->getId();
 }
 
@@ -234,7 +230,8 @@ std::string RtpConnection::getRtpInfo(const std::string &rtspUrl) {
       }
 
       snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-        "url=%s/track%d;seq=0;rtptime=%u", rtspUrl.c_str(), i, rtpTime);
+        "url=%s/track%d;seq=0;rtptime=%u",
+          rtspUrl.c_str(), i, rtpTime);
       ++num_channel;
     }
   }
@@ -257,8 +254,7 @@ void RtpConnection::setRtpHeader(MediaChannelId channelId, RtpPacket pkt) {
   {
     media_channel_info_[channelId].rtp_header.marker = pkt.last;
     media_channel_info_[channelId].rtp_header.ts = htonl(pkt.timestamp);
-    media_channel_info_[channelId].rtp_header.seq =
-      htons(media_channel_info_[channelId].packet_seq++);
+    media_channel_info_[channelId].rtp_header.seq = htons(media_channel_info_[channelId].packet_seq++);
     memcpy(pkt.data.get() + 4, &media_channel_info_[channelId].rtp_header,
       RTP_HEADER_SIZE);
     // pkt.data.fill((const char*)&media_channel_info_[channelId].rtp_header,
@@ -304,7 +300,7 @@ bool RtpConnection::sendRtpPacket(MediaChannelId channelId, RtpPacket pkt) {
   return ret;
 }
 
-bool RtpConnection::sendRtpOverTcp(MediaChannelId channelId, RtpPacket pkt) {
+int RtpConnection::sendRtpOverTcp(MediaChannelId channelId, RtpPacket pkt) {
   auto conn = rtsp_connection_.lock();
   if (!conn)
   {
@@ -313,9 +309,9 @@ bool RtpConnection::sendRtpOverTcp(MediaChannelId channelId, RtpPacket pkt) {
 
   auto rtpPktPtr = pkt.data.get();
   rtpPktPtr[0] = '$';
-  rtpPktPtr[1] = (char) media_channel_info_[channelId].rtp_channel;
-  rtpPktPtr[2] = (char) (((pkt.data.size() - 4) & 0xFF00) >> 8);
-  rtpPktPtr[3] = (char) ((pkt.data.size() - 4) & 0xFF);
+  rtpPktPtr[1] = media_channel_info_[channelId].rtp_channel;
+  rtpPktPtr[2] = (((pkt.data.size() - 4) & 0xFF00) >> 8);
+  rtpPktPtr[3] = ((pkt.data.size() - 4) & 0xFF);
 
   conn->send(rtpPktPtr, pkt.data.size());
   return pkt.data.size();
