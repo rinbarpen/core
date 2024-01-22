@@ -1,6 +1,7 @@
 #pragma once
-#include <core/util/marcos.h>
 #include <memory>
+
+#include <core/util/marcos.h>
 
 LY_NAMESPACE_BEGIN
 class SharedString final
@@ -29,7 +30,7 @@ public:
   LY_NODISCARD size_t capacity() const { return capacity_; }
 
 private:
-  std::shared_ptr<char[]> data_;
+  std::shared_ptr<char> data_;
   size_t size_{0};
   size_t capacity_{0};
 };

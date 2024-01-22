@@ -292,7 +292,7 @@ bool RtpConnection::sendRtpPacket(MediaChannelId channelId, RtpPacket pkt) {
         }
 
         // NOTE: Maybe remove
-        media_channel_info_[channelId].octet_count  += pkt.data.size();
+        media_channel_info_[channelId].octet_count  += pkt.size;
         media_channel_info_[channelId].packet_count += 1;
       }
     });
@@ -310,16 +310,16 @@ int RtpConnection::sendRtpOverTcp(MediaChannelId channelId, RtpPacket pkt) {
   auto rtpPktPtr = pkt.data.get();
   rtpPktPtr[0] = '$';
   rtpPktPtr[1] = media_channel_info_[channelId].rtp_channel;
-  rtpPktPtr[2] = (((pkt.data.size() - 4) & 0xFF00) >> 8);
-  rtpPktPtr[3] = ((pkt.data.size() - 4) & 0xFF);
+  rtpPktPtr[2] = (((pkt.size - 4) & 0xFF00) >> 8);
+  rtpPktPtr[3] = ((pkt.size - 4) & 0xFF);
 
-  conn->send(rtpPktPtr, pkt.data.size());
-  return pkt.data.size();
+  conn->send((const char*)rtpPktPtr, pkt.size);
+  return pkt.size;
 }
 
 int RtpConnection::sendRtpOverUdp(MediaChannelId channelId, RtpPacket pkt) {
-  int ret = socket_api::sendto(rtpfd_[channelId], pkt.data.get() + 4,
-    pkt.data.size() - 4, 0, peer_rtp_addr_[channelId].ip.c_str(), peer_rtp_addr_[channelId].port);
+  int ret = socket_api::sendto(rtpfd_[channelId], (const char*)pkt.data.get() + 4,
+    pkt.size - 4, 0, peer_rtp_addr_[channelId].ip.c_str(), peer_rtp_addr_[channelId].port);
 
   if (ret < 0)
   {

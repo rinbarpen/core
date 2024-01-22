@@ -11,16 +11,20 @@
 #include <core/util/time/TimestampDuration.h>
 #include <core/util/time/Clock.h>
 #include "core/config/config.h"
+#include "core/multimedia/net/rtsp/RtspServer.h"
+#include "core/multimedia/net/rtsp/RtspPusher.h"
 #include "core/net/EventLoop.h"
 #include "core/net/tcp/TcpServer.h"
 #include "core/util/Library.h"
 #include "core/util/thread/ThreadPool.h"
 #include <core/util/Record.h>
 #include <core/multimedia/ffmpeg/ffmpeg_util.h>
+#include <core/net/EventLoop.h>
 
 #include <fmt/core.h>
 
 using namespace ly;
+using namespace lynet;
 using namespace ly::literals;
 using namespace std::literals;
 
@@ -141,15 +145,34 @@ void init()
   log_load_config();
 }
 
-
 int main()
 {
+#ifdef __WIN__
+  WSADATA wsaData;
+  if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+      // 处理错误
+      return -1;
+  }
+#endif
 #ifdef LIBYUV_VERSION
   fmt::println("Libyuv is loaded");
 #endif
 #ifdef GLFW_VERSION_MAJOR
   fmt::println("GLFW is loaded");
 #endif
+  EventLoop event_loop;
+  // auto rtsp_server = RtspServer::create(&event_loop);
+  // rtsp_server->start("0.0.0.0", 554, 1024);
+  // rtsp_server->stop();
+
+  auto rtsp_server = RtspServer(&event_loop);
+  auto rtsp_pusher = RtspPusher::create(&event_loop);
+
+  rtsp_server.start("0.0.0.0", 8554, 10);
+  while (true) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+  rtsp_server.stop();
 
   // try {
   //   ThreadPool pool;
@@ -168,4 +191,8 @@ int main()
   // LogIniter::loadYamlFile("log/config.yml");
   // fmt::println("{}", LogManager::instance()->toYamlString());
   // LogManager::instance()->toYamlFile("log/x.yml");
+
+#ifdef __WIN__
+  WSACleanup();
+#endif
 }

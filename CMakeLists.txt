@@ -55,14 +55,16 @@ file(GLOB_RECURSE
         CONFIGURE_DEPENDS
         "src/core/net/*.cpp"
         "src/core/util/*.cpp"
-        # "src/core/multimedia/*.cpp"
+        "src/core/multimedia/*.cpp"
         "src/core/config/*.cpp"
 )
 message(STATUS "SRC FILES: ${CoreSrcs}")
 
-add_subdirectory(test)
+if(GTEST_FOUND)
+    add_subdirectory(test)
+endif()
 
-#add_library(${PROJECT_NAME} STATIC ${CoreSrcs})
+# add_library(${PROJECT_NAME} STATIC ${CoreSrcs})
 add_executable (${PROJECT_NAME} "src/main.cpp" ${CoreSrcs})
 
 target_include_directories(${PROJECT_NAME}

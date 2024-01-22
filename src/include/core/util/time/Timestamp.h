@@ -2,8 +2,6 @@
 
 #include <chrono>
 
-#include <core/util/marcos.h>
-#include <core/util/Traits.h>
 #include <core/util/time/time.h>
 #include <core/util/time/TimestampDuration.h>
 
@@ -15,7 +13,7 @@ class TimestampDuration;
 template <class ClockType = T_steady_clock>
 class Timestamp
 {
-  LY_CHECK(is_clock_v<ClockType>, "Error ClockType");
+  LY_CHECK(detail::is_clock_v<ClockType>, "Error ClockType");
 public:
   using time_point = typename ClockType::time_point;
 
@@ -42,7 +40,7 @@ public:
   template <class TimeDurationType>
   auto cast() const -> time_point
   {
-    LY_CHECK(is_time_duration_v<TimeDurationType>, "Error time type");
+    LY_CHECK(detail::is_time_duration_v<TimeDurationType>, "Error time type");
     return std::chrono::time_point_cast<TimeDurationType>(tp_);
   }
 

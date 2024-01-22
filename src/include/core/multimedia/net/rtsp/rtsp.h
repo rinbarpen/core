@@ -1,19 +1,19 @@
 #pragma once
+
 #include <cstdint>
 #include <cstdio>
 #include <memory>
-
-#include "core/multimedia/net/media.h"
-#include "core/util/Authentication.h"
-#include "core/util/logger/Logger.h"
-#include "core/util/marcos.h"
-#include <core/multimedia/net/MediaSession.h>
-#include <core/multimedia/net/MediaSource.h>
 #include <string>
 #include <string_view>
 
-LY_NAMESPACE_BEGIN
+#include "core/util/marcos.h"
+#include "core/util/logger/Logger.h"
+#include "core/util/Authentication.h"
+#include "core/multimedia/net/media.h"
+#include <core/multimedia/net/MediaSession.h>
+#include <core/multimedia/net/MediaSource.h>
 
+LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
 
 struct RtspUrlInfo
@@ -87,7 +87,7 @@ public:
   }
 
 protected:
-  virtual auto lookMediaSession(std::string_view suffix) -> MediaSession::ptr { return nullptr; }
+  virtual auto lookMediaSession(const std::string& suffix) -> MediaSession::ptr { return nullptr; }
   virtual auto lookMediaSession(MediaSessionId session_id) -> MediaSession::ptr { return nullptr; }
   // virtual auto lookMediaSession(std::variant<std::string_view, MediaSessionId> suffix_or_session_id) -> MediaSession::ptr;
 

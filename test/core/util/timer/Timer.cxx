@@ -13,6 +13,6 @@ TEST(TestTimer, Add)
   }, 100ms);
 
   while (!pTask.isExpired(Clock<T_steady_clock>::now())) {
-      ;
+    ;
   }
 }

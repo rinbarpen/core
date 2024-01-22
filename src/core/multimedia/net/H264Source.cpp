@@ -2,18 +2,18 @@
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
-H264Source::H264Source(uint32_t frame_rate) :
+H264Source::H264Source(uint32_t framerate) :
   MediaSource(),
-  frame_rate_(frame_rate)
+  framerate_(framerate)
 {
   payload_ = 96;
   media_type_ = H264;
   clock_rate_ = 90000;
 }
 
-H264Source* H264Source::createNew(uint32_t frame_rate)
+H264Source* H264Source::create(uint32_t framerate)
 {
-  return new H264Source(frame_rate);
+  return new H264Source(framerate);
 }
 
 std::string H264Source::getAttribute()

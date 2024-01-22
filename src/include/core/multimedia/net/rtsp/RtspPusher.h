@@ -20,6 +20,7 @@ class RtspPusher : public Rtsp
   friend class RtspConnection;
 public:
   static auto create(EventLoop *eventLoop) -> std::shared_ptr<RtspPusher>;
+  RtspPusher(EventLoop *eventLoop);
   ~RtspPusher();
 
   void addSession(MediaSession *session);
@@ -31,8 +32,8 @@ public:
 
   bool pushFrame(MediaChannelId channel_id, SimAVFrame frame);
 
+  LY_NONCOPYABLE(RtspPusher);
 private:
-  RtspPusher(EventLoop *eventLoop);
   auto lookMediaSession(MediaSessionId session_id) -> MediaSession::ptr override;
 
 private:

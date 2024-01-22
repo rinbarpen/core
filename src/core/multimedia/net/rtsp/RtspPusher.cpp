@@ -1,8 +1,10 @@
 #include <chrono>
+
 #include "core/net/SocketUtil.h"
 #include "core/util/time/Timestamp.h"
 #include <core/multimedia/net/rtsp/RtspPusher.h>
 #include <core/net/tcp/TcpSocket.h>
+#include <core/multimedia/net/rtsp/RtspConnection.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -52,36 +54,35 @@ bool RtspPusher::openUrl(std::string_view url, std::chrono::milliseconds msec)
 	{
 		tcp_socket->close();
 		return false;
-	}
 
-	task_scheduler_ = event_loop_->getTaskScheduler().get();
-	rtsp_conn_.reset(new RtspConnection(shared_from_this(), task_scheduler_, tcp_socket.getSockfd()));
-    event_loop_->addTriggerEvent([this]() {
-		rtsp_conn_->sendOptions(RtspConnection::PUSHING);
-    });
+		task_scheduler_ = event_loop_->getTaskScheduler().get();
+		rtsp_conn_.reset(new RtspConnection(shared_from_this(), task_scheduler_, tcp_socket->getSockfd()));
+			event_loop_->addTriggerEvent([this]() {
+			rtsp_conn_->sendOptions(RtspConnection::ConnectionMode::RTSP_PUSHER);
+		});
 
-	auto duration = Clock<T_steady_clock>::now().duration<std::chrono::milliseconds>(timestamp);
-  int64_t rest = msec.count() - duration.count();
+		auto duration = Clock<T_steady_clock>::now().duration<std::chrono::milliseconds>(timestamp);
+		int64_t rest = msec.count() - duration.count();
 
-	do
-	{
-		Timer::sleep(100ms);
-		timeout -= 100;
-	} while (!rtsp_conn_->isRecord() && timeout > 0);
+		do {
+			Timer::sleep(100ms);
+			rest -= 100;
+		} while (!rtsp_conn_->isRecording() && rest > 0);
 
-	if (!rtsp_conn_->isRecord()) {
-		std::shared_ptr<RtspConnection> rtspConn = rtsp_conn_;
-		sockfd_t sockfd = rtspConn->getSockfd();
-		task_scheduler_->addTriggerEvent([sockfd, rtspConn]() {
-			rtspConn->disconnect();
+		if (!rtsp_conn_->isRecording()) {
+			std::shared_ptr<RtspConnection> rtspConn = rtsp_conn_;
+			sockfd_t sockfd = rtspConn->getSockfd();
+			task_scheduler_->addTriggerEvent([sockfd, rtspConn]() {
+				rtspConn->disconnect();
 		});
 		rtsp_conn_ = nullptr;
 		return false;
+		}
 	}
 
 	return true;
 }
-void RtspPusher::close(){
+void RtspPusher::close() {
   Mutex::lock locker(mutex_);
 
 	if (rtsp_conn_ != nullptr) {

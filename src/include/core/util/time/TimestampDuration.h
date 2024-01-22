@@ -10,7 +10,7 @@ class Timestamp;
 template <class TimeDurationType = ::std::chrono::milliseconds>
 class TimestampDuration
 {
-  LY_CHECK(is_time_duration_v<TimeDurationType>, "Error TimeDurationType");
+  LY_CHECK(detail::is_time_duration_v<TimeDurationType>, "Error TimeDurationType");
 
 public:
   TimestampDuration(TimeDurationType duration)
@@ -31,7 +31,7 @@ public:
   template <class U>
   auto cast() const -> U
   {
-    LY_CHECK(is_time_duration_v<U>, "Error TimeDurationType");
+    LY_CHECK(detail::is_time_duration_v<U>, "Error TimeDurationType");
 
     return std::chrono::duration_cast<U>(duration_);
   }

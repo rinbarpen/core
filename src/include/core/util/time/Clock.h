@@ -6,7 +6,6 @@
 #include <core/util/time/Timestamp.h>
 #include <core/util/time/TimestampDuration.h>
 
-// TODO: Merge the Clock, Timestamp and TimestampDuration in single file
 LY_NAMESPACE_BEGIN
 template <class ClockType>
 class Clock

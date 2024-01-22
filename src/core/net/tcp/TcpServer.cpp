@@ -46,7 +46,8 @@ TcpServer::TcpServer(EventLoop *eventLoop) : event_loop_(eventLoop) {
 }
 
 TcpServer::~TcpServer() {
-  (void)this->stop();
+  if (running_)
+    (void)this->stop();
 }
 
 bool TcpServer::start(const char *ip, uint16_t port, int max_backlog) {
