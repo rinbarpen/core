@@ -6,7 +6,7 @@ NAMESPACE_BEGIN(net)
 class AACSource : public MediaSource
 {
 public:
-  static AACSource *createNew(uint32_t sample_rate = 44100, uint32_t channels = 2, bool adts_mode = true);
+  static AACSource *create(uint32_t sample_rate = 44100, uint32_t channels = 2, bool adts_mode = true);
   virtual ~AACSource() = default;
 
   virtual std::string getAttribute() override;

@@ -144,7 +144,7 @@ struct fmt::formatter<::ly::TimestampDuration<::std::chrono::seconds>>
   template <typename FormatContext>
   auto format(const ::ly::TimestampDuration<::std::chrono::seconds> &obj,
     FormatContext &ctx) {
-    return fmt::format_to(ctx.out(), "{}s", obj.count());
+    return fmt::format_to(ctx.out(), "{}(s)", obj.count());
   }
 };
 template <>

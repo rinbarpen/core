@@ -4,7 +4,7 @@
 #include <list>
 #include <unordered_map>
 #include <core/util/time/Timestamp.h>
-#include <core/util/buffer/Replacer.h>
+#include <core/util/replacer/Replacer.h>
 #include <core/util/Mutex.h>
 
 LY_NAMESPACE_BEGIN

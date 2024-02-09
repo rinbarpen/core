@@ -25,7 +25,7 @@ ThreadPool::~ThreadPool() noexcept
   }
 }
 
-void ThreadPool::start()
+void ThreadPool::start() noexcept
 {
   if (running_) {
     return;
@@ -38,7 +38,7 @@ void ThreadPool::start()
 
   running_ = true;
 }
-void ThreadPool::stop()
+void ThreadPool::stop() noexcept
 {
   if (!running_) {
     return;

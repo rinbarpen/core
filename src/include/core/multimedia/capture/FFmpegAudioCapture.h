@@ -1,17 +1,18 @@
 #pragma once
-#include "core/util/marcos.h"
+#include <cstdint>
+#include <memory>
 #include <core/multimedia/ffmpeg/ffmpeg_util.h>
 #include <core/multimedia/capture/AudioCapture.h>
 
 LY_NAMESPACE_BEGIN
-class FFmpegAudioCapture : public AudioCapture
+class FFmpegAudioCapture final : public AudioCapture
 {
 public:
-  FFmpegAudioCapture(AVPlayer *player, AVCapture *capture)
-    : AudioCapture(player, capture) {
+  FFmpegAudioCapture(std::unique_ptr<AVPlayer> player, std::unique_ptr<AVCapture> capture);
 
-  }
 private:
+  bool startCapture() override;
+  bool stopCapture() override;
 
 };
 LY_NAMESPACE_END

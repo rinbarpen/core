@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <core/multimedia/ffmpeg/ffmpeg_util.h>
+#include <libavcodec/avcodec.h>
 
 LY_NAMESPACE_BEGIN
 namespace ffmpeg
@@ -19,6 +20,8 @@ public:
   virtual uint32_t getFrameNum() const { return 0; }
   virtual void useIDR() { }
   virtual void setBitRate(uint32_t bit_rate_bps) { }
+
+  AVCodecContext *getAVCodecContext() const { return codec_context_; }
 
   LY_NONCOPYABLE(Encoder);
 

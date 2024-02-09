@@ -46,10 +46,10 @@ public:
     return res;
   }
 
-  void start();
-  void stop();
+  void start() noexcept;
+  void stop() noexcept;
 
-  size_t capacity() const { return capacity_; }
+  size_t capacity() const noexcept { return capacity_; }
 
 private:
   void work();

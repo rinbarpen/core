@@ -18,7 +18,7 @@ AACSource::AACSource(uint32_t sample_rate, uint32_t channels, bool adts_mode) :
 	clock_rate_ = sample_rate;
 }
 
-AACSource* AACSource::createNew(uint32_t sample_rate, uint32_t channels, bool adts_mode)
+AACSource* AACSource::create(uint32_t sample_rate, uint32_t channels, bool adts_mode)
 {
   return new AACSource(sample_rate, channels, adts_mode);
 }

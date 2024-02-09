@@ -38,11 +38,17 @@
 #include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
+#ifdef LOG_MORE_FUNCTION_INFO_ENABLED
+#define FUNC __PRETTY_FUNCTION__
+#else
+#define FUNC __func__
+#endif
+
 #define __LogEventGen(level, timestamp) \
-  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, __PRETTY_FUNCTION__, timestamp)
+  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, FUNC, timestamp)
 
 #define __LogEventGen2(level) \
-  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, __PRETTY_FUNCTION__, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
+  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, FUNC, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
 #define __LogEventWrapperGen(pLogger, level, timestamp) \
   std::make_shared<::ly::LogEventWrapper>(__LogEventGen(level, timestamp), pLogger)

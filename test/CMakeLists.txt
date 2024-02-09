@@ -2,15 +2,14 @@ enable_testing()
 message(STATUS "walk in testing")
 
 set(GTEST_LIBS GTest::gtest_main GTest::gtest GTest::gmock_main GTest::gmock)
-file(GLOB_RECURSE UtilSrcs "${CMAKE_SOURCE_DIR}/src/core/util/*.cpp")
 
 function(add_test_project test_name src_path other_srcs includes libs)
-    add_executable(${test_name} ${src_path} ${UtilSrcs} ${other_srcs})
+    add_executable(${test_name} ${src_path} ${other_srcs})
     target_include_directories(${test_name}
         PRIVATE
             ${includes}
             "${GTEST_INCLUDE_DIRS}"
-            "${CMAKE_SOURCE_DIR}/src/include"
+            "${PROJECT_SOURCE_DIR}/src/include"
             "3rdparty/sqlite3pp/include"
     )
     target_link_libraries(${test_name}
@@ -31,10 +30,23 @@ function(add_test_project test_name src_path other_srcs includes libs)
     message(STATUS "Add ${test_name} to test")
 endfunction()
 
-file(GLOB_RECURSE NetSrcs "${CMAKE_SOURCE_DIR}/src/core/net/*.cpp")
+file(GLOB_RECURSE UtilSrcs "${PROJECT_SOURCE_DIR}/src/core/util/*.cpp")
+file(GLOB_RECURSE NetSrcs "${PROJECT_SOURCE_DIR}/src/core/net/*.cpp" ${NetSrcs})
+# file(GLOB_RECURSE MultiMediaSrcs "${PROJECT_SOURCE_DIR}/src/core/multimedia/*.cpp")
+# set(Srcs "${NetSrcs}" "${UtilSrcs}" "${MultiMediaSrcs}")
 
 add_test_project(Timer
     "${CMAKE_CURRENT_SOURCE_DIR}/core/util/timer/Timer.cxx"
     "${NetSrcs}"
+    ""
+    "")
+add_test_project(Trans
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/util/Trans.cxx"
+    "${UtilSrcs}"
+    ""
+    "")
+add_test_project(OSUtil
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/util/OSUtil.cxx"
+    "${UtilSrcs}"
     ""
     "")

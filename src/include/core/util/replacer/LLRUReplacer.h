@@ -1,6 +1,6 @@
 #pragma once
 #include <list>
-#include <core/util/buffer/Replacer.h>
+#include <core/util/replacer/Replacer.h>
 
 LY_NAMESPACE_BEGIN
 template <class K, class V>

@@ -1,4 +1,4 @@
-#include <core/util/buffer/LLRUReplacer.h>
+#include <core/util/replacer/LLRUReplacer.h>
 
 LY_NAMESPACE_BEGIN
 template <class K, class V>

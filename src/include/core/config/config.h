@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <thread>
 #include <string>
 
@@ -53,35 +54,39 @@ struct Config {
 
     struct
     {
-
+      uint16_t port = 80;
+      uint16_t ssl_port = 443;
     } https;
     struct
     {
-
+      uint16_t port = 22;
     } ftp;
     struct
     {
-
+      uint16_t port = 23;
     } sftp;
     struct
     {
-
+      uint16_t port = 80;
+      uint16_t ssl_port = 443;
     } websocket;
     struct
     {
-
+      uint16_t port = 80;
+      uint16_t ssl_port = 443;
     } hls;
     struct
     {
-
+      uint16_t port = 443;
+      uint16_t ssl_port = 1443;
     } rtsp;
     struct
     {
-
+      uint16_t port = 1935;
+      uint16_t ssl_port = 19350;
     } rtmp;
     struct
     {
-
     } webrtc;
   } net;
 
@@ -90,7 +95,8 @@ struct Config {
     /** multimedia **/
     struct
     {
-
+      bool open_debug = true;
+      uint8_t flag = 0xFF;  // open all ffmpeg modules
     } ffmpeg;
     struct
     {

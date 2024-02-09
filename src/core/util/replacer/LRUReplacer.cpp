@@ -1,5 +1,5 @@
-#include <core/util/buffer/LRUReplacer.h>
 #include <algorithm>
+#include <core/util/replacer/LRUReplacer.h>
 
 LY_NAMESPACE_BEGIN
 template <class K, class V>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <list>
-#include <core/util/buffer/Replacer.h>
+#include <core/util/replacer/Replacer.h>
 #include <core/util/Mutex.h>
 
 LY_NAMESPACE_BEGIN
@@ -15,8 +15,8 @@ public:
    * \brief put kv pair into the cache head, if in cache
    *        move kv pair to the cache, if not in cache
    *
-   * \param key 
-   * \param value 
+   * \param key
+   * \param value
    * \return return true if not in cache;
    *         return false otherwise
    */
@@ -24,7 +24,7 @@ public:
   /**
    * \brief put kv pair into the cache head, if in cache
    *
-   * \param key 
+   * \param key
    * \return return value if in cache;
    *         return nullopt otherwise
    */
@@ -40,7 +40,7 @@ public:
   auto evite(const K& key) -> bool override;
 
   auto capacity() const -> uint32_t { return lru_capacity_; }
-  
+
 private:
   Mutex::type mutex_;
   std::list<std::pair<K, V>> caches_;

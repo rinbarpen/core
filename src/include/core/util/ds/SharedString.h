@@ -26,6 +26,7 @@ public:
   SharedString clone();
   void resize(size_t size);
 
+  bool empty() const { return size_ == 0; }
   LY_NODISCARD size_t size() const { return size_; }
   LY_NODISCARD size_t capacity() const { return capacity_; }
 

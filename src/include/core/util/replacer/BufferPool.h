@@ -1,7 +1,7 @@
 #pragma once
 
-#include <core/util/buffer/Replacer.h>
-#include <core/util/buffer/LRUKReplacer.h>
+#include <core/util/replacer/Replacer.h>
+#include <core/util/replacer/LRUKReplacer.h>
 
 // NOTE: No work now.
 

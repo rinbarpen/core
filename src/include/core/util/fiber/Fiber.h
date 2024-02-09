@@ -36,7 +36,6 @@ class Fiber
 {
   friend class FiberScheduler;
 public:
-
   SHARED_PTR_USING(Fiber, ptr);
 
   using InitializedCallback = std::function<void()>;
@@ -89,7 +88,6 @@ public:
   auto id() const -> FiberId { return reinterpret_cast<uintptr_t>(this) & 0xFFFF; }
 
   LY_NONCOPYABLE(Fiber);
-
 protected:
   virtual void ready() const { initialized_callback_(); }
   virtual void running() const { running_callback_(); }

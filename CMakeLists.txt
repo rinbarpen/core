@@ -15,6 +15,22 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}"
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
 
+
+# list(APPEND CMAKE_CXX_FLAGS "-fsanitize=address")
+# list(APPEND CMAKE_LINKER_FLAGS "-fsanitize=address")
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Clang specific flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+elseif (MSVC)
+    # MSVC specific flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")   # 启用并行编译
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive-")
+endif()
+
 ######################################### Requirments Begin ########################################
 # add_subdirectory("3rdparty")
 add_subdirectory("3rdparty/yaml-cpp")
@@ -26,8 +42,8 @@ add_subdirectory("3rdparty/fmt")
 include_directories("3rdparty/fmt/include")
 # add_subdirectory("3rdparty/expected")
 # include_directories("3rdparty/expected/include")
-# add_subdirectory("3rdparty/range-v3")
-# include_directories("3rdparty/range-v3/include")
+add_subdirectory("3rdparty/range-v3")
+include_directories("3rdparty/range-v3/include")
 add_subdirectory("3rdparty/glfw")
 include_directories("3rdparty/glfw/include")
 add_subdirectory("3rdparty/libyuv")
@@ -48,6 +64,8 @@ set(FFMPEG_LIBRARIES_DIR "${FFMPEG_DIR}/ffmpeg/lib")
 set(FFMPEG_INCLUDE "${FFMPEG_DIR}/ffmpeg/include")
 set(FFMPEG_LIBRARIES "avcodec" "avformat" "avutil" "avdevice" "avfilter" "postproc" "swresample" "swscale")
 
+add_definitions(-DLOG_MORE_FUNCTION_INFO_ENABLED)
+
 #find_package(Qt5 REQUIRED COMPONENTS Widgets Gui Core Sql REQUIRED)
 
 file(GLOB_RECURSE
@@ -55,14 +73,14 @@ file(GLOB_RECURSE
         CONFIGURE_DEPENDS
         "src/core/net/*.cpp"
         "src/core/util/*.cpp"
-        "src/core/multimedia/*.cpp"
+        # "src/core/multimedia/*.cpp"
         "src/core/config/*.cpp"
 )
 message(STATUS "SRC FILES: ${CoreSrcs}")
 
-if(GTEST_FOUND)
+# if(GTEST_FOUND)
     add_subdirectory(test)
-endif()
+# endif()
 
 # add_library(${PROJECT_NAME} STATIC ${CoreSrcs})
 add_executable (${PROJECT_NAME} "src/main.cpp" ${CoreSrcs})
@@ -84,7 +102,7 @@ target_link_libraries(${PROJECT_NAME}
         OpenSSL::SSL
         OpenSSL::Crypto
         ${FFMPEG_LIBRARIES}
-        # range-v3
+        range-v3
 )
 
 target_compile_features(${PROJECT_NAME}

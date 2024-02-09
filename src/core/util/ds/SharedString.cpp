@@ -34,6 +34,10 @@ void SharedString::reset(size_t newCapacity)
 
 void SharedString::resize(size_t size)
 {
+  if (size > capacity_)
+  {
+    this->reset(size);
+  }
   size_ = size;
 }
 

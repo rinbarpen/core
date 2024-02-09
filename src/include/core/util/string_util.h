@@ -1,27 +1,19 @@
 #pragma once
 
+#include <string_view>
 #include <array>
-#include <core/util/marcos.h>
 #include <map>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <core/util/marcos.h>
 
 
 LY_NAMESPACE_BEGIN
-
 NAMESPACE_BEGIN(string_util)
-
-#ifdef __CXX17
-# include <string_view>
-# define const_string_ref ::std::string_view
-#else  // since cxx17
-# define const_string_ref const ::std::string &
-#endif
-
-static auto split(const_string_ref s, const_string_ref delim)
+static auto split(::std::string_view s, ::std::string_view delim)
   -> std::vector<std::string> {
   std::vector<std::string> result;
   size_t start = 0;
@@ -37,7 +29,7 @@ static auto split(const_string_ref s, const_string_ref delim)
 
   return result;
 }
-static auto start_with(const_string_ref s, const_string_ref matchStr) -> bool {
+static auto start_with(::std::string_view s, ::std::string_view matchStr) -> bool {
   size_t len = matchStr.length();
   if (len > s.length())
   {
@@ -50,7 +42,7 @@ static auto start_with(const_string_ref s, const_string_ref matchStr) -> bool {
   }
   return true;
 }
-static auto end_with(const_string_ref s, const_string_ref matchStr) -> bool {
+static auto end_with(::std::string_view s, ::std::string_view matchStr) -> bool {
   size_t len = matchStr.length();
   size_t slen = s.length();
   if (len > slen)
@@ -68,7 +60,7 @@ static auto end_with(const_string_ref s, const_string_ref matchStr) -> bool {
   return true;
 }
 
-static auto ltrim(const_string_ref s) -> std::string {
+static auto ltrim(::std::string_view s) -> std::string {
   size_t len = s.length();
   if (len == 0)
   {
@@ -90,7 +82,7 @@ static auto ltrim(const_string_ref s) -> std::string {
   }
   return std::string(s.substr(left, right - left + 1));
 }
-static auto rtrim(const_string_ref s) -> std::string {
+static auto rtrim(::std::string_view s) -> std::string {
   size_t len = s.length();
   if (len == 0)
   {
@@ -104,7 +96,7 @@ static auto rtrim(const_string_ref s) -> std::string {
   if (left > right) return "";
   return std::string(s.substr(left, right - left + 1));
 }
-static auto trim(const_string_ref s) -> std::string {
+static auto trim(::std::string_view s) -> std::string {
   size_t len = s.length();
   if (len == 0)
   {
@@ -211,7 +203,7 @@ static auto trim(std::string &s) -> std::string & {
   return s = s.substr(left, right - left + 1);
 }
 
-static auto equal(const_string_ref s1, const_string_ref s2,
+static auto equal(::std::string_view s1, ::std::string_view s2,
   bool upperLowerSensitive = false) -> bool {
   if (upperLowerSensitive)
   {
@@ -239,7 +231,7 @@ static auto equal(const_string_ref s1, const_string_ref s2,
   return true;
 }
 
-static auto to_upper(const_string_ref s) -> std::string {
+static auto to_upper(::std::string_view s) -> std::string {
   std::string r;
   r.reserve(s.length());
   for (auto c : s)
@@ -248,7 +240,7 @@ static auto to_upper(const_string_ref s) -> std::string {
   }
   return r;
 }
-static auto to_lower(const_string_ref s) -> std::string {
+static auto to_lower(::std::string_view s) -> std::string {
   std::string r;
   r.reserve(s.length());
   for (auto c : s)
@@ -273,7 +265,7 @@ static auto to_lower(std::string &s) -> std::string & {
 }
 
 static auto split(
-  const_string_ref s, std::initializer_list<const_string_ref> delimList)
+  ::std::string_view s, std::initializer_list<::std::string_view> delimList)
   -> std::vector<std::string> {
   std::vector<std::string> result;
   size_t start = 0;
@@ -303,7 +295,7 @@ static auto split(
   }
 }
 
-static auto parse_url_params(const_string_ref url)
+static auto parse_url_params(::std::string_view url)
   -> std::unordered_map<std::string, std::string> {
   std::unordered_map<std::string, std::string> ret;
 
@@ -318,7 +310,7 @@ static auto parse_url_params(const_string_ref url)
   return ret;
 }
 
-static auto split_httplike_packet(const_string_ref str)
+static auto split_httplike_packet(::std::string_view str)
   -> std::tuple<std::string, std::string, std::string> {
   size_t curr = 0, last = curr;
   curr = str.find("\r\n", curr);
@@ -333,7 +325,7 @@ static auto split_httplike_packet(const_string_ref str)
 
   return std::make_tuple(line, headers, body);
 }
-static auto split_httplike_headers(const_string_ref str)
+static auto split_httplike_headers(::std::string_view str)
   -> std::vector<std::string> {
   std::vector<std::string> res;
 
@@ -353,7 +345,7 @@ static auto split_httplike_headers(const_string_ref str)
 
   return res;
 }
-static auto split_httplike_header(const_string_ref header)
+static auto split_httplike_header(::std::string_view header)
   -> std::pair<std::string, std::string> {
   const size_t mid = header.find(':');
   return std::make_pair(
@@ -361,8 +353,7 @@ static auto split_httplike_header(const_string_ref header)
 }
 
 NAMESPACE_BEGIN(literals)
-
-static auto operator*(const_string_ref s, size_t n) -> ::std::string {
+static auto operator*(::std::string_view s, size_t n) -> ::std::string {
   ::std::string r;
   r.reserve(s.length() * n);
   for (size_t i = 0; i < n; ++i)
@@ -371,14 +362,8 @@ static auto operator*(const_string_ref s, size_t n) -> ::std::string {
   }
   return r;
 }
-
 NAMESPACE_END(literals)
-
 NAMESPACE_END(string_util)
-
 namespace literals = string_util::literals;
 
-
 LY_NAMESPACE_END
-
-#undef const_string_ref
