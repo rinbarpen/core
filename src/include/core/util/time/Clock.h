@@ -52,13 +52,10 @@ static auto datetime2time(
   const std::string &datetime, const char *dateFmt = "%Y-%m-%d %H:%M:%S") -> time_t
 {
   std::tm tm = {};
-  std::istringstream ss(datetime);
-  ss >> std::get_time(&tm, dateFmt);
-
-  if (ss.fail()) {
-    return -1;
+  memset(&tm, 0, sizeof(tm));
+  if(!strptime(datetime.c_str(), dateFmt, &tm)) {
+    return 0;
   }
-
   return std::mktime(&tm);
 }
 

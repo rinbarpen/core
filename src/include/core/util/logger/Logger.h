@@ -19,16 +19,16 @@
 
 #pragma once
 
-#include <chrono>
 #include <cstdarg>
+#include <string>
+#include <chrono>
+#include <sstream>
 #include <fstream>
 #include <functional>
 #include <future>
-#include <list>
 #include <memory>
+#include <list>
 #include <mutex>
-#include <sstream>
-#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -39,16 +39,16 @@
 #include <yaml-cpp/yaml.h>
 
 #ifdef LOG_MORE_FUNCTION_INFO_ENABLED
-#define FUNC __PRETTY_FUNCTION__
+#define LY_FUNC __PRETTY_FUNCTION__
 #else
-#define FUNC __func__
+#define LY_FUNC __func__
 #endif
 
 #define __LogEventGen(level, timestamp) \
-  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, FUNC, timestamp)
+  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, LY_FUNC, timestamp)
 
 #define __LogEventGen2(level) \
-  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, FUNC, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
+  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, LY_FUNC, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
 #define __LogEventWrapperGen(pLogger, level, timestamp) \
   std::make_shared<::ly::LogEventWrapper>(__LogEventGen(level, timestamp), pLogger)

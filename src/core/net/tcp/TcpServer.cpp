@@ -1,17 +1,18 @@
+#include <chrono>
+#include <core/config/config.h>
 #include <core/net/tcp/TcpServer.h>
 
-LY_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(ly::net)
+static auto g_net_logger = GET_LOGGER("net.tcp");
+static auto g_timeout_while_removing_connections_ms = LY_CONFIG_GET(net.common.timeout_while_removing_connections_ms);
 
-NAMESPACE_BEGIN(net)
-static auto g_net_logger = GET_LOGGER("net");
-
-TcpServer::TcpServer(EventLoop *eventLoop) : event_loop_(eventLoop) {
+TcpServer::TcpServer(EventLoop *event_loop) : event_loop_(event_loop) {
   acceptor_ =
-    std::make_unique<Acceptor>(eventLoop);
+    std::make_unique<Acceptor>(event_loop);
   acceptor_->setNewConnectionCallback([this](sockfd_t fd) {
     TcpConnection::ptr conn = this->onConnect(fd);
     if (conn) {
-      ILOG_INFO(g_net_logger) << "A new comer: " << fd;
+      ILOG_INFO_FMT(g_net_logger, "A new comer: {}", fd);
       this->addConnection(fd, conn);
       conn->setDisconnectCallback([this](TcpConnection::ptr conn) {
         ILOG_INFO_FMT(g_net_logger, "{} is Leaving...", this->type());
@@ -19,7 +20,7 @@ TcpServer::TcpServer(EventLoop *eventLoop) : event_loop_(eventLoop) {
         sockfd_t sockfd = conn->getSockfd();
         scheduler->addTriggerEventForce(
           [this, sockfd] { this->removeConnection(sockfd); },
-          100ms);  // TODO: Replace with env.removeConnectionMsTimeout
+          std::chrono::milliseconds{g_timeout_while_removing_connections_ms});
       });
 
       conn->setCloseCallback([](TcpConnection::ptr close_conn) {
@@ -72,9 +73,7 @@ bool TcpServer::stop() {
   }
 
   acceptor_->close();
-
-  while (!connections_.empty())
-  {
+  while (!connections_.empty()) {
     Timer::sleep(10ms);
   }
   return true;
@@ -95,6 +94,4 @@ void TcpServer::removeConnection(sockfd_t fd) {
   connections_.erase(fd);
 }
 
-NAMESPACE_END(net)
-
-LY_NAMESPACE_END
+NAMESPACE_END(ly::net)

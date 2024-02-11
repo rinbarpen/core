@@ -10,18 +10,18 @@
 #include <tuple>
 
 
-#include <core/util/OSUtil.h>
+#include <core/util/Util.h>
 #include <core/util/Record.h>
-#include <core/util/logger/Logger.h>
-#include <core/util/string_util.h>
+#include <core/util/Library.h>
 #include <core/util/time/Clock.h>
 #include <core/util/time/Timestamp.h>
 #include <core/util/time/TimestampDuration.h>
-#include "core/util/Library.h"
-#include "core/util/thread/ThreadPool.h"
-#include "core/config/config.h"
+#include <core/util/logger/Logger.h>
+#include <core/util/thread/ThreadPool.h>
+#include <core/config/config.h>
 #include <core/net/EventLoop.h>
-#include "core/net/tcp/TcpServer.h"
+#include <core/net/tcp/TcpServer.h>
+
 // #include <core/multimedia/ffmpeg/ffmpeg_util.h>
 // #include "core/multimedia/net/rtsp/RtspPusher.h"
 // #include "core/multimedia/net/rtsp/RtspServer.h"
@@ -43,7 +43,7 @@ using namespace std::literals;
 
 void test_logger() {
   auto test_logger = LogIniter::getLogger(
-    "Test", LogLevel::LTRACE, kDefaultFormatPattern, false);
+    "test", LogLevel::LTRACE, kDefaultFormatPattern, false);
 
   ILOG_TRACE_FMT(test_logger, "{}", "x"sv * 3);
   ILOG_DEBUG_FMT(test_logger, "{}", "x"sv * 3);
@@ -85,15 +85,10 @@ void test_load_library() {
 }
 
 void test_tcp() {
-  LogIniter::getLogger("net", LogLevel::LDEBUG, kDefaultFormatPattern, false);
+  lynet::EventLoop event_loop(g_config.common.threadpool.thread_num);
 
-  // LogIniter::loadYamlFile("./config/log.yml");
-  // g_config = Config::fromFile("./config/config.yml");
-
-  lynet::EventLoop eventLoop(g_config.common.threadpool.thread_num);
-
-  lynet::TcpServer tcp_server(&eventLoop);
-  tcp_server.start("192.168.146.136", 8080, 10);
+  lynet::TcpServer tcp_server(&event_loop);
+  tcp_server.start("192.168.146.136", 8080, 1000);
 
   while (true)
     ;
@@ -108,6 +103,15 @@ void init() {
   // lyffmpeg::reg_ffmpeg(lyffmpeg::RegFlag::ALL);
   //
   log_load_config();
+  LogIniter::getLogger(
+    "system", LogLevel::LDEBUG, kDefaultFormatPattern, false);
+  LogIniter::getLogger(
+    "system.fiber", LogLevel::LDEBUG, kDefaultFormatPattern, false);
+  LogIniter::getLogger(
+    "multimedia", LogLevel::LDEBUG, kDefaultFormatPattern, false);
+  LogIniter::getLogger("net", LogLevel::LDEBUG, kDefaultFormatPattern, false);
+  LogIniter::getLogger(
+    "app.screenlive", LogLevel::LDEBUG, kDefaultFormatPattern, false);
 }
 
 void range_test() {

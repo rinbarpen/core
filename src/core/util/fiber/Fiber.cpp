@@ -1,65 +1,62 @@
-#include <core/util/fiber/Fiber.h>
+#include <cstddef>
 #include <cstring>
+#include <exception>
+
+#include "core/util/logger/Logger.h"
+#include "core/util/marcos.h"
+#include <core/util/fiber/Fiber.h>
+#include <core/config/config.h>
+#include <ucontext.h>
+
+#include <fmt/core.h>
+
+// FIXME: How to switch to DEAD status
 
 LY_NAMESPACE_BEGIN
+static auto g_fiber_logger = GET_LOGGER("system.fiber");
+static auto g_max_fiber_buffer_size = LY_CONFIG_GET(common.fiber.max_buffer_size);
+
 Fiber::Fiber(FiberScheduler* pScheduler)
   : scheduler_(pScheduler)
 {
   LY_ASSERT(scheduler_);
-  context_.buffer = new char[kDefaultMaxFiberBufferSize];
+  context_.buffer = new char[g_max_fiber_buffer_size];
+  // context_.buffer = new char[global::max_fiber_buffer_size];
   init();
 }
 
-Fiber::Fiber(InitializedCallback initializedCallback,
-  RunningCallback runningCallback,
-  YieldCallback yieldCallback,
-  DestroyedCallback destroyedCallback,
-  FiberScheduler* pScheduler)
-  : scheduler_(pScheduler)
+Fiber::Fiber(RunningCallback callback, FiberScheduler* pScheduler)
+  : scheduler_(pScheduler), callback_(callback)
 {
   LY_ASSERT(scheduler_);
-  this->set(std::move(initializedCallback), std::move(runningCallback),
-            std::move(yieldCallback), std::move(destroyedCallback));
-  context_.buffer = new char[kDefaultMaxFiberBufferSize];
+  context_.buffer = new char[g_max_fiber_buffer_size];
   init();
 }
 
 Fiber::~Fiber()
 {
-  destroyed_callback_();
+  LY_ASSERT2(context_.status != FiberStatus::RUNNING, fmt::format("Fiber({}) should be joined", id()));
+  --s_total_count;
   delete[] context_.buffer;
 }
 
 
-void Fiber::set(InitializedCallback initializedCallback,
-  RunningCallback runningCallback,
-  YieldCallback yieldCallback,
-  DestroyedCallback destroyedCallback)
+void Fiber::reset(RunningCallback callback)
 {
-  initialized_callback_ = initializedCallback;
-  running_callback_ = runningCallback;
-  yield_callback_ = yieldCallback;
-  destroyed_callback_ = destroyedCallback;
-}
+  LY_ASSERT2(context_.status == FiberStatus::DEAD
+         || context_.status == FiberStatus::RUNNABLE
+         || context_.status == FiberStatus::ABNORMAL,
+         fmt::format("The status of fiber({}) is {}, wrong status", id(), static_cast<int>(getStatus())));
+  callback_ = callback;
 
-void Fiber::setInitializedCallback(InitializedCallback callback)
-{
-  initialized_callback_ = callback;
-}
+  ::getcontext(&context_.ctx);
+  context_.ctx.uc_link = scheduler_ ? &scheduler_->main_fiber_->context_.ctx : nullptr;
+  context_.ctx.uc_stack.ss_flags = 0;
+  context_.ctx.uc_stack.ss_size = g_max_fiber_buffer_size;
+  context_.ctx.uc_stack.ss_sp = &context_.buffer;
 
-void Fiber::setRunningCallback(RunningCallback callback)
-{
-  running_callback_ = callback;
-}
-
-void Fiber::setYieldCallback(YieldCallback callback)
-{
-  yield_callback_ = callback;
-}
-
-void Fiber::setDestroyedCallback(DestroyedCallback callback)
-{
-  destroyed_callback_ = callback;
+  ::makecontext(&context_.ctx, (void(*)())&Fiber::entry, 1,
+    static_cast<void *>(this));
 }
 
 void Fiber::resume()
@@ -67,23 +64,18 @@ void Fiber::resume()
   switch (context_.status) {
   case FiberStatus::RUNNABLE:
   {
-#ifdef __LINUX__
     ::swapcontext(&scheduler_->main_fiber_->context_.ctx, &context_.ctx);
-#endif
     context_.status = FiberStatus::RUNNING;
-    running_callback_();
     break;
   }
   case FiberStatus::SUSPEND:
   {
     loadStack();
-#ifdef __LINUX__
     ::swapcontext(&scheduler_->main_fiber_->context_.ctx, &context_.ctx);
-#endif
     context_.status = FiberStatus::RUNNING;
-    running_callback_();
     break;
   }
+  default: break;
   } // switch
 }
 void Fiber::yield()
@@ -92,22 +84,20 @@ void Fiber::yield()
   case FiberStatus::RUNNING:
     context_.status = FiberStatus::SUSPEND;
     saveStack();
-#ifdef __LINUX__
     ::swapcontext(&context_.ctx, &scheduler_->main_fiber_->context_.ctx);
-#endif
-    yield_callback_();
     break;
+  default: break;
   }
 }
 
 void Fiber::saveStack()
 {
   char *p = scheduler_->main_fiber_->context_.buffer
-            + kDefaultMaxFiberBufferSize;
+            + g_max_fiber_buffer_size;
   char dummy = 0;
 
   int used = p - &dummy;
-  LY_ASSERT(used <= kDefaultMaxFiberBufferSize);
+  LY_ASSERT(used <= g_max_fiber_buffer_size);
   context_.buffer_size = used;
 
   ::memcpy(context_.buffer, &dummy, used);
@@ -115,34 +105,43 @@ void Fiber::saveStack()
 void Fiber::loadStack()
 {
   void *p = scheduler_->main_fiber_->context_.buffer
-            + kDefaultMaxFiberBufferSize - scheduler_->main_fiber_->context_.buffer_size;
-  ::memcpy(p,
-    scheduler_->main_fiber_->context_.buffer,
-    scheduler_->main_fiber_->context_.buffer_size);
+            + g_max_fiber_buffer_size - scheduler_->main_fiber_->context_.buffer_size;
+  ::memcpy(p, context_.buffer, context_.buffer_size);
 }
 
-static void fiber_entry(void *pFiber)
+auto Fiber::totalCount() -> uint64_t { return s_total_count; }
+
+void Fiber::entry(void *pFiber)
 {
   auto *co = static_cast<Fiber *>(pFiber);
+  LY_ASSERT(co->getStatus() != FiberStatus::ABNORMAL || co->getStatus() != FiberStatus::NONE);
+  if (co->getStatus() == FiberStatus::DEAD) { return ; }
+
   co->setStatus(FiberStatus::RUNNING);
-  co->run();
-  co->setStatus(FiberStatus::SUSPEND);
+  try {
+    co->callback_();
+  } catch(std::exception &ex) {
+    co->context_.status = FiberStatus::ABNORMAL;
+    ILOG_ERROR(g_fiber_logger) << ex.what() << " with fiber id = " << co->id();
+  } catch(...) {
+    co->context_.status = FiberStatus::ABNORMAL;
+    ILOG_ERROR(g_fiber_logger) << "unknown exception with fiber id = " << co->id();
+  }
+  co->yield();
 }
 
 
 void Fiber::init()
 {
-#ifdef __LINUX__
   ::getcontext(&context_.ctx);
-  context_.ctx.uc_link = &scheduler_->main_fiber_->context_.ctx;
+  context_.ctx.uc_link = scheduler_ ? &scheduler_->main_fiber_->context_.ctx : nullptr;
   context_.ctx.uc_stack.ss_flags = 0;
-  context_.ctx.uc_stack.ss_size = kDefaultMaxFiberBufferSize;
-  context_.ctx.uc_stack.ss_sp = &scheduler_->main_fiber_->context_.buffer;
+  context_.ctx.uc_stack.ss_size = g_max_fiber_buffer_size;
+  context_.ctx.uc_stack.ss_sp = &context_.buffer;
 
-  ::makecontext(&context_.ctx, (void (*)()) & fiber_entry, 1,
+  ::makecontext(&context_.ctx, (void(*)())&Fiber::entry, 1,
     static_cast<void *>(this));
-#endif
-  initialized_callback_();
+  ++s_total_count;
 }
 
 LY_NAMESPACE_END

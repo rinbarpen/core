@@ -1,3 +1,13 @@
+/**
+ * @file marcos.h
+ * @author LpoutYoumu (LpoutYoumu@gmail.com)
+ * @brief This file includes some macros we need
+ * @version 0.1
+ * @date 2024-02-11
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #pragma once
 
 /*********************************************************************************/
@@ -29,14 +39,33 @@
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 
 
-#define LY_AUTHOR            LpoutYoumu
-#define LY_VERSION           0.1
 
-#define LY_ASSERT(x)         assert(x)
+#define LY_AUTHOR    LpoutYoumu
+#define LY_VERSION   0.1
+
+#define LY_ASSERT(x) assert(x)
+#define LY_ASSERT2(x, detail)                             \
+  do {                                                    \
+    if (!(x))                                             \
+    {                                                     \
+      static auto system_logger = GET_LOGGER("system"); \
+      ILOG_FATAL(system_logger) << (detail);            \
+      std::abort();                                       \
+    }                                                     \
+  } while (0)
+#define LY_ASSERT3(x, detail)           \
+  do {                                  \
+    if (!(x))                           \
+    {                                   \
+      throw std::runtime_error(detail); \
+    }                                   \
+  } while (0)
 #define LY_CHECK(x, err_msg) static_assert(x, err_msg)
 
 #define NAMESPACE_BEGIN(x) \
@@ -54,7 +83,8 @@
 
 
 LY_NAMESPACE_BEGIN
-namespace detail {
+namespace detail
+{
 class UnreachableException : public ::std::runtime_error
 {
 public:
@@ -67,7 +97,7 @@ public:
     char __s[100];                                                     \
     ::snprintf(__s, 100, "Unreachable has been called by %s in %s:%d", \
       __FUNCTION__, __FILE__, __LINE__);                               \
-    throw ::ly::detail::UnreachableException(__s);                             \
+    throw ::ly::detail::UnreachableException(__s);                     \
   } while (0)
 
 #define __UNREACHABLE_NOTHROW()                                     \
@@ -88,8 +118,19 @@ public:
   CLS &operator=(CLS &&) = delete
 
 
-#define LY_UNUSED                      [[maybe_unused]]
-#define LY_NODISCARD                   [[nodiscard]]
+#define LY_UNUSED     [[maybe_unused]]
+#define LY_NODISCARD  [[nodiscard]]
+#define LY_DEPRECATED [[deprecated]]
+#ifdef __CXX20
+# define LY_LIKELY   [[likely]]
+# define LY_UNLIKELY [[unlikely]]
+#elif defined(__GNUC__) || defined(__llvm__)
+# define LY_LIKELY(x)   __builtin_expect(!!(x), 1)
+# define LY_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+# define LY_LIKELY(x)   (x)
+# define LY_UNLIKELY(x) (x)
+#endif
 
 #define SHARED_PTR_USING(CLS, ALIAS)   using ALIAS = std::shared_ptr<CLS>
 #define UNIQUE_PTR_USING(CLS, ALIAS)   using ALIAS = std::unique_ptr<CLS>
@@ -120,12 +161,13 @@ public:
   UNIQUE_PTR_USING(CLS, uptr); \
   MAKE_UNIQUE(CLS)
 
-#ifdef __CXX17
-# define LY_UNWARP(TYPE, WRAPPER, ...) auto TYPE[__VA_ARGS__] = WRAPPER
-#endif
+#define LY_UNWARP(TYPE, WRAPPER, ...) auto TYPE[__VA_ARGS__] = WRAPPER
 
 #define LY_GLOBAL_BLOCK(BODY) \
-  namespace global { BODY }
+  namespace global            \
+  {                           \
+  BODY                        \
+  }
 
 LY_NAMESPACE_END
 

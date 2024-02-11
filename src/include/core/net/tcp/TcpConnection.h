@@ -1,17 +1,15 @@
 #pragma once
-#include "core/net/NetAddress.h"
-#include "core/net/SocketUtil.h"
-#include "core/net/TaskScheduler.h"
-#include <core/net/FdChannel.h>
-#include <core/net/EventLoop.h>
-#include <core/util/buffer/BufferReader.h>
-#include <core/util/buffer/BufferWriter.h>
 #include <cstdint>
 
-LY_NAMESPACE_BEGIN
+#include <core/util/buffer/BufferReader.h>
+#include <core/util/buffer/BufferWriter.h>
+#include <core/net/NetAddress.h>
+#include <core/net/SocketUtil.h>
+#include <core/net/TaskScheduler.h>
+#include <core/net/FdChannel.h>
+#include <core/net/EventLoop.h>
 
-NAMESPACE_BEGIN(net)
-
+NAMESPACE_BEGIN(ly::net)
 class TcpConnection : public std::enable_shared_from_this<TcpConnection>
 {
 protected:
@@ -24,7 +22,7 @@ public:
   using CloseCallback = std::function<void(TcpConnection::ptr)>;
   using ErrorCallback = std::function<void(TcpConnection::ptr)>;
 
-  TcpConnection(TaskScheduler* pTaskScheduler, sockfd_t fd);
+  TcpConnection(TaskScheduler* task_scheduler, sockfd_t fd);
   virtual ~TcpConnection();
 
   void send(const char *data, size_t len);
@@ -32,16 +30,16 @@ public:
 
   bool isRunning() const { return running_; }
 
-  void setReadCallback(ReadCallback fn) { read_callback_ = fn; }
-  void setDisconnectCallback(DisconnectCallback fn) { disconnect_callback_ = fn; }
-  void setCloseCallback(CloseCallback fn) { close_callback_ = fn; }
-  void setErrorCallback(ErrorCallback fn) { error_callback_ = fn; }
+  void setReadCallback(ReadCallback callback) { read_callback_ = callback; }
+  void setDisconnectCallback(DisconnectCallback callback) { disconnect_callback_ = callback; }
+  void setCloseCallback(CloseCallback callback) { close_callback_ = callback; }
+  void setErrorCallback(ErrorCallback callback) { error_callback_ = callback; }
 
   TaskScheduler* getTaskScheduler() const { return task_scheduler_; }
   sockfd_t getSockfd() const { return channel_->getSockfd(); }
   auto getAddress() const -> NetAddress { return socket_api::getPeerAddr(channel_->getSockfd()); }
 
-  auto getId() const -> int { return reinterpret_cast<uintptr_t>(task_scheduler_); }
+  auto getId() const -> uint32_t { return reinterpret_cast<uintptr_t>(task_scheduler_); }
 
 protected:
   virtual void onRead();
@@ -68,7 +66,4 @@ private:
 
   Mutex::type mutex_;
 };
-
-NAMESPACE_END(net)
-
-LY_NAMESPACE_END
+NAMESPACE_END(ly::net)

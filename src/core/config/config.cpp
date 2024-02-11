@@ -17,7 +17,7 @@ void Config::toFile(const std::string &filename) const
   }
   else
   {
-    throw std::runtime_error("There is no target file");
+    throw std::runtime_error("Config: There is no target file");
   }
 }
 

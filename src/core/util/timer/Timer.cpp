@@ -1,7 +1,10 @@
+#include "core/config/config.h"
 #include <core/util/timer/Timer.h>
-#include <core/util/container_util.h>
+#include <core/util/ContainerUtil.h>
+#include <ratio>
 
 LY_NAMESPACE_BEGIN
+static auto g_timeout_if_not_task_ms = LY_CONFIG_GET(common.timer.timeout_if_not_task_ms);
 
 auto Timer::newTask(TimerTask::TaskCallback fn,
   std::chrono::milliseconds timeout,
@@ -88,12 +91,10 @@ void Timer::run()
 auto Timer::nextTimestamp() const -> TimerTimestampDuration
 {
   if (task_map_.empty()) {
-    // TODO: use Env.ms_timeout_if_no_timer
-    return {100ms};
+    return std::chrono::milliseconds{g_timeout_if_not_task_ms};
   }
 
-  const TimerTimestamp now = TimerClock::now();
-
+  auto now = TimerClock::now();
   Mutex::lock locker(mutex_);
   const TimerTask &curTask = task_map_.begin()->second;
   if (curTask.expire_time > now)

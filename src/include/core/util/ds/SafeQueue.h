@@ -6,11 +6,9 @@
 
 #include <core/util/Mutex.h>
 
-// TODO: Add this to ThreadPool
 
 namespace ly
 {
-
 template <typename T>
 class SafeQueue
 {

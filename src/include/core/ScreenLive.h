@@ -78,7 +78,6 @@ private:
 	void pushAudio(const uint8_t* data, uint32_t size, uint32_t timestamp);
 	bool isKeyFrame(const uint8_t* data, uint32_t size);
 
-
 private:
   bool initialized_{false};
   bool capture_started_{false};

@@ -29,13 +29,18 @@ public:
 
   auto count() const -> size_t;
 
+  static auto totalCount() -> uint64_t;
+
   LY_NONCOPYABLE(FiberScheduler);
 private:
   std::shared_ptr<Fiber> main_fiber_;
 
   std::unordered_map<FiberId, std::shared_ptr<Fiber>> fibers_;
+  std::unordered_map<FiberId, std::shared_ptr<Fiber>> freelist_;
 
   mutable RWMutex::type rwmutex_;
+
+  static inline uint64_t s_total_count{0};
 };
 
 LY_NAMESPACE_END

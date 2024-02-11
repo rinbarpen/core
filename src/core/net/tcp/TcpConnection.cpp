@@ -1,12 +1,12 @@
+#include "core/config/config.h"
 #include "core/net/TaskScheduler.h"
 #include <core/net/tcp/TcpConnection.h>
 
-LY_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(ly::net)
+static auto g_send_timeout_ms = LY_CONFIG_GET(net.common.send_timeout_ms);
 
-NAMESPACE_BEGIN(net)
-
-TcpConnection::TcpConnection(TaskScheduler *pTaskScheduler, sockfd_t fd)
-  : task_scheduler_(pTaskScheduler),
+TcpConnection::TcpConnection(TaskScheduler *task_scheduler, sockfd_t fd)
+  : task_scheduler_(task_scheduler),
   read_buffer_(new BufferReader(kMaxBufferSize)),
   write_buffer_(new BufferWriter(kMaxBufferSize)),
   channel_(new FdChannel(fd))
@@ -48,7 +48,6 @@ void TcpConnection::disconnect()
   task_scheduler_->addTriggerEventForce([conn]() {
     conn->close();
   }, 0ms);
-
 }
 
 void TcpConnection::onRead()
@@ -56,15 +55,14 @@ void TcpConnection::onRead()
   Mutex::lock locker(mutex_);
   if (!running_) return;
 
-  int ret = read_buffer_->read(channel_->getSockfd());
-  if (ret <= 0) {
+  int r = read_buffer_->read(channel_->getSockfd());
+  if (r <= 0) {
     this->close();
     return;
   }
 
   if (read_callback_) {
-    bool ret = read_callback_(shared_from_this(), *read_buffer_);
-    if (false == ret) {
+    if (!read_callback_(shared_from_this(), *read_buffer_)) {
       this->close();
       return;
     }
@@ -75,10 +73,8 @@ void TcpConnection::onWrite()
   Mutex::lock locker(mutex_);
   if (!running_) return;
 
-  int ret = 0;
-  // TODO:
-  ret = write_buffer_->send(channel_->getSockfd(), 100);
-  if (ret < 0) {
+  int r = write_buffer_->send(channel_->getSockfd(), g_send_timeout_ms);
+  if (r < 0) {
     this->close();
     return;
   }
@@ -125,6 +121,4 @@ void TcpConnection::close()
     }
   }
 }
-
-NAMESPACE_END(net)
-LY_NAMESPACE_END
+NAMESPACE_END(ly::net)

@@ -7,7 +7,7 @@
 
 LY_NAMESPACE_BEGIN
 
-inline static constexpr int kDefaultMaxFiberBufferSize = 1024;
+inline static constexpr int kDefaultMaxFiberBufferSize = 1024 * 1024;
 inline static constexpr int kDefaultMaxFiberPerScheduler = 100;
 
 using FiberId = uint32_t;

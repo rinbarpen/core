@@ -20,25 +20,25 @@ Language: Cpp                                       # this format style is targe
 BasedOnStyle: LLVM
 AccessModifierOffset: -2                            # 控制 @public ... 的左缩进，以 IndentWidth 为基准
 AlignAfterOpenBracket: false                        #
-AlignConsecutiveMacros: {                           # 
+AlignConsecutiveMacros: {                           #
   Enabled: true,                                     # 宏对齐
   AcrossEmptyLines: true,                            # 即使有空行也对齐
   AcrossComments: false,                             # 即使有注释也对齐
 }
-#AlignConsecutiveShortCaseStatements: {               # 
+#AlignConsecutiveShortCaseStatements: {               #
 #  Enabled: true,                                     # switch case 对齐
-#  AcrossEmptyLines: true,                            # 
-#  AcrossComments: true,                              # 
+#  AcrossEmptyLines: true,                            #
+#  AcrossComments: true,                              #
 #  AlignCaseColons: false,                            # 以冒号对齐
 #}
-# AlignConsecutiveAssignments: true                 # 
+# AlignConsecutiveAssignments: true                 #
 # AlignConsecutiveDeclarations: false               #
 AlignEscapedNewlinesLeft: true                      # 宏的 \ 对齐
 AlignOperands: true                                 # 多行操作符的语句，水平对齐
 #AlignTrailingComments: {                            # 连续行，行尾注释对齐
 #  Kind: Always,                                      #
-#  OverEmptyLines: 2,                                 # 注释两空格对齐            
-#}                             
+#  OverEmptyLines: 2,                                 # 注释两空格对齐
+#}
 AllowAllArgumentsOnNextLine: true                   # 即使 BinPackParameters 为 false, 仍允许方法声明的多个参数不在同一行
 #AllowBreakBeforeNoexceptSpecifier: Never            # noexcept对齐
 AllowShortBlocksOnASingleLine: Empty                # 空 while {} 语句单行
@@ -57,11 +57,11 @@ BinPackParameters: true                             # false 时表示 c 方法�
 BitFieldColonSpacing: After                         # 位域显示-> field: 2
 BreakBeforeBraces: Custom                           # BreakBeforeBraces = Custom 时此参数起作用，自定义不同语义下的 { 是否单起一行策略
 BraceWrapping: {
-  AfterCaseLabel: true,                           # 
+  AfterCaseLabel: true,                           #
   AfterClass: true,                               # class {  的 { 另起一行
-  AfterControlStatement: true,                    # if { 的 { 另起一行
+  AfterControlStatement: false,                   # if { 的 { 另起一行
   AfterEnum: true,                                # enum { 的 { 另起一行
-  AfterFunction: false,                            # aFunc { 的 { 另起一行
+  AfterFunction: false,                           # aFunc { 的 { 另起一行
   AfterNamespace: true,                           # aNamespaece { 的 { 另起一行
   AfterStruct: true,
   AfterUnion: true,
@@ -71,8 +71,8 @@ BraceWrapping: {
   BeforeLambdaBody: false,
   BeforeWhile: false,
 }
-#BreakAdjacentStringLiterals: true                   # 
-#BreakAfterAttributes: Always                        # [[nodiscard]] \n xx 
+#BreakAdjacentStringLiterals: true                   #
+#BreakAfterAttributes: Always                        # [[nodiscard]] \n xx
 BreakBeforeBinaryOperators: NonAssignment           # = 不管
 # BreakBeforeInheritanceComma: false                  # class 继承后的多个类，不强制分成多行，暂不支持
 BreakInheritanceList: AfterColon                    #
@@ -103,7 +103,7 @@ IndentPPDirectives: AfterHash
 IndentRequiresClause: false
 IndentWrappedFunctionNames: false
 #InsertNewlineAtEOF: true
-#IntegerLiteralSeparator: { 
+#IntegerLiteralSeparator: {
 #  Binary: 4,
 #  Decimal: 3,
 #  Hex: -1,

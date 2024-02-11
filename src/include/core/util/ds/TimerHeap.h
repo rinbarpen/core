@@ -1,13 +1,11 @@
 #pragma once
 
-#include <core/util/timer/TimerTask.h>
 #include <vector>
 #include <optional>
 
-// TODO: Use this instead of Timer's buildin-map
+#include <core/util/timer/TimerTask.h>
 
 LY_NAMESPACE_BEGIN
-
 class TimerHeap
 {
 public:

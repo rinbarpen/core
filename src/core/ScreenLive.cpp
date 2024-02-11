@@ -1,9 +1,9 @@
-#include "core/net/EventLoop.h"
-#include "core/util/logger/Logger.h"
-#include <core/ScreenLive.h>
+#include <cstddef>
+#include <core/util/logger/Logger.h>
+#include <core/net/EventLoop.h>
 #include <core/multimedia/net/H264Source.h>
 #include <core/multimedia/net/AACSource.h>
-#include <cstddef>
+#include <core/ScreenLive.h>
 
 #define SCREEN_LIVE_RTSP_SERVER 1
 #define SCREEN_LIVE_RTSP_PUSHER 2
@@ -11,7 +11,7 @@
 
 LY_NAMESPACE_BEGIN
 
-static auto g_screenlive_logger = GET_LOGGER("screenlive");
+static auto g_screenlive_logger = GET_LOGGER("app.screenlive");
 
 ScreenLive::ScreenLive()
   : event_loop_(new net::EventLoop), encoding_fps_(0)

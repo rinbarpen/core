@@ -4,15 +4,17 @@ LY_NAMESPACE_BEGIN
 FiberScheduler::FiberScheduler()
 {
   main_fiber_ = std::make_shared<Fiber>(this);
+  ++s_total_count;
 }
 
 FiberScheduler::~FiberScheduler()
 {
   RWMutex::wlock locker(rwmutex_);
   for (auto &[_, pFiber] : fibers_) {
-    pFiber->yield();
+    // pFiber->yield();
     pFiber.reset();
   }
+  --s_total_count;
 }
 
 void FiberScheduler::resume(FiberId fid)
@@ -20,7 +22,7 @@ void FiberScheduler::resume(FiberId fid)
   if (currentFiberId() == fid) return;
 
   RWMutex::wlock locker(rwmutex_);
-  if (auto it = fibers_.find(fid); 
+  if (auto it = fibers_.find(fid);
       it != fibers_.end())
   {
     this->yield();
@@ -51,15 +53,13 @@ auto FiberScheduler::track(std::shared_ptr<Fiber> pFiber) -> bool
 auto FiberScheduler::untrack(FiberId fid) -> bool
 {
   RWMutex::wlock locker(rwmutex_);
-  if (auto it = fibers_.find(fid); 
+  if (auto it = fibers_.find(fid);
       it != fibers_.end())
   {
     fibers_.erase(it);
-    locker.unlock();
     return true;
   }
 
-  locker.unlock();
   return false;
 }
 
@@ -79,6 +79,6 @@ auto FiberScheduler::count() const -> size_t
   return fibers_.size();
 }
 
-
+auto FiberScheduler::totalCount() -> uint64_t { return s_total_count; }
 
 LY_NAMESPACE_END

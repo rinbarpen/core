@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <utility>
 #include <core/util/fiber/FiberConstant.h>
@@ -17,9 +18,10 @@ enum class FiberStatus
 {
   NONE,     // uninitialized
   RUNNABLE, // initialized
-  RUNNING,  // from RUNABLE(first) or SUSPEND
-  SUSPEND,  // from RUNNING or RUNABLE
+  RUNNING,  // from RUNNABLE(first) or SUSPEND
+  SUSPEND,  // from RUNNING
   DEAD,     // complete, from SUSPEND
+  ABNORMAL, // exception or abort
 };
 struct FiberContext
 {
@@ -38,16 +40,10 @@ class Fiber
 public:
   SHARED_PTR_USING(Fiber, ptr);
 
-  using InitializedCallback = std::function<void()>;
-  using DestroyedCallback = std::function<void()>;
   using RunningCallback = std::function<void()>;
-  using YieldCallback = std::function<void()>;
 
   Fiber(FiberScheduler *pScheduler);
-  Fiber(InitializedCallback initializedCallback,
-        RunningCallback runningCallback,
-        YieldCallback yieldCallback,
-        DestroyedCallback destroyedCallback,
+  Fiber(RunningCallback callback,
         FiberScheduler *pScheduler);
   virtual ~Fiber();
 
@@ -55,43 +51,29 @@ public:
   {
     return std::make_shared<Fiber>(pScheduler);
   }
-  static Fiber::ptr newFiber(InitializedCallback initializedCallback,
-    RunningCallback runningCallback, YieldCallback yieldCallback,
-    DestroyedCallback destroyedCallback,
+  static Fiber::ptr newFiber(RunningCallback callback,
     FiberScheduler *pScheduler)
   {
     auto pFiber = std::make_shared<Fiber>(pScheduler);
-    pFiber->set(std::move(initializedCallback),
-                std::move(runningCallback),
-                std::move(yieldCallback),
-                std::move(destroyedCallback));
+    pFiber->reset(callback);
     return pFiber;
   }
 
   void resume();
   void yield();
 
-  virtual void run() {}
+  static void entry(void *pFiber);
 
   // Callbacks
-  void set(InitializedCallback initializedCallback,
-           RunningCallback runningCallback,
-           YieldCallback yieldCallback,
-           DestroyedCallback destroyedCallback);
-  void setInitializedCallback(InitializedCallback callback);
-  void setRunningCallback(RunningCallback callback);
-  void setYieldCallback(YieldCallback callback);
-  void setDestroyedCallback(DestroyedCallback callback);
+  void reset(RunningCallback callback);
 
   void setStatus(FiberStatus status) { context_.status = status; }
   auto getStatus() const -> FiberStatus { return context_.status; }
   auto id() const -> FiberId { return reinterpret_cast<uintptr_t>(this) & 0xFFFF; }
 
+  static auto totalCount() -> uint64_t;
+
   LY_NONCOPYABLE(Fiber);
-protected:
-  virtual void ready() const { initialized_callback_(); }
-  virtual void running() const { running_callback_(); }
-  virtual void dead() const { destroyed_callback_(); }
 
 private:
   void saveStack();
@@ -102,13 +84,12 @@ private:
 protected:
   FiberContext context_;
 
-  InitializedCallback initialized_callback_{};
-  RunningCallback running_callback_{};
-  YieldCallback yield_callback_{};
-  DestroyedCallback destroyed_callback_{};
 
 private:
   FiberScheduler *scheduler_{ nullptr };
+  RunningCallback callback_{};
+
+  static inline uint64_t s_total_count{0};
 };
 
 LY_NAMESPACE_END
