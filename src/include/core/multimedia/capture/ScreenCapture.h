@@ -10,7 +10,7 @@ public:
   ScreenCapture() = default;
   virtual ~ScreenCapture() = default;
 
-  virtual bool init(int display_index = 0) = 0;
+  virtual bool init(int display_index = 0, bool auto_run = true) = 0;
   virtual bool destroy() = 0;
   virtual bool captureFrame(std::vector<uint8_t> &image, uint32_t &width, uint32_t &height) = 0;
 

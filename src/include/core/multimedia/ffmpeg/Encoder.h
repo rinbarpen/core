@@ -1,12 +1,11 @@
 #pragma once
 
 #include <cstdint>
-#include <core/multimedia/ffmpeg/ffmpeg_util.h>
-#include <libavcodec/avcodec.h>
+#include <core/util/marcos.h>
+#include <core/multimedia/ffmpeg/FFmpegUtil.h>
 
 LY_NAMESPACE_BEGIN
-namespace ffmpeg
-{
+NAMESPACE_BEGIN(ffmpeg)
 class Encoder
 {
 public:
@@ -29,5 +28,5 @@ protected:
   AVConfig config_;
   AVCodecContext *codec_context_{nullptr};
 };
-}  // namespace ffmpeg
+NAMESPACE_END(ffmpeg)
 LY_NAMESPACE_END

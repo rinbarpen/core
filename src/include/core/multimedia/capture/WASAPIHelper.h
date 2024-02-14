@@ -1,12 +1,13 @@
 #pragma once
 
-#include "core/util/marcos.h"
-#ifdef __WIN__
 #include <vector>
-#include <d3d9.h>
+#include <core/util/marcos.h>
+
+#ifdef __WIN__
+# include <d3d9.h>
+#endif
 
 LY_NAMESPACE_BEGIN
-
 namespace DX
 {
 struct Monitor
@@ -20,9 +21,10 @@ struct Monitor
 	int bottom;
 };
 
-static auto getMonitors() -> std::vector<Monitor>
+static auto monitors() -> std::vector<Monitor>
 {
 	std::vector<Monitor> monitors;
+#ifdef __WIN__
 	HRESULT hr = S_OK;
 
 	IDirect3D9Ex* d3d9ex = nullptr;
@@ -62,9 +64,9 @@ static auto getMonitors() -> std::vector<Monitor>
 	}
 
 	d3d9ex->Release();
+#endif
 	return monitors;
 }
 
 }
 LY_NAMESPACE_END
-#endif

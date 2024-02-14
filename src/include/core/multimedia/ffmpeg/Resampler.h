@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/util/marcos.h"
-#include <core/multimedia/ffmpeg/ffmpeg_util.h>
-#include <core/multimedia/ffmpeg/Exception.h>
+#include <stdexcept>
+#include <core/util/marcos.h>
+#include <core/multimedia/ffmpeg/FFmpegUtil.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(ffmpeg)
@@ -27,7 +27,7 @@ public:
   {
     swr_context_ = swr_alloc();
     if (nullptr == swr_context_) {
-      throw InitializationException("Out of memory in allocating swr_context");
+      throw std::runtime_error("Out of memory in allocating swr_context");
     }
     int64_t in_ch_layout = av_get_default_channel_layout(in.channels);
     int64_t out_ch_layout = av_get_default_channel_layout(out.channels);
@@ -41,7 +41,7 @@ public:
     av_opt_set_sample_fmt(swr_context_, "out_sample_fmt", out.format, 0);
 
     if (swr_init(swr_context_) < 0) {
-      throw InitializationException("Fail to call swr_init");
+      throw std::runtime_error("Fail to call swr_init");
     }
     in_audio_info_ = in;
     in_audio_info_.bits_per_sample = av_get_bytes_per_sample(in.format);

@@ -4,7 +4,6 @@
 #include <core/net/TaskScheduler.h>
 
 LY_NAMESPACE_BEGIN
-
 NAMESPACE_BEGIN(net)
 
 class EpollTaskScheduler final : public TaskScheduler

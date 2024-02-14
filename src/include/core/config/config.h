@@ -4,8 +4,9 @@
 #include <thread>
 #include <string>
 
-#include <yaml-cpp/yaml.h>
 #include <core/util/marcos.h>
+
+#include <yaml-cpp/yaml.h>
 
 LY_NAMESPACE_BEGIN
 
@@ -16,6 +17,13 @@ struct Config {
     struct logger
     {
       uint64_t max_file_line = 100000;
+      // const char *default_format_pattern =
+      //   "$DATETIME{%Y-%m-%d %H:%M:%S}"
+      //   "$CHAR:\t$LOG_NAME$CHAR:[$LOG_LEVEL$CHAR:]"
+      //   "$CHAR:\t$FILENAME$CHAR::$LINE"
+      //   "$CHAR:\t$FUNCTION_NAME"
+      //   "$CHAR:\t$MESSAGE$CHAR:\n";
+
     } logger;
     struct buffer
     {
@@ -25,12 +33,12 @@ struct Config {
     } buffer;
     struct threadpool
     {
-      int thread_num = std::thread::hardware_concurrency();
-
+      uint32_t thread_num = std::thread::hardware_concurrency();
     } threadpool;
     struct fiber
     {
-      int max_buffer_size = 1024 * 128;
+      uint32_t max_buffer_size = 1024 * 128;
+      uint32_t max_fiber_capacity_per_scheduler = 100;
     } fiber;
     struct timer
     {
@@ -87,8 +95,21 @@ struct Config {
     } hls;
     struct rtsp
     {
+      enum ConnectionType {
+        AUTO = 0xFF,
+        TCP = 0x01,
+        UDP = 0x02,
+        MULTICAST = 0x04,
+      };
+
       uint16_t port = 443;
       uint16_t ssl_port = 1443;
+      ConnectionType connection_type = ConnectionType::AUTO;
+
+      struct multicast_range {
+        uint16_t begin = 15000;
+        uint16_t end = 15100;
+      } multicast_range;
     } rtsp;
     struct rtmp
     {
@@ -142,6 +163,5 @@ static Config &g_config = Config::instance();
   g_config.FIELD
 #define LY_CONFIG_SET(FIELD, VALUE) \
   do { g_config.FIELD = VALUE } while(0)
-
 
 LY_NAMESPACE_END

@@ -1,3 +1,4 @@
+#include <core/net/platform.h>
 #include <core/net/Socket.h>
 
 LY_NAMESPACE_BEGIN
@@ -12,41 +13,38 @@ Socket::Socket(NetProtocol protocol)
   else
     sockfd_ = socket_api::socket_udp();
 }
-
 Socket::~Socket()
 {
-  if (sockfd_ != kInvalidSockfd)
+  if (isValid())
     socket_api::close(sockfd_);
 }
 
 int Socket::bind(const NetAddress &addr)
 {
-  int r;
+  int r{};
   r = socket_api::bind(sockfd_, addr.ip.c_str(), addr.port);
   return r;
 }
-
 int Socket::listen(int backlog)
 {
-  int r;
+  int r{};
   r = socket_api::listen(sockfd_, backlog);
   return r;
 }
-
 int Socket::connect(const NetAddress &addr, std::chrono::milliseconds msec)
 {
-  int r;
+  int r{};
   auto ms = msec.count();
   if (ms > 0)
-    socket_api::setBlocking(sockfd_, msec.count());
+    socket_api::set_blocking(sockfd_, msec.count());
   r = socket_api::connect(sockfd_, addr.ip.c_str(), addr.port);
   if (ms > 0)
-    socket_api::setNonBlocking(sockfd_);
+    socket_api::set_nonblocking(sockfd_);
   return r;
 }
 SockfdAddressPair Socket::accept()
 {
-  int r;
+  sockfd_t r;
   NetAddress addr;
   char ip[30];
   r = socket_api::accept(sockfd_, ip, &addr.port);
@@ -64,13 +62,13 @@ int Socket::close()
 
 int Socket::send(const void *data, int len)
 {
-  int r;
+  int r{};
   r = socket_api::send(sockfd_, static_cast<const char *>(data), len);
   return r;
 }
 int Socket::recv(void *data, int len)
 {
-  int r;
+  int r{};
   r = socket_api::recv(sockfd_, static_cast<char *>(data), len);
   return r;
 }

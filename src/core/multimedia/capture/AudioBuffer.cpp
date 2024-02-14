@@ -20,7 +20,7 @@ int AudioBuffer::read(uint8_t* data, size_t len)
     return -1;
   }
 
-  ::memcpy(data, buffer_ + read_pos_, len);
+  memcpy(data, buffer_ + read_pos_, len);
   retrieve(len);
   return len;
 }

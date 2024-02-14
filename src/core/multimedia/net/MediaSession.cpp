@@ -1,7 +1,7 @@
-#include "core/multimedia/net/MediaSession.h"
-#include "core/multimedia/net/media.h"
-#include "core/net/multicast/MulticastAddress.h"
-#include "core/util/marcos.h"
+#include <core/util/marcos.h>
+#include <core/net/multicast/MulticastAddress.h>
+#include <core/multimedia/net/media.h>
+#include <core/multimedia/net/MediaSession.h>
 
 #include <forward_list>
 
@@ -15,7 +15,6 @@ MediaSession* MediaSession::create(std::string suffix)
 MediaSession::~MediaSession()
 {
 	multicast_address_.release();
-//	SingleMulticastAddress::instance()->release(multicast_ip_);
 }
 bool MediaSession::addSource(MediaChannelId channel_id, MediaSource* source)
 {
@@ -57,7 +56,7 @@ bool MediaSession::addSource(MediaChannelId channel_id, MediaSource* source)
 						iter2 != packets.end()) {
 				  count++;
 				  ret = iter->sendRtpPacket(channel_id, iter2->second);
-				  if (multicasting_ && ret == 0) {
+				  if (multicast_on_ && ret == 0) {
 					  break;
 				  }
 			  }
@@ -76,7 +75,7 @@ bool MediaSession::removeSource(MediaChannelId channel_id)
 }
 bool MediaSession::startMulticast()
 {
-	if (multicasting_) {
+	if (multicast_on_) {
 		return true;
 	}
 	if (multicast_address_.ip().empty()) {
@@ -88,7 +87,7 @@ bool MediaSession::startMulticast()
 	multicast_address_.addPort(htons(rd() & 0xFFFE));
 	multicast_address_.addPort(htons(rd() & 0xFFFE));
 
-	multicasting_ = true;
+	multicast_on_ = true;
 	return true;
 }
 
@@ -125,7 +124,7 @@ std::string MediaSession::getSdpMessage(const std::string& ip, std::string sessi
 						 session_name.c_str());
 	}
 
-	if (multicasting_) {
+	if (multicast_on_) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
 						 "a=type:broadcast\r\n"
 						 "a=rtcp-unicast: reflection\r\n");
@@ -133,7 +132,7 @@ std::string MediaSession::getSdpMessage(const std::string& ip, std::string sessi
 
 	for (uint32_t chn = 0; chn < media_sources_.size(); chn++) {
 		if (media_sources_[chn]) {
-			if (multicasting_) {
+			if (multicast_on_) {
 				//buf += fmt::vformat("{:s}\r\n", media_sources_[chn]->getMediaDescription(
 				//					multicast_address_.port(chn)));
 				snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
@@ -230,7 +229,7 @@ MediaSession::MediaSession(std::string url_suffix) :
   media_sources_(kMaxMediaChannel),
 	buffers_(kMaxMediaChannel),
 	multicast_address_("", kMaxMediaChannel),
-	session_id_(generator_.load().next())
+	session_id_(generator_.next())
 {
 }
 NAMESPACE_END(net)

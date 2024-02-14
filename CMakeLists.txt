@@ -73,7 +73,7 @@ file(GLOB_RECURSE
         CONFIGURE_DEPENDS
         "src/core/net/*.cpp"
         "src/core/util/*.cpp"
-        # "src/core/multimedia/*.cpp"
+        "src/core/multimedia/*.cpp"
         "src/core/config/*.cpp"
 )
 message(STATUS "SRC FILES: ${CoreSrcs}")
@@ -104,7 +104,6 @@ target_link_libraries(${PROJECT_NAME}
         ${FFMPEG_LIBRARIES}
         range-v3
 )
-
 target_compile_features(${PROJECT_NAME}
     PUBLIC
         cxx_std_17

@@ -14,14 +14,14 @@ public:
   virtual ~AudioCapture();
 
   bool init(uint32_t buffer_size = 20480);
-  void destroy();
+  bool destroy();
 
   int read(uint8_t *data, uint32_t samples);
 
   int getSamples() const {
     return audio_buffer_->size() * 8 / bits_per_sample_ / channels_;
   }
-  uint32_t getSamplerate() const { return sample_rate_; }
+  uint32_t getSampleRate() const { return sample_rate_; }
   uint32_t getChannels() const { return channels_; }
   uint32_t getBitsPerSample() const { return bits_per_sample_; }
   bool isCaptureStarted() const { return started_; }

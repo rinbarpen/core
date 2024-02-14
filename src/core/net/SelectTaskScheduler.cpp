@@ -27,7 +27,6 @@ void SelectTaskScheduler::updateChannel(FdChannel::ptr pChannel)
 	Mutex::lock locker(mutex_);
 
 	sockfd_t fd = pChannel->getSockfd();
-
 	if (channels_.find(fd) != channels_.end()) {
 		if (pChannel->isNoneEvent()) {
 			is_fd_read_reset_ = true;
@@ -88,9 +87,9 @@ bool SelectTaskScheduler::handleEvent(std::chrono::milliseconds timeout)
 		}
 
 		Mutex::lock locker(mutex_);
-		for (auto &[_, pChannel] : channels_) {
-			int events = pChannel->getEvents();
-			sockfd_t fd = pChannel->getSockfd();
+		for (auto &[_, channel] : channels_) {
+			int events = channel->getEvents();
+			sockfd_t fd = channel->getSockfd();
 
 			if (is_fd_read_reset_ && (events & EVENT_IN)) {
 				FD_SET(fd, &fd_read);
@@ -164,9 +163,9 @@ bool SelectTaskScheduler::handleEvent(std::chrono::milliseconds timeout)
 	if (ret > 0) {
 		ILOG_DEBUG(g_net_logger) << "There is some events";
 		Mutex::lock locker(mutex_);
-		for (auto &[_, pChannel] : channels_) {
+		for (auto &[_, channel] : channels_) {
 			int events = 0;
-			sockfd_t fd = pChannel->getSockfd();
+			sockfd_t fd = channel->getSockfd();
 
 			if (FD_ISSET(fd, &fd_read)) {
 				events |= EVENT_IN;
@@ -181,14 +180,14 @@ bool SelectTaskScheduler::handleEvent(std::chrono::milliseconds timeout)
 			}
 
 			if (events != 0) {
-				event_list.emplace_front(pChannel, events);
+				event_list.emplace_front(channel, events);
 			}
 		}
 	}
 
-	for (auto &[pChannel, events] : event_list) {
-		ILOG_INFO(g_net_logger) << "Handle Event: " << pChannel->getSockfd() << ":" << events;
-		pChannel->handleEvent(events);
+	for (auto &[channel, events] : event_list) {
+		ILOG_INFO(g_net_logger) << "Handle Event: " << channel->getSockfd() << ":" << events;
+		channel->handleEvent(events);
 	}
 
 	return true;

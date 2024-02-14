@@ -5,7 +5,6 @@
 #include <core/net/NetAddress.h>
 
 LY_NAMESPACE_BEGIN
-
 NAMESPACE_BEGIN(net)
 
 using namespace std::literals;
@@ -72,5 +71,4 @@ protected:
 };
 
 NAMESPACE_END(net)
-
 LY_NAMESPACE_END

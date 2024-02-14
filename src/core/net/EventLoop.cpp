@@ -1,6 +1,6 @@
-#include "core/util/thread/ThreadPool.h"
-#include <core/net/EventLoop.h>
 #include <memory>
+#include <core/util/thread/ThreadPool.h>
+#include <core/net/EventLoop.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -30,8 +30,8 @@ void EventLoop::start()
 }
 void EventLoop::stop()
 {
-  for (auto pTaskScheduler : task_schedulers_) {
-    pTaskScheduler->stop();
+  for (auto task_scheduler : task_schedulers_) {
+    task_scheduler->stop();
   }
   pool_->stop();
 
@@ -51,19 +51,16 @@ bool EventLoop::addTriggerEvent(TriggerEvent callback)
 {
 	Mutex::lock locker(mutex_);
   return task_schedulers_[current_task_scheduler_]->addTriggerEvent(callback);
-	return false;
 }
 bool EventLoop::addTriggerEventForce(TriggerEvent callback, std::chrono::milliseconds timeout)
 {
 	Mutex::lock locker(mutex_);
   return task_schedulers_[current_task_scheduler_]->addTriggerEventForce(callback, timeout);
-	return false;
 }
 TimerTaskId EventLoop::addTimer(TimerTask timerTask)
 {
 	Mutex::lock locker(mutex_);
   return task_schedulers_[current_task_scheduler_]->addTimer(timerTask);
-	return kInvalidTimerId;
 }
 void EventLoop::removeTimer(TimerTaskId timerTaskId)
 {

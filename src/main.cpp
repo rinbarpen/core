@@ -22,117 +22,25 @@
 #include <core/net/EventLoop.h>
 #include <core/net/tcp/TcpServer.h>
 
-// #include <core/multimedia/ffmpeg/ffmpeg_util.h>
-// #include "core/multimedia/net/rtsp/RtspPusher.h"
-// #include "core/multimedia/net/rtsp/RtspServer.h"
+// #include <core/multimedia/ffmpeg/FFmpegUtil.h>
+// #include <core/multimedia/net/rtsp/RtspPusher.h>
+// #include <core/multimedia/net/rtsp/RtspServer.h>
 
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
 #include <range/v3/algorithm.hpp>
-#include <range/v3/all.hpp>
 #include <range/v3/range.hpp>
 #include <range/v3/view.hpp>
-
-
+#include <range/v3/all.hpp>
 
 using namespace ly;
 using namespace lynet;
 using namespace ly::literals;
 using namespace std::literals;
 
-void test_logger() {
-  auto test_logger = LogIniter::getLogger(
-    "test", LogLevel::LTRACE, kDefaultFormatPattern, false);
-
-  ILOG_TRACE_FMT(test_logger, "{}", "x"sv * 3);
-  ILOG_DEBUG_FMT(test_logger, "{}", "x"sv * 3);
-  ILOG_INFO_FMT(test_logger, "{}", "x"sv * 3);
-  ILOG_WARN_FMT(test_logger, "{}", "x"sv * 3);
-  ILOG_ERROR_FMT(test_logger, "{}", "x"sv * 3);
-  ILOG_CRITICAL_FMT(test_logger, "{}", "x"sv * 3);
-  ILOG_FATAL_FMT(test_logger, "{}", "x"sv * 3);
-}
-
-void test_time() {
-  auto t = Clock<T_system_clock>::now();
-  auto ts = Timestamp<T_system_clock>();
-
-  LOG_DEBUG_FMT("Current: {}", time2datetime(ts));
-  LOG_DEBUG_FMT("Current: {} <=> {}", t, ts.count());
-
-  std::this_thread::sleep_for(1000ms);
-
-  auto duration = TimestampDuration<>::castTo<T_system_clock>(
-    ts.current(), Clock<T_system_clock>::tp());
-  auto h = TimestampDuration(1h);
-  auto s = h.cast<std::chrono::seconds>();
-  LOG_DEBUG_FMT(
-    "Duration: {} -> {} -> {}", duration.count(), h.count(), s.count());
-}
-
-void test_load_library() {
-  Library library;
-  auto loaded = library.load("sqlite3");
-  if (loaded)
-  {
-    LOG_DEBUG() << "Load sqlite3 successfully";
-  }
-  else
-  {
-    LOG_DEBUG() << "Load sqlite3 faulty";
-  }
-}
-
-void test_tcp() {
-  lynet::EventLoop event_loop(g_config.common.threadpool.thread_num);
-
-  lynet::TcpServer tcp_server(&event_loop);
-  tcp_server.start("192.168.146.136", 8080, 1000);
-
-  while (true)
-    ;
-}
-
 #include <GLFW/glfw3.h>
 #include <libyuv.h>
-
-
-void init() {
-  // ffmpeg init
-  // lyffmpeg::reg_ffmpeg(lyffmpeg::RegFlag::ALL);
-  //
-  log_load_config();
-  LogIniter::getLogger(
-    "system", LogLevel::LDEBUG, kDefaultFormatPattern, false);
-  LogIniter::getLogger(
-    "system.fiber", LogLevel::LDEBUG, kDefaultFormatPattern, false);
-  LogIniter::getLogger(
-    "multimedia", LogLevel::LDEBUG, kDefaultFormatPattern, false);
-  LogIniter::getLogger("net", LogLevel::LDEBUG, kDefaultFormatPattern, false);
-  LogIniter::getLogger(
-    "app.screenlive", LogLevel::LDEBUG, kDefaultFormatPattern, false);
-}
-
-void range_test() {
-  auto v = ranges::views::iota(1);
-  for (auto _ : v | ranges::views::take(10) | ranges::views::reverse
-                  | ranges::views::drop(4))
-  {
-    LOG_DEBUG() << _;
-  }
-  std::map<int, std::string> map1;
-  for (int i = 0; i < 10; ++i) map1[i] = std::to_string(-i);
-  for (auto &[k, v] : map1 | ranges::views::take(4) | ranges::views::reverse)
-  {
-    LOG_DEBUG() << k << " => " << v;
-  }
-
-  auto c = ranges::count(v, 6);
-  auto b = ranges::any_of(v, [](auto x) { return x == 6; });
-  b = ranges::all_of(v, [](auto x) { return x == 6; });
-  b = ranges::none_of(v, [](auto x) { return x == 6; });
-}
 
 // void rtsp_server_on() {
 //   EventLoop event_loop;
@@ -146,23 +54,6 @@ void range_test() {
 //   }
 //   rtsp_server.stop();
 // }
-
-void threadpool_test() {
-  try
-  {
-    ThreadPool pool;
-    (void) pool.submit([&]() {
-      Record::record("test_logger", &test_logger);
-      fmt::println("");
-    });
-    (void) pool.submit([&]() {
-      Record::record("test_time", &test_time);
-      fmt::println("");
-    });
-  }
-  catch (std::exception &e)
-  { LOG_FATAL() << e.what(); }
-}
 
 int main() {
 #ifdef __WIN__

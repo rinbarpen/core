@@ -19,39 +19,43 @@
 
 #pragma once
 
-#include <cstdarg>
-#include <string>
 #include <chrono>
-#include <sstream>
-#include <fstream>
+#include <cstdarg>
 #include <functional>
 #include <future>
-#include <memory>
+#include <fstream>
 #include <list>
-#include <mutex>
+#include <memory>
+#include <sstream>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
 #include <core/util/marcos.h>
-#include <core/config/config.h>
+#include <core/util/Mutex.h>
 
 #include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
 #ifdef LOG_MORE_FUNCTION_INFO_ENABLED
-#define LY_FUNC __PRETTY_FUNCTION__
+# define LY_FUNC __PRETTY_FUNCTION__
 #else
-#define LY_FUNC __func__
+# define LY_FUNC __func__
 #endif
 
 #define __LogEventGen(level, timestamp) \
-  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, LY_FUNC, timestamp)
+  std::make_shared<::ly::LogEvent>(     \
+    level, __FILE__, __LINE__, LY_FUNC, timestamp)
 
-#define __LogEventGen2(level) \
-  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, LY_FUNC, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
+#define __LogEventGen2(level)                                          \
+  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, LY_FUNC, \
+    std::chrono::duration_cast<std::chrono::milliseconds>(             \
+      std::chrono::system_clock::now().time_since_epoch())             \
+      .count())
 
 #define __LogEventWrapperGen(pLogger, level, timestamp) \
-  std::make_shared<::ly::LogEventWrapper>(__LogEventGen(level, timestamp), pLogger)
+  std::make_shared<::ly::LogEventWrapper>(              \
+    __LogEventGen(level, timestamp), pLogger)
 
 #define __LogEventWrapperGen2(pLogger, level) \
   std::make_shared<::ly::LogEventWrapper>(__LogEventGen2(level), pLogger)
@@ -59,71 +63,85 @@
 #define __LOG_STREAM(pLogger, level) \
   __LogEventWrapperGen2(pLogger, level)->getSS()
 
-#define LOG_ROOT() ::ly::LogManager::instance()->getRoot()
+#define LOG_ROOT()       ::ly::LogManager::instance()->getRoot()
 #define GET_LOGGER(name) ::ly::LogManager::instance()->getLogger(name)
 
-#define ILOG_TRACE_FMT(pLogger, fmt, ...) \
-  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LTRACE)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define ILOG_DEBUG_FMT(pLogger, fmt, ...) \
-  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LDEBUG)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define ILOG_INFO_FMT(pLogger, fmt, ...) \
-  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LINFO)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define ILOG_CRITICAL_FMT(pLogger, fmt, ...) \
-  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LCRITICAL)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define ILOG_WARN_FMT(pLogger, fmt, ...) \
-  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LWARN)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define ILOG_ERROR_FMT(pLogger, fmt, ...) \
-  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LERROR)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define ILOG_FATAL_FMT(pLogger, fmt, ...) \
-  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LFATAL)->getEvent()->format(fmt, ##__VA_ARGS__)
+#define ILOG_TRACE_FMT(pLogger, fmt, ...)                \
+  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LTRACE) \
+    ->getEvent()                                         \
+    ->format(fmt, ##__VA_ARGS__)
+#define ILOG_DEBUG_FMT(pLogger, fmt, ...)                \
+  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LDEBUG) \
+    ->getEvent()                                         \
+    ->format(fmt, ##__VA_ARGS__)
+#define ILOG_INFO_FMT(pLogger, fmt, ...)                \
+  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LINFO) \
+    ->getEvent()                                        \
+    ->format(fmt, ##__VA_ARGS__)
+#define ILOG_CRITICAL_FMT(pLogger, fmt, ...)                \
+  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LCRITICAL) \
+    ->getEvent()                                            \
+    ->format(fmt, ##__VA_ARGS__)
+#define ILOG_WARN_FMT(pLogger, fmt, ...)                \
+  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LWARN) \
+    ->getEvent()                                        \
+    ->format(fmt, ##__VA_ARGS__)
+#define ILOG_ERROR_FMT(pLogger, fmt, ...)                \
+  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LERROR) \
+    ->getEvent()                                         \
+    ->format(fmt, ##__VA_ARGS__)
+#define ILOG_FATAL_FMT(pLogger, fmt, ...)                \
+  __LogEventWrapperGen2(pLogger, ::ly::LogLevel::LFATAL) \
+    ->getEvent()                                         \
+    ->format(fmt, ##__VA_ARGS__)
 
 
-#define ILOG_TRACE(pLogger) \
-  __LOG_STREAM(pLogger, ::ly::LogLevel::LTRACE)
-#define ILOG_DEBUG(pLogger) \
-  __LOG_STREAM(pLogger, ::ly::LogLevel::LDEBUG)
-#define ILOG_INFO(pLogger) \
-  __LOG_STREAM(pLogger, ::ly::LogLevel::LINFO)
-#define ILOG_CRITICAL(pLogger) \
-  __LOG_STREAM(pLogger, ::ly::LogLevel::LCRITICAL)
-#define ILOG_WARN(pLogger) \
-  __LOG_STREAM(pLogger, ::ly::LogLevel::LWARN)
-#define ILOG_ERROR(pLogger) \
-  __LOG_STREAM(pLogger, ::ly::LogLevel::LERROR)
-#define ILOG_FATAL(pLogger) \
-  __LOG_STREAM(pLogger, ::ly::LogLevel::LFATAL)
+#define ILOG_TRACE(pLogger)    __LOG_STREAM(pLogger, ::ly::LogLevel::LTRACE)
+#define ILOG_DEBUG(pLogger)    __LOG_STREAM(pLogger, ::ly::LogLevel::LDEBUG)
+#define ILOG_INFO(pLogger)     __LOG_STREAM(pLogger, ::ly::LogLevel::LINFO)
+#define ILOG_CRITICAL(pLogger) __LOG_STREAM(pLogger, ::ly::LogLevel::LCRITICAL)
+#define ILOG_WARN(pLogger)     __LOG_STREAM(pLogger, ::ly::LogLevel::LWARN)
+#define ILOG_ERROR(pLogger)    __LOG_STREAM(pLogger, ::ly::LogLevel::LERROR)
+#define ILOG_FATAL(pLogger)    __LOG_STREAM(pLogger, ::ly::LogLevel::LFATAL)
 
 
-#define LOG_TRACE_FMT(fmt, ...) \
-  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LTRACE)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define LOG_DEBUG_FMT(fmt, ...) \
-  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LDEBUG)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define LOG_INFO_FMT(fmt, ...) \
-  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LINFO)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define LOG_CRITICAL_FMT(fmt, ...) \
-  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LCRITICAL)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define LOG_WARN_FMT(fmt, ...) \
-  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LWARN)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define LOG_ERROR_FMT(fmt, ...) \
-  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LERROR)->getEvent()->format(fmt, ##__VA_ARGS__)
-#define LOG_FATAL_FMT(fmt, ...) \
-  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LFATAL)->getEvent()->format(fmt, ##__VA_ARGS__)
+#define LOG_TRACE_FMT(fmt, ...)                             \
+  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LTRACE) \
+    ->getEvent()                                            \
+    ->format(fmt, ##__VA_ARGS__)
+#define LOG_DEBUG_FMT(fmt, ...)                             \
+  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LDEBUG) \
+    ->getEvent()                                            \
+    ->format(fmt, ##__VA_ARGS__)
+#define LOG_INFO_FMT(fmt, ...)                             \
+  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LINFO) \
+    ->getEvent()                                           \
+    ->format(fmt, ##__VA_ARGS__)
+#define LOG_CRITICAL_FMT(fmt, ...)                             \
+  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LCRITICAL) \
+    ->getEvent()                                               \
+    ->format(fmt, ##__VA_ARGS__)
+#define LOG_WARN_FMT(fmt, ...)                             \
+  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LWARN) \
+    ->getEvent()                                           \
+    ->format(fmt, ##__VA_ARGS__)
+#define LOG_ERROR_FMT(fmt, ...)                             \
+  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LERROR) \
+    ->getEvent()                                            \
+    ->format(fmt, ##__VA_ARGS__)
+#define LOG_FATAL_FMT(fmt, ...)                             \
+  __LogEventWrapperGen2(LOG_ROOT(), ::ly::LogLevel::LFATAL) \
+    ->getEvent()                                            \
+    ->format(fmt, ##__VA_ARGS__)
 
 
-#define LOG_TRACE() \
-  __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LTRACE)
-#define LOG_DEBUG() \
-  __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LDEBUG)
-#define LOG_INFO() \
-  __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LINFO)
-#define LOG_CRITICAL() \
-  __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LCRITICAL)
-#define LOG_WARN() \
-  __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LWARN)
-#define LOG_ERROR() \
-  __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LERROR)
-#define LOG_FATAL() \
-  __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LFATAL)
+#define LOG_TRACE()    __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LTRACE)
+#define LOG_DEBUG()    __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LDEBUG)
+#define LOG_INFO()     __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LINFO)
+#define LOG_CRITICAL() __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LCRITICAL)
+#define LOG_WARN()     __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LWARN)
+#define LOG_ERROR()    __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LERROR)
+#define LOG_FATAL()    __LOG_STREAM(LOG_ROOT(), ::ly::LogLevel::LFATAL)
 
 
 LY_NAMESPACE_BEGIN
@@ -154,27 +172,6 @@ inline constexpr const char *kBriefFormatPattern =
   "$CHAR:\t$CHAR:[$LOG_LEVEL$CHAR:]"
   "$CHAR:\t$MESSAGE$CHAR:\n";
 
-
-/**
- * $MESSAGE
- * $LOG_LEVEL
- * $LOG_NAME
- * $CHAR:\n
- * $CHAR:\t
- * $CHAR:[
- * $CHAR:]
- * $DATETIME
- * $LINE
- * $FILENAME
- *
- *
- *  "$DATETIME{%Y-%m-%d %H:%M:%S}"
- *  "$CHAR:\t$THREAD_NAME$CHAR:[$THREAD_ID:%FIBER_ID$CHAR:]"
- *  "$CHAR:\t$LOG_NAME$CHAR:[$LOG_LEVEL$CHAR:]"
- *  "$CHAR:\t$FILENAME$CHAR::$LINE"
- *  "$CHAR:\t$FUNCTION_NAME"
- *  "$CHAR:\t$MESSAGE$CHAR:\n"
- **/
 class LogLevel
 {
 public:
@@ -192,35 +189,29 @@ public:
     /* CUSTOM */
   };
 
-  LogLevel(LogLevel::Level level = LUNKNOWN)
-    : level_(level)
-  {}
+  LogLevel(LogLevel::Level level = LUNKNOWN) : level_(level) {}
 
   Level level() const { return level_; }
-	std::string toString() const
-	{
-    switch (level_)
-    {
+  std::string toString() const {
+    switch (level_) {
 #define XX(x) \
-    case LogLevel::Level::L##x: \
-      return #x;
+  case LogLevel::Level::L##x: return #x;
 
-    XX(TRACE)
-    XX(DEBUG)
-    XX(INFO)
-    XX(CRITICAL)
-    XX(WARN)
-    XX(ERROR)
-    XX(FATAL)
+      XX(TRACE)
+      XX(DEBUG)
+      XX(INFO)
+      XX(CRITICAL)
+      XX(WARN)
+      XX(ERROR)
+      XX(FATAL)
 #undef XX
 
     case LogLevel::Level::LUNKNOWN:
-    default:
-      return "NONE";
+    default: return "NONE";
     }
 
     LY_UNREACHABLE();
-	}
+  }
 
   bool operator<(const LogLevel &rhs) const { return level_ < rhs.level_; }
   bool operator>(const LogLevel &rhs) const { return !(*this <= rhs); }
@@ -229,10 +220,11 @@ public:
   bool operator==(const LogLevel &rhs) const { return level_ == rhs.level_; }
   bool operator!=(const LogLevel &rhs) const { return !(*this == rhs); }
 
-	static LogLevel fromString(const std::string &str)
-	{
-#define XX(x)                 \
-  if (str == #x) { return LogLevel(L##x); }
+  static LogLevel fromString(const std::string &str) {
+#define XX(x)              \
+  if (str == #x) {         \
+    return LogLevel(L##x); \
+  }
 
     XX(TRACE)
     XX(DEBUG)
@@ -244,7 +236,7 @@ public:
 #undef XX
 
     return LogLevel(LUNKNOWN);
-	}
+  }
 
 private:
   Level level_;
@@ -264,15 +256,15 @@ struct LogColorConfig
     DEEP_RED = 7,
   };
 
-  const char * const colors[8] = {
-    "\033[0m",  // END
-    "\033[31m", // Red
-    "\033[32m", // Green
-    "\033[33m", // Yellow
-    "\033[34m", // Blue
-    "\033[35m", // Purple
-    "\033[36m", // Cyan
-    "\033[31;2m", // Deep Red
+  const char *const colors[8] = {
+    "\033[0m",     // END
+    "\033[31m",    // Red
+    "\033[32m",    // Green
+    "\033[33m",    // Yellow
+    "\033[34m",    // Blue
+    "\033[35m",    // Purple
+    "\033[36m",    // Cyan
+    "\033[31;2m",  // Deep Red
   };
 
   int LOG_END = END;
@@ -284,10 +276,7 @@ struct LogColorConfig
   int LOG_LEVEL_ERROR = RED;
   int LOG_LEVEL_FATAL = DEEP_RED;
 
-  const char *getColor(int type) const
-  {
-    return colors[type];
-  }
+  const char *getColor(int type) const { return colors[type]; }
 };
 
 class Logger;
@@ -297,9 +286,8 @@ class LogEvent
 public:
   using ptr = std::shared_ptr<LogEvent>;
 
-  LogEvent(LogLevel level,
-    const std::string &filename, int32_t line, const std::string &functionName,
-    int64_t timestamp,
+  LogEvent(LogLevel level, const std::string &filename, int32_t line,
+    const std::string &functionName, int64_t timestamp,
     LogColorConfig config = LogColorConfig());
 
   std::string getFilename() const { return filename_; }
@@ -308,8 +296,8 @@ public:
   int64_t getTimestamp() const { return timestamp_; }
   std::string getContent() const { return ss_.str(); }
   // TODO: add thread id and process id
-  //std::thread::id getThreadId() const { return std::this_thread::get_id(); }
-  //int getProcessId() const {}
+  // std::thread::id getThreadId() const { return std::this_thread::get_id(); }
+  // int getProcessId() const {}
 
   LogLevel getLevel() const { return level_; }
   LogColorConfig getColorConfig() const { return color_config_; }
@@ -318,15 +306,13 @@ public:
 #ifdef FMT_VERSION
   // fmt-style
   template <typename... Args>
-  void format(::fmt::string_view fmt, Args&&... args)
-  {
+  void format(::fmt::string_view fmt, Args &&...args) {
     ss_ << ::fmt::format(fmt, std::forward<Args>(args)...);
   }
 #else
   // c-style
   template <typename... Args>
-  void format(::std::string_view fmt, Args&&... args)
-  {
+  void format(::std::string_view fmt, Args &&...args) {
     char buf[256];
     snprintf(buf, 256, fmt.data(), std::forward<Args>(args)...);
     ss_ << std::string(buf);
@@ -342,12 +328,14 @@ private:
   LogColorConfig color_config_;
 };
 
-struct LogFormatterItem {
+struct LogFormatterItem
+{
   using ptr = std::shared_ptr<LogFormatterItem>;
 
   virtual ~LogFormatterItem() = default;
 
-  virtual void format(std::ostream &os, LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) = 0;
+  virtual void format(std::ostream &os, LogEvent::ptr pLogEvent,
+    std::shared_ptr<Logger> pLogger) = 0;
 };
 
 class LogFormatter
@@ -358,28 +346,31 @@ protected:
   static constexpr int FORMAT_FN_ARG_LOC = 1;
   static constexpr int STATUS_CODE_LOC = 2;
 
-  enum {
+  enum
+  {
     PARSE_OK = 0,
     PARSE_ERROR = 1,
   };
 
   using PatArgsWrapper = std::tuple<std::string, std::string, int>;
+
 public:
   using ptr = std::shared_ptr<LogFormatter>;
 
   LogFormatter(const std::string &pattern = kDefaultFormatPattern);
 
   std::string format(LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger);
-  std::ostream &format(std::ostream &os, LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger);
+  std::ostream &format(
+    std::ostream &os, LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger);
 
-  bool hasError() const { return hasError_; }
+  bool hasError() const { return has_error_; }
   std::string lastError() const { return error_; }
   std::string getPattern() const { return pattern_; }
 
   auto toYaml() const -> YAML::Node;
 
 private:
-  PatArgsWrapper parsePatToken(const std::string& patToken);
+  PatArgsWrapper parsePatToken(const std::string &patToken);
 
   void init();
 
@@ -387,7 +378,7 @@ private:
   std::string pattern_;
   std::vector<LogFormatterItem::ptr> items_;
   std::string error_;
-  bool hasError_{false};
+  bool has_error_{false};
 };
 
 class LogAppender
@@ -401,18 +392,18 @@ public:
   virtual void log(LogEvent::ptr pEvent, std::shared_ptr<Logger> pLogger) = 0;
 
   void setFormatter(LogFormatter::ptr pFormatter);
-
-  LogFormatter::ptr getFormatter();
+  LogFormatter::ptr getFormatter() const;
 
   LogLevel getLevel() const { return level_; }
   void setLevel(LogLevel level) { level_ = level; }
 
   virtual auto toYaml() const -> YAML::Node = 0;
+
 protected:
   LogLevel level_{LogLevel::LTRACE};
-  bool hasFormatter_{false};
-  std::mutex mutex_;
-  LogFormatter::ptr pFormatter_;
+  LogFormatter::ptr formatter_;
+
+  mutable Mutex::type mutex_;
 };
 
 class FileLogAppender : public LogAppender
@@ -420,56 +411,50 @@ class FileLogAppender : public LogAppender
 public:
   using ptr = std::shared_ptr<FileLogAppender>;
 
-	FileLogAppender(const std::string &filename);
+  FileLogAppender(const std::string &filename);
   virtual ~FileLogAppender() override = default;
 
-  virtual void log(LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) override;
-
+  virtual void log(
+    LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) override;
   bool reopen();
-
   auto toYaml() const -> YAML::Node override;
 
 private:
   std::string getWholeFilename();
 
-protected:
-  uint64_t& kMaxLines = g_config.common.logger.max_file_line;
 private:
   /* real filename: filename_ + "_" + current_day + "_" + cnt{02d} + ".log" */
   std::string filename_;
-  std::ofstream filestream_;
-  uint64_t lastAccessTime_{0};
+  std::ofstream file_stream_;
+  uint64_t last_access_time_{0};
   uint64_t lines_{0};
-  uint8_t cnt_{0};  // cnt_ incr when lines_ encounters kMaxLines
+  uint8_t cnt_{0};  // cnt_ incr when lines_ encounters max lines
   int today_;
 };
-class AsyncFileLogAppender : public LogAppender {
+class AsyncFileLogAppender : public LogAppender
+{
 public:
   using ptr = std::shared_ptr<AsyncFileLogAppender>;
 
   AsyncFileLogAppender(const std::string &filename);
   virtual ~AsyncFileLogAppender() override = default;
 
-  virtual void log(LogEvent::ptr pLogEvent,
-                   std::shared_ptr<Logger> pLogger) override;
+  virtual void log(
+    LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) override;
 
   auto toYaml() const -> YAML::Node override;
+
 private:
-  bool reopen(struct tm* tm);
-
+  bool reopen(struct tm *tm);
   std::string getWholeFilename(struct tm *tm) const;
-
   void reopenNewFileIfShould(int64_t timestamp);
-
-protected:
-  uint64_t& kMaxLines = g_config.common.logger.max_file_line;
 
 private:
   /* real filename: filename_ + "_" + current_day + "_" + cnt{02d} + ".log" */
   std::string filename_;
-  std::ofstream filestream_;
+  std::ofstream file_stream_;
   uint64_t lines_{0};
-  uint8_t cnt_{0}; // cnt_ incr when lines_ encounters kMaxLines
+  uint8_t cnt_{0};  // cnt_ incr when lines_ encounters max lines
   int today_{0};
 };
 class StdoutLogAppender : public LogAppender
@@ -477,18 +462,18 @@ class StdoutLogAppender : public LogAppender
 public:
   using ptr = std::shared_ptr<StdoutLogAppender>;
 
-	StdoutLogAppender() = default;
+  StdoutLogAppender() = default;
   virtual ~StdoutLogAppender() override = default;
 
-  virtual void log(LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) override;
+  virtual void log(
+    LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) override;
   auto toYaml() const -> YAML::Node override;
-
 };
 
 class Logger : public std::enable_shared_from_this<Logger>
 {
 public:
-	using ptr = std::shared_ptr<Logger>;
+  using ptr = std::shared_ptr<Logger>;
 
   Logger(const std::string &name = "root");
   Logger(const std::string &name, LogLevel level, std::string pattern);
@@ -513,34 +498,33 @@ public:
 
   Logger::ptr getLogger() { return root_; }
   void setLogger(Logger::ptr pLogger) { root_ = pLogger; }
+
 private:
   std::string name_;
   LogLevel level_{LogLevel::Level::LDEBUG};
-  mutable std::mutex mutex_;
   std::list<LogAppender::ptr> appenders_;
-  LogFormatter::ptr pFormatter_;
+  LogFormatter::ptr formatter_;
   Logger::ptr root_;
+
+  mutable Mutex::type mutex_;
 };
 
 
-class LogEventWrapper {
+class LogEventWrapper
+{
 public:
   using ptr = std::shared_ptr<LogEventWrapper>;
 
   LogEventWrapper(LogEvent::ptr pEvent, Logger::ptr pLogger);
+  ~LogEventWrapper() { logger_->log(event_); }
 
-  ~LogEventWrapper()
-  {
-    pLogger_->log(pEvent_);
-  }
-
-  LY_NODISCARD LogEvent::ptr getEvent() const { return pEvent_; }
-  LY_NODISCARD Logger::ptr getLogger() const { return pLogger_; }
-  std::stringstream &getSS() { return pEvent_->getSS(); }
+  LY_NODISCARD LogEvent::ptr getEvent() const { return event_; }
+  LY_NODISCARD Logger::ptr getLogger() const { return logger_; }
+  std::stringstream &getSS() { return event_->getSS(); }
 
 private:
-  LogEvent::ptr pEvent_;
-  Logger::ptr pLogger_;
+  LogEvent::ptr event_;
+  Logger::ptr logger_;
 };
 
 class LogManager
@@ -548,12 +532,10 @@ class LogManager
 public:
   using ptr = std::shared_ptr<LogManager>;
 
-  static LogManager *instance()
-  {
+  static LogManager *instance() {
     static LogManager *manager = new LogManager();
     return manager;
   }
-
   ~LogManager() = default;
 
   Logger::ptr getLogger(const std::string &name);
@@ -568,7 +550,7 @@ public:
 private:
   LogManager();
 
-  std::mutex mutex_;
+  Mutex::type mutex_;
   std::unordered_map<std::string, Logger::ptr> loggers_;
   Logger::ptr root_;
 };
@@ -579,31 +561,33 @@ public:
   /* the appender's formatter is the same as the logger */
   static Logger::ptr getLogger(
     /* logger */
-    const std::string &logName, LogLevel logLevel,
+    const std::string &log_name, LogLevel log_level,
     /* formatter */
-    const std::string &formatPattern = kDefaultFormatPattern,
+    const std::string &format_pattern = kDefaultFormatPattern,
     /* appender */
-    bool write2file = true, const std::string &filename = "x", bool async = false);
+    bool write2file = true, const std::string &filename = "x",
+    bool async = false);
 
   static void loadYamlFile(std::string_view filename);
-
   static void loadYamlNode(YAML::Node node);
 };
 
-/* LogIniter::getLogger("sample", "LogLevel::Level::LDEBUG",
- *                      kDefaultFormatPattern, true,
+/*
+ * LogIniter::getLogger("sample",
+ *                      "LogLevel::Level::LDEBUG",
+ *                      kDefaultFormatPattern,
+ *                      true,
  *                      "sample")
  *
  * sample_${DATE}_${COUNT}.log
+ *
  */
 
-static void log_export_config()
-{
+static void log_export_config() {
   LogManager::instance()->toYamlFile("config.yml");
 }
 
-static void log_load_config()
-{
+static void log_load_config() {
   LogIniter::loadYamlFile("config.yml");
 }
 

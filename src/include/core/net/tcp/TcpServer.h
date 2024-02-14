@@ -1,9 +1,10 @@
 #pragma once
 
 #include <unordered_map>
-#include <core/net/tcp/TcpConnection.h>
-#include <core/net/Acceptor.h>
+
 #include <core/util/Mutex.h>
+#include <core/net/Acceptor.h>
+#include <core/net/tcp/TcpConnection.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -11,7 +12,7 @@ NAMESPACE_BEGIN(net)
 class TcpServer
 {
 public:
-  TcpServer(EventLoop *eventLoop);
+  explicit TcpServer(EventLoop *eventLoop);
   virtual ~TcpServer();
 
   virtual bool start(const char *ip, uint16_t port, int max_backlog);
@@ -25,7 +26,6 @@ protected:
   virtual void addConnection(sockfd_t fd, TcpConnection::ptr conn);
   virtual void removeConnection(sockfd_t fd);
 
-  // TcpServerEnv &env_;
   EventLoop *event_loop_;
   std::unique_ptr<Acceptor> acceptor_;
 
@@ -36,5 +36,4 @@ protected:
 };
 
 NAMESPACE_END(net)
-
 LY_NAMESPACE_END

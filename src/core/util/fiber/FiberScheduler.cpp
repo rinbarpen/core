@@ -1,6 +1,9 @@
+#include "core/config/config.h"
 #include <core/util/fiber/FiberScheduler.h>
 
 LY_NAMESPACE_BEGIN
+static auto g_max_fiber_capacity_per_scheduler = LY_CONFIG_GET(common.fiber.max_fiber_capacity_per_scheduler);
+
 FiberScheduler::FiberScheduler()
 {
   main_fiber_ = std::make_shared<Fiber>(this);
@@ -10,7 +13,7 @@ FiberScheduler::FiberScheduler()
 FiberScheduler::~FiberScheduler()
 {
   RWMutex::wlock locker(rwmutex_);
-  for (auto &[_, pFiber] : fibers_) {
+  for (auto &[_, pFiber] : activate_list_) {
     // pFiber->yield();
     pFiber.reset();
   }
@@ -22,8 +25,8 @@ void FiberScheduler::resume(FiberId fid)
   if (currentFiberId() == fid) return;
 
   RWMutex::wlock locker(rwmutex_);
-  if (auto it = fibers_.find(fid);
-      it != fibers_.end())
+  if (auto it = activate_list_.find(fid);
+      it != activate_list_.end())
   {
     this->yield();
     it->second->resume();
@@ -39,11 +42,16 @@ void FiberScheduler::yield()
 
 auto FiberScheduler::track(std::shared_ptr<Fiber> pFiber) -> bool
 {
+  if (activate_list_.size() >= g_max_fiber_capacity_per_scheduler) {
+    return false;
+  }
+
   if (pFiber && pFiber->getStatus() == FiberStatus::RUNNABLE) {
     RWMutex::wlock locker(rwmutex_);
-    if (auto it = fibers_.find(pFiber->id()); it == fibers_.end())
+    if (auto it = activate_list_.find(pFiber->id());
+        it == activate_list_.end())
     {
-      fibers_.emplace(pFiber->id(), pFiber);
+      activate_list_.emplace(pFiber->id(), pFiber);
       return true;
     }
   }
@@ -53,10 +61,10 @@ auto FiberScheduler::track(std::shared_ptr<Fiber> pFiber) -> bool
 auto FiberScheduler::untrack(FiberId fid) -> bool
 {
   RWMutex::wlock locker(rwmutex_);
-  if (auto it = fibers_.find(fid);
-      it != fibers_.end())
+  if (auto it = activate_list_.find(fid);
+      it != activate_list_.end())
   {
-    fibers_.erase(it);
+    activate_list_.erase(it);
     return true;
   }
 
@@ -76,7 +84,7 @@ auto FiberScheduler::currentFiber() const -> Fiber::ptr
 auto FiberScheduler::count() const -> size_t
 {
   RWMutex::rlock locker(rwmutex_);
-  return fibers_.size();
+  return activate_list_.size();
 }
 
 auto FiberScheduler::totalCount() -> uint64_t { return s_total_count; }

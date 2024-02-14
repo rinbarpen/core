@@ -11,12 +11,10 @@ public:
 
   virtual std::string getAttribute() override;
   virtual std::string getMediaDescription(uint16_t port) const override;
-
-  static uint32_t getTimestamp(uint32_t sample_rate = 44100);
-
   uint32_t getSampleRate() const { return sample_rate_; }
 
   bool handleFrame(MediaChannelId channel_id, SimAVFrame frame) override;
+  static uint32_t getTimestamp(uint32_t sample_rate = 44100);
 
 private:
   AACSource(uint32_t sample_rate, uint32_t channels, bool adts_mode);

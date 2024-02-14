@@ -1,8 +1,8 @@
 #pragma once
 #include <cstdint>
 
-#include "core/util/Mutex.h"
-#include "core/util/marcos.h"
+#include <core/util/marcos.h>
+#include <core/util/Mutex.h>
 
 LY_NAMESPACE_BEGIN
 class AudioBuffer
@@ -25,10 +25,11 @@ public:
 
   size_t capacity() const { return capacity_; }
 
+  LY_NONCOPYABLE(AudioBuffer);
 private:
   size_t readableBytesNoLock() const { return write_pos_ - read_pos_; }
   size_t writableBytesNoLock() const { return capacity_ - write_pos_; }
-  size_t sizeNoLock() const { return writableBytes(); }
+  size_t sizeNoLock() const { return writableBytesNoLock(); }
 
   uint8_t* peekNoLock() const { return buffer_ + read_pos_; }
 

@@ -44,25 +44,24 @@
 #include <memory>
 #include <stdexcept>
 
+#define LY_AUTHOR  LpoutYoumu
+#define LY_VERSION 0.1
 
-
-#define LY_AUTHOR    LpoutYoumu
-#define LY_VERSION   0.1
-
-#define LY_ASSERT(x) assert(x)
-#define LY_ASSERT2(x, detail)                             \
-  do {                                                    \
-    if (!(x))                                             \
-    {                                                     \
-      static auto system_logger = GET_LOGGER("system"); \
-      ILOG_FATAL(system_logger) << (detail);            \
-      std::abort();                                       \
-    }                                                     \
+#define LY_ASSERT(x) \
+  do {               \
+    assert(x);       \
+  } while (0)
+#define LY_ASSERT2(x, detail)                                       \
+  do {                                                              \
+    if (!(x)) {                                                     \
+      static auto system_logger = GET_LOGGER("system");             \
+      ILOG_FATAL(system_logger) << (detail);                        \
+      std::abort();                                                 \
+    }                                                               \
   } while (0)
 #define LY_ASSERT3(x, detail)           \
   do {                                  \
-    if (!(x))                           \
-    {                                   \
+    if (!(x)) {                         \
       throw std::runtime_error(detail); \
     }                                   \
   } while (0)
@@ -89,6 +88,8 @@ class UnreachableException : public ::std::runtime_error
 {
 public:
   UnreachableException(const char *msg) : ::std::runtime_error(msg) {}
+  UnreachableException(std::string msg) : ::std::runtime_error(msg.c_str()) {}
+  UnreachableException(std::string_view msg) : ::std::runtime_error(msg.data()) {}
 };
 }  // namespace detail
 
@@ -121,10 +122,9 @@ public:
 #define LY_UNUSED     [[maybe_unused]]
 #define LY_NODISCARD  [[nodiscard]]
 #define LY_DEPRECATED [[deprecated]]
-#ifdef __CXX20
-# define LY_LIKELY   [[likely]]
-# define LY_UNLIKELY [[unlikely]]
-#elif defined(__GNUC__) || defined(__llvm__)
+#define LY_FALLTHROUGH [[fallthrough]]
+
+#if defined(__GNUC__) || defined(__llvm__)
 # define LY_LIKELY(x)   __builtin_expect(!!(x), 1)
 # define LY_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else

@@ -104,5 +104,10 @@ bool H264Source::handleFrame(MediaChannelId channel_id, SimAVFrame frame)
 
   return true;
 }
+uint32_t H264Source::getTimestamp()
+{
+  auto timestamp = Timestamp<T_steady_clock>::now<std::chrono::milliseconds>();
+  return ((timestamp / 1000 + 500) / 1000 * 96);
+}
 NAMESPACE_END(net)
 LY_NAMESPACE_END

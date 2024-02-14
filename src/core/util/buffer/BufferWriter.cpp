@@ -87,7 +87,7 @@ bool BufferWriter::append(const char* data, uint32_t size, uint32_t index)
 int BufferWriter::send(sockfd_t sockfd, int timeout)
 {
 	if (timeout > 0) {
-		net::socket_api::setBlocking(sockfd, timeout);
+		net::socket_api::set_blocking(sockfd, timeout);
 	}
 
 	int r = 0;
@@ -109,7 +109,7 @@ int BufferWriter::send(sockfd_t sockfd, int timeout)
 		}
 		else if (r < 0) {
 #if defined(__LINUX__)
-		if (errno == EINTR || errno == EAGAIN)
+			if (errno == EINTR || errno == EAGAIN)
 #elif defined(__WIN__)
 			int error = WSAGetLastError();
 			if (error == WSAEWOULDBLOCK || error == WSAEINPROGRESS || error == 0)
@@ -121,7 +121,7 @@ int BufferWriter::send(sockfd_t sockfd, int timeout)
 	} while (count > 0);
 
 	if (timeout > 0) {
-		net::socket_api::setNonBlocking(sockfd);
+		net::socket_api::set_nonblocking(sockfd);
 	}
 
 	return r;

@@ -3,20 +3,19 @@
 #include <random>
 #include <string>
 
+#include <core/util/time/Timestamp.h>
+#include <core/util/time/time.h>
+#include <core/net/NetAddress.h>
+#include <core/net/SocketUtil.h>
+#include <core/net/TaskScheduler.h>
 #include <core/multimedia/net/rtp/RtpConnection.h>
 #include <core/multimedia/net/rtsp/RtspConnection.h>
-#include "core/multimedia/net/media.h"
-#include "core/net/NetAddress.h"
-#include "core/net/SocketUtil.h"
-#include "core/net/TaskScheduler.h"
-#include "core/util/time/Timestamp.h"
-#include "core/util/time/time.h"
-#include "fmt/core.h"
+#include <core/multimedia/net/media.h>
 
+#include <fmt/core.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
-
 RtpConnection::RtpConnection(std::weak_ptr<TcpConnection> rtspConnection)
   : rtsp_connection_(rtspConnection) {
   std::random_device rd;
@@ -89,7 +88,7 @@ bool RtpConnection::setupRtpOverUdp(
     return false;
   }
 
-  peer_addr_ = socket_api::getPeerAddr(conn->getSockfd());
+  peer_addr_ = socket_api::peer_address(conn->getSockfd());
   if (peer_addr_.isNull())
   {
     return false;
@@ -128,7 +127,7 @@ bool RtpConnection::setupRtpOverUdp(
   }
 
   // TODO: Replace magic number
-  socket_api::setSendBufSize(rtpfd_[channelId], 50 * 1024);
+  socket_api::set_send_buffer_size(rtpfd_[channelId], 50 * 1024);
 
   peer_rtp_addr_[channelId] = {
     peer_addr_.ip, media_channel_info_[channelId].rtp_port};
@@ -318,18 +317,15 @@ int RtpConnection::sendRtpOverTcp(MediaChannelId channelId, RtpPacket pkt) {
 }
 
 int RtpConnection::sendRtpOverUdp(MediaChannelId channelId, RtpPacket pkt) {
-  int ret = socket_api::sendto(rtpfd_[channelId], (const char*)pkt.data.get() + 4,
+  int r = socket_api::sendto(rtpfd_[channelId], (const char*)pkt.data.get() + 4,
     pkt.size - 4, 0, peer_rtp_addr_[channelId].ip.c_str(), peer_rtp_addr_[channelId].port);
 
-  if (ret < 0)
-  {
+  if (r < 0) {
     this->teardown();
     return -1;
   }
 
-  return ret;
+  return r;
 }
-
-
 NAMESPACE_END(net)
 LY_NAMESPACE_END

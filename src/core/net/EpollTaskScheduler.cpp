@@ -1,12 +1,14 @@
+#include <cstring>
+
 #include <core/config/config.h>
 #include <core/util/Mutex.h>
 #include <core/util/logger/Logger.h>
 #include <core/net/platform.h>
 #include <core/net/FdChannel.h>
 #include <core/net/EpollTaskScheduler.h>
-#include <cstring>
 
-NAMESPACE_BEGIN(ly::net)
+LY_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(net)
 static auto g_net_logger = GET_LOGGER("net");
 static auto g_handle_max_events_once = LY_CONFIG_GET(net.common.handle_max_events_once);
 
@@ -99,4 +101,5 @@ bool EpollTaskScheduler::handleEvent(std::chrono::milliseconds timeout)
   return false;
 #endif
 }
-NAMESPACE_END(ly::net)
+NAMESPACE_END(net)
+LY_NAMESPACE_END

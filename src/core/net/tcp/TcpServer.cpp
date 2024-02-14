@@ -1,9 +1,12 @@
 #include <chrono>
+
+#include <core/util/marcos.h>
 #include <core/config/config.h>
 #include <core/net/tcp/TcpServer.h>
 
-NAMESPACE_BEGIN(ly::net)
-static auto g_net_logger = GET_LOGGER("net.tcp");
+LY_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(net)
+static auto g_net_tcp_logger = GET_LOGGER("net.tcp");
 static auto g_timeout_while_removing_connections_ms = LY_CONFIG_GET(net.common.timeout_while_removing_connections_ms);
 
 TcpServer::TcpServer(EventLoop *event_loop) : event_loop_(event_loop) {
@@ -12,10 +15,10 @@ TcpServer::TcpServer(EventLoop *event_loop) : event_loop_(event_loop) {
   acceptor_->setNewConnectionCallback([this](sockfd_t fd) {
     TcpConnection::ptr conn = this->onConnect(fd);
     if (conn) {
-      ILOG_INFO_FMT(g_net_logger, "A new comer: {}", fd);
+      ILOG_INFO_FMT(g_net_tcp_logger, "A new comer: {}", fd);
       this->addConnection(fd, conn);
       conn->setDisconnectCallback([this](TcpConnection::ptr conn) {
-        ILOG_INFO_FMT(g_net_logger, "{} is Leaving...", this->type());
+        ILOG_INFO_FMT(g_net_tcp_logger, "{} is Leaving...", this->type());
         auto scheduler = conn->getTaskScheduler();
         sockfd_t sockfd = conn->getSockfd();
         scheduler->addTriggerEventForce(
@@ -24,8 +27,8 @@ TcpServer::TcpServer(EventLoop *event_loop) : event_loop_(event_loop) {
       });
 
       conn->setCloseCallback([](TcpConnection::ptr close_conn) {
-        auto &&address = socket_api::getSocketAddr(close_conn->getSockfd());
-        ILOG_INFO_FMT(g_net_logger, "A client ({}) leaves", address);
+        auto &&address = socket_api::socket_address(close_conn->getSockfd());
+        ILOG_INFO_FMT(g_net_tcp_logger, "A client ({}) leaves", address);
       });
 
       // TODO: Remove it
@@ -37,7 +40,7 @@ TcpServer::TcpServer(EventLoop *event_loop) : event_loop_(event_loop) {
 
       //     buf = "Server Echo: you sent " + buf + "recently.\n";
       //     buf += "Thanks for your response.";
-      //     ILOG_INFO(g_net_logger) << buf;
+      //     ILOG_INFO(g_net_tcp_logger) << buf;
       //     read_conn->send(buf.c_str(), buf.length());
 
       //     return true;
@@ -47,14 +50,13 @@ TcpServer::TcpServer(EventLoop *event_loop) : event_loop_(event_loop) {
 }
 
 TcpServer::~TcpServer() {
-  if (running_)
-    (void)this->stop();
+  (void)this->stop();
 }
 
 bool TcpServer::start(const char *ip, uint16_t port, int max_backlog) {
   if (running_) return false;
 
-  ILOG_INFO_FMT(g_net_logger, "{} is started", this->type());
+  ILOG_INFO_FMT(g_net_tcp_logger, "{} is started", this->type());
   acceptor_->listen(ip, port, max_backlog);
   running_ = true;
   return true;
@@ -64,8 +66,8 @@ bool TcpServer::stop() {
   if (!running_) return false;
 
   running_ = false;
-  ILOG_INFO_FMT(g_net_logger, "{} is stopping", this->type());
-  ILOG_INFO_FMT(g_net_logger, "There are {} connections", connections_.size());
+  ILOG_INFO_FMT(g_net_tcp_logger, "{} is stopping", this->type());
+  ILOG_INFO_FMT(g_net_tcp_logger, "There are {} connections", connections_.size());
   {
     Mutex::lock locker(mutex_);
     for (auto &[fd, conn] : connections_)
@@ -94,4 +96,5 @@ void TcpServer::removeConnection(sockfd_t fd) {
   connections_.erase(fd);
 }
 
-NAMESPACE_END(ly::net)
+NAMESPACE_END(net)
+LY_NAMESPACE_END

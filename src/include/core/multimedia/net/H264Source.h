@@ -1,8 +1,8 @@
 #pragma once
 
 #include <chrono>
-#include <core/multimedia/net/MediaSource.h>
 #include <core/util/time/Clock.h>
+#include <core/multimedia/net/MediaSource.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -20,11 +20,7 @@ public:
 
   bool handleFrame(MediaChannelId channel_id, SimAVFrame frame) override;
 
-  static uint32_t getTimestamp()
-  {
-    auto timestamp = Timestamp<T_steady_clock>::now<std::chrono::milliseconds>();
-    return ((timestamp / 1000 + 500) / 1000 * 96);
-  }
+  static uint32_t getTimestamp();
 
 private:
   H264Source(uint32_t framerate);

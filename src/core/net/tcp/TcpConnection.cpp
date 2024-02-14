@@ -1,8 +1,10 @@
-#include "core/config/config.h"
-#include "core/net/TaskScheduler.h"
+#include <core/util/marcos.h>
+#include <core/config/config.h>
+#include <core/net/TaskScheduler.h>
 #include <core/net/tcp/TcpConnection.h>
 
-NAMESPACE_BEGIN(ly::net)
+LY_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(net)
 static auto g_send_timeout_ms = LY_CONFIG_GET(net.common.send_timeout_ms);
 
 TcpConnection::TcpConnection(TaskScheduler *task_scheduler, sockfd_t fd)
@@ -16,9 +18,9 @@ TcpConnection::TcpConnection(TaskScheduler *task_scheduler, sockfd_t fd)
   channel_->setCloseCallback([this]() { this->onClose(); });
   channel_->setErrorCallback([this](){ this->onError(); });
 
-  socket_api::setNonBlocking(fd);
-  socket_api::setSendBufSize(fd, 100 * 1024);
-  socket_api::setKeepAlive(fd);
+  socket_api::set_nonblocking(fd);
+  socket_api::set_send_buffer_size(fd, 100 * 1024);
+  socket_api::set_keep_alive(fd);
 
   channel_->enableReading();
   task_scheduler_->updateChannel(channel_);
@@ -38,6 +40,17 @@ void TcpConnection::send(const char* data, size_t len)
     }
 
     this->onWrite();
+  }
+}
+void TcpConnection::recv(std::string &data, size_t len)
+{
+  if (running_) {
+    {
+      Mutex::lock locker(mutex_);
+      data = read_buffer_->read(len);
+    }
+
+    this->onRead();
   }
 }
 
@@ -121,4 +134,5 @@ void TcpConnection::close()
     }
   }
 }
-NAMESPACE_END(ly::net)
+NAMESPACE_END(net)
+LY_NAMESPACE_END

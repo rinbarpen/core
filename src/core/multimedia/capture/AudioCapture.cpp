@@ -1,4 +1,4 @@
-#include "core/multimedia/capture/AudioCapture.h"
+#include <core/multimedia/capture/AudioCapture.h>
 
 LY_NAMESPACE_BEGIN
 AudioCapture::AudioCapture(std::unique_ptr<AVPlayer> player, std::unique_ptr<AVCapture> capture) :
@@ -16,7 +16,6 @@ bool AudioCapture::init(uint32_t buffer_size)
 	}
 
 	if (!capture_->init()) {
-		// throw ErrorCaptureInitialize(capture_->type());
 		return false;
 	}
 
@@ -26,24 +25,23 @@ bool AudioCapture::init(uint32_t buffer_size)
 	bits_per_sample_ = audio_format.bits_per_sample;
 
 	if(!player_->init()) {
-		// throw ErrorPlayerInitialize(player_->type());
 		return false;
 	}
 	audio_buffer_.reset(new AudioBuffer(buffer_size));
 	if (!this->startCapture()) {
-		// throw ErrorCaptureStart(capture_->type());
 		return false;
 	}
 
 	initialized_ = true;
 	return true;
 }
-void AudioCapture::destroy()
+bool AudioCapture::destroy()
 {
 	if (initialized_) {
 		this->stopCapture();
 		initialized_ = false;
 	}
+	return true;
 }
 
 int AudioCapture::read(uint8_t* data, uint32_t samples)

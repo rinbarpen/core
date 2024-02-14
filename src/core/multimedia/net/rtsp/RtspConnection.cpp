@@ -239,7 +239,7 @@ void RtspConnection::handleCmdDescribe()
 			}
 		}
 
-		std::string sdp = media_session->getSdpMessage(socket_api::getSocketAddr(this->getSockfd()).ip, rtsp->version());
+		std::string sdp = media_session->getSdpMessage(socket_api::socket_address(this->getSockfd()).ip, rtsp->version());
 		if(sdp.empty()) {
 			size = rtsp_request_->buildServerErrorRes(res.get(), 4096);
 		}
@@ -271,7 +271,7 @@ void RtspConnection::handleCmdSetup()
 		goto server_error;
 	}
 
-	if(media_session->isMulticasting())  {
+	if(media_session->isMulticastOn())  {
 		std::string multicast_ip = media_session->getMulticastIp();
 		if (rtsp_request_->transportMode() == RTP_OVER_MULTICAST) {
 			uint16_t port = media_session->getMulticastPort(channel_id);
@@ -453,7 +453,7 @@ void RtspConnection::sendAnnounce()
 		}
 	}
 
-	std::string sdp = media_session->getSdpMessage(socket_api::getSocketAddr(this->getSockfd()).ip, rtsp->version());
+	std::string sdp = media_session->getSdpMessage(socket_api::socket_address(this->getSockfd()).ip, rtsp->version());
 	if (sdp.empty()) {
 		TcpConnection::onClose();
 		return;

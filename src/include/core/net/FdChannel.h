@@ -3,9 +3,9 @@
 
 #include <core/util/marcos.h>
 #include <core/net/Socket.h>
+#include <core/util/logger/Logger.h>
 
 LY_NAMESPACE_BEGIN
-
 NAMESPACE_BEGIN(net)
 
 enum EventType

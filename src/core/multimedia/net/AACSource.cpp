@@ -1,6 +1,6 @@
+#include <cstdint>
 #include <algorithm>
 #include <array>
-#include <cstdint>
 
 #include <core/util/time/Clock.h>
 #include <core/multimedia/net/rtp/rtp.h>
@@ -31,7 +31,7 @@ uint32_t AACSource::getTimestamp(uint32_t sample_rate)
 
 std::string AACSource::getAttribute()
 {
-	static std::array<uint32_t, 16> AACSampleRate =
+	static std::array<uint32_t, 16> s_aac_sample_rate =
 	{
 		97000, 88200, 64000, 48000,
 		44100, 32000, 24000, 22050,
@@ -42,11 +42,11 @@ std::string AACSource::getAttribute()
 	char buf[500] = { 0 };
 	sprintf(buf, "a=rtpmap:97 MPEG4-GENERIC/%u/%u\r\n", sample_rate_, channels_);
 
-	auto it = std::find(AACSampleRate.cbegin(), AACSampleRate.cend(), sample_rate_);
-	if (it == AACSampleRate.cend()) {
+	auto it = std::find(s_aac_sample_rate.cbegin(), s_aac_sample_rate.cend(), sample_rate_);
+	if (it == s_aac_sample_rate.cend()) {
 		return ""; // error
 	}
-	uint8_t index = std::distance(AACSampleRate.cbegin(), it);
+	uint8_t index = std::distance(s_aac_sample_rate.cbegin(), it);
 
 	uint8_t profile = 1;
 	char config[10] = { 0 };
@@ -85,8 +85,8 @@ bool AACSource::handleFrame(MediaChannelId channel_id, SimAVFrame frame)
 	char AU[AU_SIZE] = { 0 };
 	AU[0] = 0x00;
 	AU[1] = 0x10;
-	AU[2] = (frame_size & 0x1fe0) >> 5;
-	AU[3] = (frame_size & 0x1f) << 3;
+	AU[2] = (frame_size & 0x1FE0) >> 5;
+	AU[3] = (frame_size & 0x1F) << 3;
 
 	RtpPacket rtp_pkt;
 	rtp_pkt.size = (frame_size + 4 + RTP_HEADER_SIZE + AU_SIZE);
@@ -102,7 +102,9 @@ bool AACSource::handleFrame(MediaChannelId channel_id, SimAVFrame frame)
 	memcpy(rtp_pkt.data.get() + 4 + RTP_HEADER_SIZE + AU_SIZE, frame_buf, frame_size);
 
 	if (send_frame_callback_) {
-		send_frame_callback_(channel_id, rtp_pkt);
+		if (!send_frame_callback_(channel_id, rtp_pkt)) {
+			return false;
+		}
 	}
 
 	return true;

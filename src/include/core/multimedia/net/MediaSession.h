@@ -4,13 +4,13 @@
 #include <string>
 
 #include <core/util/marcos.h>
-#include <core/net/SocketUtil.h>
-#include <core/util/buffer/RingBuffer.h>
 #include <core/util/Generic.h>
-#include "core/multimedia/net/media.h"
+#include <core/util/buffer/RingBuffer.h>
+#include <core/net/SocketUtil.h>
+#include <core/net/multicast/MulticastAddress.h>
+#include <core/multimedia/net/media.h>
 #include <core/multimedia/net/MediaSource.h>
 #include <core/multimedia/net/rtp/RtpConnection.h>
-#include <core/net/multicast/MulticastAddress.h>
 
 
 LY_NAMESPACE_BEGIN
@@ -51,7 +51,7 @@ public:
 
   MediaSessionId getMediaSessionId() const { return session_id_; }
 
-  bool isMulticasting() const { return multicasting_; }
+  bool isMulticastOn() const { return multicast_on_; }
   std::string getMulticastIp() const { return multicast_address_.ip(); }
   uint16_t getMulticastPort(MediaChannelId channel_id) const;
 private:
@@ -71,7 +71,7 @@ private:
   std::map<sockfd_t, std::weak_ptr<RtpConnection>> clients_;
   std::atomic_bool has_new_client_{false};
 
-  bool multicasting_{false};
+  bool multicast_on_{false};
   MulticastAddress multicast_address_;
   // uint16_t multicast_port_[kMaxMediaChannel];
   // std::string multicast_ip_;
@@ -79,7 +79,7 @@ private:
   Mutex::type mutex_;
   Mutex::type map_mutex_;
 
-  static inline std::atomic<ForwardSequenceGeneric<MediaSessionId>> generator_;
+  static inline ForwardSequenceGeneric<MediaSessionId> generator_{};
   // static inline std::atomic<MediaSessionId> next_session_id_ = 1;
 };
 NAMESPACE_END(net)

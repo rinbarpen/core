@@ -1,9 +1,10 @@
 #pragma once
 
+#include <vector>
+
 #include <core/util/thread/ThreadPool.h>
 #include <core/net/EpollTaskScheduler.h>
 #include <core/net/SelectTaskScheduler.h>
-#include <vector>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -26,7 +27,6 @@ public:
 	void removeChannel(sockfd_t sockfd);
 
   LY_NONCOPYABLE(EventLoop);
-
 private:
   std::unique_ptr<ThreadPool> pool_;
   std::vector<TaskScheduler::ptr> task_schedulers_;

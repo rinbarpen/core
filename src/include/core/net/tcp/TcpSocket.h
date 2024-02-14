@@ -16,7 +16,5 @@ public:
   LY_NONCOPYABLE(TcpSocket);
 };
 
-
 NAMESPACE_END(net)
-
 LY_NAMESPACE_END

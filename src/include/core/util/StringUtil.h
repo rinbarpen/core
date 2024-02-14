@@ -1,29 +1,26 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
-#include <clocale>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <limits>
-#include <map>
-#include <optional>
-#include <string>
-#include <string_view>
-#include <type_traits>
+#include <clocale>
+#include <initializer_list>
+#include <array>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <optional>
 
-
-#include <core/util/Traits.h>
 #include <core/util/marcos.h>
-
+#include <core/util/Traits.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(string_util)
-static auto split(::std::string_view s, ::std::string_view delim)
+static auto split(::std::string_view s, ::std::string_view delim) noexcept(true)
   -> std::vector<std::string> {
   std::vector<std::string> result;
   size_t start = 0;
@@ -37,28 +34,28 @@ static auto split(::std::string_view s, ::std::string_view delim)
   result.emplace_back(s.substr(start));
   return result;
 }
-static auto start_with(::std::string_view s, ::std::string_view matchStr)
+static auto start_with(::std::string_view s, ::std::string_view match) noexcept(true)
   -> bool {
-  size_t len = matchStr.length();
+  size_t len = match.length();
   if (len > s.length()) {
     return false;
   }
 
   for (size_t i = 0; i < len; ++i) {
-    if (s[i] != matchStr[i]) return false;
+    if (s[i] != match[i]) return false;
   }
   return true;
 }
-static auto end_with(::std::string_view s, ::std::string_view matchStr)
+static auto end_with(::std::string_view s, ::std::string_view match) noexcept(true)
   -> bool {
-  size_t len = matchStr.length();
+  size_t len = match.length();
   size_t slen = s.length();
   if (len > slen) {
     return false;
   }
 
   for (size_t i = 0; i < len; ++i) {
-    if (s[slen - len + i] != matchStr[i]) {
+    if (s[slen - len + i] != match[i]) {
       return false;
     }
   }
@@ -66,25 +63,25 @@ static auto end_with(::std::string_view s, ::std::string_view matchStr)
 }
 
 static auto ltrim(::std::string_view s,
-  ::std::string_view delim = " \n\t\r\v\f") -> std::string {
+  ::std::string_view delim = " \n\t\r\v\f") noexcept(true) -> std::string {
   size_t begin = s.find_first_not_of(delim);
   if (begin == std::string::npos) return "";
   return std::string(s.substr(begin));
 }
 static auto rtrim(::std::string_view s,
-  ::std::string_view delim = " \n\t\r\v\f") -> std::string {
+  ::std::string_view delim = " \n\t\r\v\f") noexcept(true) -> std::string {
   size_t end = s.find_last_not_of(delim);
   if (end == std::string::npos) return "";
   return std::string(s.substr(0, end));
 }
-static auto trim(::std::string_view s, ::std::string_view delim = " \n\t\r\v\f")
+static auto trim(::std::string_view s, ::std::string_view delim = " \n\t\r\v\f") noexcept(true)
   -> std::string {
   size_t begin = s.find_first_not_of(delim);
   if (begin == std::string::npos) return "";
   size_t end = s.find_last_not_of(delim);
   return std::string(s.substr(begin, end - begin + 1));
 }
-static auto ltrim(std::string &s, ::std::string_view delim = " \n\t\r\v\f")
+static auto ltrim(std::string &s, ::std::string_view delim = " \n\t\r\v\f") noexcept(true)
   -> std::string & {
   size_t begin = s.find_first_not_of(delim);
   if (begin == std::string::npos) {
@@ -95,7 +92,7 @@ static auto ltrim(std::string &s, ::std::string_view delim = " \n\t\r\v\f")
   }
   return s;
 }
-static auto rtrim(std::string &s, ::std::string_view delim = " \n\t\r\v\f")
+static auto rtrim(std::string &s, ::std::string_view delim = " \n\t\r\v\f") noexcept(true)
   -> std::string & {
   size_t end = s.find_last_not_of(delim);
   if (end == std::string::npos) {
@@ -106,7 +103,7 @@ static auto rtrim(std::string &s, ::std::string_view delim = " \n\t\r\v\f")
   }
   return s;
 }
-static auto trim(std::string &s, ::std::string_view delim = " \n\t\r\v\f")
+static auto trim(std::string &s, ::std::string_view delim = " \n\t\r\v\f") noexcept(true)
   -> std::string & {
   size_t begin = s.find_first_not_of(delim);
   if (begin == std::string::npos) {
@@ -120,7 +117,7 @@ static auto trim(std::string &s, ::std::string_view delim = " \n\t\r\v\f")
 }
 
 static auto equal(::std::string_view s1, ::std::string_view s2,
-  bool upper_lower_sensitive = false) -> bool {
+  bool upper_lower_sensitive = false) noexcept(true) -> bool {
   if (upper_lower_sensitive) {
     return 0 == s1.compare(s2);
   }
@@ -142,7 +139,7 @@ static auto equal(::std::string_view s1, ::std::string_view s2,
   return true;
 }
 
-static auto to_upper(::std::string_view s) -> std::string {
+static auto to_upper(::std::string_view s) noexcept(true) -> std::string {
   std::string r;
   r.reserve(s.length());
   for (auto c : s) {
@@ -150,7 +147,7 @@ static auto to_upper(::std::string_view s) -> std::string {
   }
   return r;
 }
-static auto to_lower(::std::string_view s) -> std::string {
+static auto to_lower(::std::string_view s) noexcept(true) -> std::string {
   std::string r;
   r.reserve(s.length());
   for (auto c : s) {
@@ -158,13 +155,13 @@ static auto to_lower(::std::string_view s) -> std::string {
   }
   return r;
 }
-static auto to_upper(std::string &s) -> std::string & {
+static auto to_upper(std::string &s) noexcept(true) -> std::string & {
   for (char &it : s) {
     it = ::std::toupper(it);
   }
   return s;
 }
-static auto to_lower(std::string &s) -> std::string & {
+static auto to_lower(std::string &s) noexcept(true) -> std::string & {
   for (char &it : s) {
     it = ::std::tolower(it);
   }
@@ -172,7 +169,7 @@ static auto to_lower(std::string &s) -> std::string & {
 }
 
 static auto split(
-  ::std::string_view s, std::initializer_list<::std::string_view> delimList)
+  ::std::string_view s, std::initializer_list<::std::string_view> delimList) noexcept(true)
   -> std::vector<std::string> {
   std::vector<std::string> result;
   size_t start = 0;
@@ -199,7 +196,7 @@ static auto split(
 }
 
 /* net */
-static auto parse_url_params(::std::string_view url)
+static auto parse_url_params(::std::string_view url) noexcept(true)
   -> std::unordered_map<std::string, std::string> {
   std::unordered_map<std::string, std::string> ret;
 
@@ -212,7 +209,7 @@ static auto parse_url_params(::std::string_view url)
 
   return ret;
 }
-static auto split_httplike_packet(::std::string_view str)
+static auto split_httplike_packet(::std::string_view str) noexcept(true)
   -> std::tuple<std::string, std::string, std::string> {
   size_t curr = 0, last = curr;
   curr = str.find("\r\n", curr);
@@ -227,7 +224,7 @@ static auto split_httplike_packet(::std::string_view str)
 
   return std::make_tuple(line, headers, body);
 }
-static auto split_httplike_headers(::std::string_view str)
+static auto split_httplike_headers(::std::string_view str) noexcept(true)
   -> std::vector<std::string> {
   std::vector<std::string> res;
 
@@ -253,7 +250,7 @@ static auto split_httplike_header(::std::string_view header)
 }
 
 /* converter */
-static auto wstring2string(std::wstring_view ws) -> std::string
+static auto wstring2string(std::wstring_view ws) noexcept(true) -> std::string
 {
   std::string str_locale = std::setlocale(LC_ALL, "");
   const wchar_t *wch_src = ws.data();
@@ -266,7 +263,7 @@ static auto wstring2string(std::wstring_view ws) -> std::string
   std::setlocale(LC_ALL, str_locale.c_str());
   return str_result;
 }
-static auto string2wstring(std::string_view s) -> std::wstring
+static auto string2wstring(std::string_view s) noexcept(true) -> std::wstring
 {
   std::string str_locale = std::setlocale(LC_ALL, "");
   const char *ch_src = s.data();
@@ -279,9 +276,42 @@ static auto string2wstring(std::string_view s) -> std::wstring
   std::setlocale(LC_ALL, str_locale.c_str());
   return wstr_result;
 }
+template <class StringType>
+static auto to_cstr(StringType &&s) noexcept(is_any_of_v<std::decay_t<StringType>, std::string, std::string_view, const char *, char *, char *const, const char *const>) -> const char *
+{
+  using RawStringType = std::decay_t<StringType>;
+
+  if constexpr (std::is_same_v<RawStringType, std::string>) {
+    return s.c_str();
+  }
+  else if constexpr (std::is_same_v<RawStringType, std::string_view>) {
+    return s.data();
+  }
+  else if constexpr (is_any_of_v<RawStringType, const char *, char *, char *const, const char *const>) {
+    return s;
+  }
+
+  LY_UNREACHABLE();
+}
+
+static auto convert(std::string_view s,
+  const std::unordered_map<std::string, std::string> &mappings) noexcept(true) -> std::string
+{
+  std::string r{s};
+  for (auto &[key, value] : mappings) {
+    while (true) {
+      auto pos = r.find(key);
+      if (pos == std::string::npos) break;
+      r.replace(pos, key.length(), value);
+    }
+  }
+  return r;
+  // R"(\)" => R"(＼)";
+  // R"(/\!<>:*?"|\n\t\r\f\v)";
+}
 
 NAMESPACE_BEGIN(literals)
-static auto operator*(::std::string_view s, size_t n) -> ::std::string {
+inline auto operator*(::std::string_view s, size_t n) noexcept(true) -> ::std::string {
   ::std::string r;
   r.reserve(s.length() * n);
   for (size_t i = 0; i < n; ++i) {
@@ -290,14 +320,14 @@ static auto operator*(::std::string_view s, size_t n) -> ::std::string {
   return r;
 }
 template <typename Numeric>
-static auto operator+(::std::string_view s, Numeric n) -> ::std::string {
+inline auto operator+(::std::string_view s, Numeric n) noexcept(true) -> ::std::string {
   LY_CHECK(is_numeric_v<Numeric>, "n is not a number");
   ::std::string r(s);
   r.append(std::to_string(n));
   return r;
 }
 template <typename Numeric>
-static auto operator+=(::std::string &s, Numeric n) -> ::std::string & {
+inline auto operator+=(::std::string &s, Numeric n) noexcept(true) -> ::std::string & {
   LY_CHECK(is_numeric_v<Numeric>, "n is not a number");
   s.append(std::to_string(n));
   return s;

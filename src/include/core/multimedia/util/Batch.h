@@ -1,6 +1,7 @@
 #pragma once
-#include <core/util/marcos.h>
 #include <vector>
+
+#include <core/util/marcos.h>
 
 LY_NAMESPACE_BEGIN
 template <class T>
@@ -9,7 +10,6 @@ class Batch
 public:
   Batch() = default;
   ~Batch() = default;
-
 
   auto unwarp() const noexcept -> std::vector<T>;
 

@@ -16,16 +16,14 @@ public:
   using AcceptCallbackFn = std::function<void()>;
   using NewConnectionCallback = std::function<void(sockfd_t)>;
 
-  Acceptor(EventLoop* pEventLoop);
+  Acceptor(EventLoop* event_loop);
   ~Acceptor() = default;
 
   void listen(const char *ip, uint16_t port, int backlog);
   void listen(const NetAddress &addr, int backlog);
   void close();
 
-  void setNewConnectionCallback(const NewConnectionCallback &callback) {
-    new_connection_cb_ = callback;
-  }
+  void setNewConnectionCallback(NewConnectionCallback callback);
   // bool isIpv6() const { return socket_->isIpv6(); }
 
   std::string getIp() const { return socket_->getIp(); }
@@ -36,8 +34,8 @@ private:
 private:
   EventLoop *event_loop_;
   std::unique_ptr<Socket> socket_;
-  AcceptCallbackFn accept_cb_;
-  NewConnectionCallback new_connection_cb_;
+  AcceptCallbackFn accept_callback_;
+  NewConnectionCallback new_connection_callback_;
   FdChannel::ptr channel_;
 
   Mutex::type mutex_;

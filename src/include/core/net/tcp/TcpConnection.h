@@ -9,7 +9,8 @@
 #include <core/net/FdChannel.h>
 #include <core/net/EventLoop.h>
 
-NAMESPACE_BEGIN(ly::net)
+LY_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(net)
 class TcpConnection : public std::enable_shared_from_this<TcpConnection>
 {
 protected:
@@ -26,6 +27,8 @@ public:
   virtual ~TcpConnection();
 
   void send(const char *data, size_t len);
+  void recv(std::string &data, size_t len);
+
   void disconnect();
 
   bool isRunning() const { return running_; }
@@ -37,9 +40,9 @@ public:
 
   TaskScheduler* getTaskScheduler() const { return task_scheduler_; }
   sockfd_t getSockfd() const { return channel_->getSockfd(); }
-  auto getAddress() const -> NetAddress { return socket_api::getPeerAddr(channel_->getSockfd()); }
+  NetAddress getAddress() const { return socket_api::peer_address(channel_->getSockfd()); }
 
-  auto getId() const -> uint32_t { return reinterpret_cast<uintptr_t>(task_scheduler_); }
+  uint32_t getId() const { return reinterpret_cast<uintptr_t>(task_scheduler_); }
 
 protected:
   virtual void onRead();
@@ -66,4 +69,5 @@ private:
 
   Mutex::type mutex_;
 };
-NAMESPACE_END(ly::net)
+NAMESPACE_END(net)
+LY_NAMESPACE_END

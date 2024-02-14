@@ -1,12 +1,10 @@
-#include <cstddef>
 #include <cstring>
 #include <exception>
 
-#include "core/util/logger/Logger.h"
-#include "core/util/marcos.h"
-#include <core/util/fiber/Fiber.h>
+#include <core/util/Util.h>
 #include <core/config/config.h>
-#include <ucontext.h>
+#include <core/util/logger/Logger.h>
+#include <core/util/fiber/Fiber.h>
 
 #include <fmt/core.h>
 
@@ -15,18 +13,17 @@
 LY_NAMESPACE_BEGIN
 static auto g_fiber_logger = GET_LOGGER("system.fiber");
 static auto g_max_fiber_buffer_size = LY_CONFIG_GET(common.fiber.max_buffer_size);
+static auto g_max_fiber_capacity_per_scheduler = LY_CONFIG_GET(common.fiber.max_fiber_capacity_per_scheduler);
 
-Fiber::Fiber(FiberScheduler* pScheduler)
-  : scheduler_(pScheduler)
+Fiber::Fiber(FiberScheduler* scheduler)
+  : scheduler_(scheduler)
 {
   LY_ASSERT(scheduler_);
   context_.buffer = new char[g_max_fiber_buffer_size];
-  // context_.buffer = new char[global::max_fiber_buffer_size];
   init();
 }
-
-Fiber::Fiber(RunningCallback callback, FiberScheduler* pScheduler)
-  : scheduler_(pScheduler), callback_(callback)
+Fiber::Fiber(RunningCallback callback, FiberScheduler* scheduler)
+  : scheduler_(scheduler), callback_(callback)
 {
   LY_ASSERT(scheduler_);
   context_.buffer = new char[g_max_fiber_buffer_size];
@@ -38,6 +35,30 @@ Fiber::~Fiber()
   LY_ASSERT2(context_.status != FiberStatus::RUNNING, fmt::format("Fiber({}) should be joined", id()));
   --s_total_count;
   delete[] context_.buffer;
+}
+
+Fiber::ptr Fiber::newFiber(FiberScheduler *scheduler)
+{
+  if (!scheduler) {
+    scheduler = MainFiberScheduler::instance();
+  }
+
+  if (scheduler->count() >= g_max_fiber_capacity_per_scheduler) {
+    return nullptr;
+  }
+  return std::make_shared<Fiber>(scheduler);
+}
+Fiber::ptr Fiber::newFiber(RunningCallback callback,
+  FiberScheduler *scheduler)
+{
+  if (!scheduler) {
+    scheduler = MainFiberScheduler::instance();
+  }
+
+  if (scheduler->count() >= g_max_fiber_capacity_per_scheduler) {
+    return nullptr;
+  }
+  return std::make_shared<Fiber>(callback, scheduler);
 }
 
 

@@ -2,16 +2,17 @@
 
 #include <cstdint>
 #include <cstring>
-#include <core/util/marcos.h>
 #include <core/net/platform.h>
-#include <core/util/logger/Logger.h>
 #include <core/net/NetAddress.h>
+#include <core/util/marcos.h>
+#include <core/util/logger/Logger.h>
+
 
 LY_NAMESPACE_BEGIN
-
 NAMESPACE_BEGIN(net)
 
-struct NetDomain {
+struct NetDomain
+{
   enum Type
   {
     NONE = 0,
@@ -22,29 +23,25 @@ struct NetDomain {
   bool isIpv4() const { return type == IPV4; }
   bool isIpv6() const { return type == IPV6; }
 
-  static NetDomain toDomain(std::string name)
-  {
+  static NetDomain toDomain(std::string name) {
     if (name == "IPV4")
       return {IPV4};
     else if (name == "IPV6")
       return {IPV6};
     return {NONE};
   }
-  static std::string toString(NetDomain domain)
-  {
+  static std::string toString(NetDomain domain) {
     switch (domain.type) {
-      case IPV4:
-        return "IPV4";
-      case IPV6:
-        return "IPV6";
-      default:
-        return "NONE";
+    case IPV4: return "IPV4";
+    case IPV6: return "IPV6";
+    default: return "NONE";
     }
 
     return "NONE";
   }
 };
-struct NetProtocol {
+struct NetProtocol
+{
   enum Type
   {
     NONE = 0,
@@ -53,30 +50,23 @@ struct NetProtocol {
   } type;
 
   NetProtocol() = default;
-  NetProtocol(Type _type)
-    : type(_type)
-  {}
+  NetProtocol(Type _type) : type(_type) {}
 
   bool isUdp() const { return type == UDP; }
   bool isTcp() const { return type == TCP; }
 
-  static NetProtocol toProcotol(std::string name)
-  {
+  static NetProtocol toProcotol(std::string name) {
     if (name == "UDP")
       return {UDP};
     else if (name == "TCP")
       return {TCP};
     return {NONE};
   }
-  static std::string toString(NetProtocol protocol)
-  {
+  static std::string toString(NetProtocol protocol) {
     switch (protocol.type) {
-      case UDP:
-        return "UDP";
-      case TCP:
-        return "TCP";
-      default:
-        return "NONE";
+    case UDP: return "UDP";
+    case TCP: return "TCP";
+    default: return "NONE";
     }
 
     return "NONE";
@@ -87,20 +77,19 @@ static constexpr sockfd_t kInvalidSockfd = -1;
 // TODO: Add ipv6
 namespace socket_api
 {
-static sockfd_t socket(int domain, int type, int protocol)
-{
+static bool is_valid(sockfd_t fd) {
+  return fd > 0;
+}
+static sockfd_t socket(int domain, int type, int protocol) {
   return ::socket(domain, type, protocol);
 }
-static sockfd_t socket_tcp()
-{
+static sockfd_t socket_tcp() {
   return ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 }
-static sockfd_t socket_udp()
-{
+static sockfd_t socket_udp() {
   return ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 }
-static int bind(sockfd_t sockfd, const char *ip, uint16_t port)
-{
+static int bind(sockfd_t sockfd, const char *ip, uint16_t port) {
   int r;
 
   struct sockaddr_in addr;
@@ -113,7 +102,8 @@ static int bind(sockfd_t sockfd, const char *ip, uint16_t port)
     return r;
   }
 
-  r = ::bind(sockfd, reinterpret_cast<const struct sockaddr *>(&addr), INET_ADDRSTRLEN);
+  r = ::bind(
+    sockfd, reinterpret_cast<const struct sockaddr *>(&addr), INET_ADDRSTRLEN);
   if (r == SOCKET_ERROR) {
     return r;
   }
@@ -128,11 +118,9 @@ static int bind(sockfd_t sockfd, const char *ip, uint16_t port)
  * @param port
  * @return sockfd_t
  */
-static sockfd_t socket_udp_bind(const char *ip, uint16_t port)
-{
+static sockfd_t socket_udp_bind(const char *ip, uint16_t port) {
   sockfd_t sockfd = socket_udp();
-  if (sockfd == SOCKET_ERROR)
-    return kInvalidSockfd;
+  if (sockfd == SOCKET_ERROR) return kInvalidSockfd;
 
   if (bind(sockfd, ip, port) < 0) {
     close(sockfd);
@@ -140,8 +128,7 @@ static sockfd_t socket_udp_bind(const char *ip, uint16_t port)
   return kInvalidSockfd;
 }
 
-static int listen(sockfd_t fd, int backlog)
-{
+static int listen(sockfd_t fd, int backlog) {
   int r;
   r = ::listen(fd, backlog);
   if (r < 0) {
@@ -163,9 +150,7 @@ static int listen(sockfd_t fd, int backlog)
  * @return sockfd_t
  */
 static sockfd_t socket_bind_listen(int domain, int type, int protocol,
-  const char *ip, uint16_t port,
-  int backlog)
-{
+  const char *ip, uint16_t port, int backlog) {
   sockfd_t fd = socket(domain, type, protocol);
   if (fd == SOCKET_ERROR) {
     return kInvalidSockfd;
@@ -186,8 +171,7 @@ static sockfd_t socket_bind_listen(int domain, int type, int protocol,
   return fd;
 }
 
-static int close(sockfd_t sockfd)
-{
+static int close(sockfd_t sockfd) {
 #ifdef __WIN__
   return ::closesocket(sockfd);
 #elif defined(__LINUX__)
@@ -195,13 +179,11 @@ static int close(sockfd_t sockfd)
 #endif
 }
 
-static sockfd_t accept(sockfd_t sockfd, char *ip, uint16_t *port)
-{
+static sockfd_t accept(sockfd_t sockfd, char *ip, uint16_t *port) {
   struct sockaddr_storage addr;
   socklen_t len;
-  sockfd_t clientfd = ::accept(sockfd, (struct sockaddr *)&addr, &len);
-  if (clientfd == INVALID_SOCKET)
-    return clientfd;
+  sockfd_t clientfd = ::accept(sockfd, (struct sockaddr *) &addr, &len);
+  if (is_valid(clientfd)) return clientfd;
 
   struct sockaddr_in *addr4 = reinterpret_cast<struct sockaddr_in *>(&addr);
   *port = ::ntohs(addr4->sin_port);
@@ -210,30 +192,27 @@ static sockfd_t accept(sockfd_t sockfd, char *ip, uint16_t *port)
   }
   return clientfd;
 }
-static int connect(sockfd_t sockfd, const char *ip, uint16_t port)
-{
+static int connect(sockfd_t sockfd, const char *ip, uint16_t port) {
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
   addr.sin_port = ::htons(port);
-  if (::inet_pton(AF_INET, ip, &addr.sin_addr) < 0) {
-    return -1;
-  }
+  int r = ::inet_pton(AF_INET, ip, &addr.sin_addr);
+  if (r < 0) { return r; }
 
-  return ::connect(sockfd, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr));
+  return ::connect(
+    sockfd, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr));
 }
 
-static int send(sockfd_t sockfd, const char *buf, size_t len, int flags = 0)
-{
+static int send(sockfd_t sockfd, const char *buf, size_t len, int flags = 0) {
   return ::send(sockfd, buf, len, flags);
 }
-static int recv(sockfd_t sockfd, char *buf, size_t len, int flags = 0)
-{
+static int recv(sockfd_t sockfd, char *buf, size_t len, int flags = 0) {
   return ::recv(sockfd, buf, len, flags);
 }
 
-static int sendto(sockfd_t fd, const char *buf, uint32_t len, int flags, const char *ip, uint16_t port)
-{
-  int r;
+static int sendto(sockfd_t fd, const char *buf, uint32_t len, int flags,
+  const char *ip, uint16_t port) {
+  int r{};
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
   r = ::inet_pton(AF_INET, ip, &addr.sin_addr);
@@ -241,15 +220,14 @@ static int sendto(sockfd_t fd, const char *buf, uint32_t len, int flags, const c
     return r;
   }
 
-  r = ::sendto(fd, buf, len, flags, (struct sockaddr *)&addr, INET_ADDRSTRLEN);
+  r = ::sendto(fd, buf, len, flags, (struct sockaddr *) &addr, INET_ADDRSTRLEN);
   return r;
 }
 
-static NetAddress getSocketAddr(sockfd_t fd)
-{
+static NetAddress socket_address(sockfd_t fd) {
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
-  if (0 != ::getsockname(fd, (struct sockaddr *)&addr, &len)) {
+  if (0 != ::getsockname(fd, (struct sockaddr *) &addr, &len)) {
     return {};
   }
 
@@ -257,11 +235,10 @@ static NetAddress getSocketAddr(sockfd_t fd)
   ::inet_ntop(AF_INET, &addr.sin_addr, ip, INET_ADDRSTRLEN);
   return {ip, ::ntohs(addr.sin_port)};
 }
-static NetAddress getPeerAddr(sockfd_t fd)
-{
+static NetAddress peer_address(sockfd_t fd) {
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
-  if (0 != ::getpeername(fd, (struct sockaddr *)&addr, &len)) {
+  if (0 != ::getpeername(fd, (struct sockaddr *) &addr, &len)) {
     return {};
   }
 
@@ -270,36 +247,34 @@ static NetAddress getPeerAddr(sockfd_t fd)
   return {ip, ::ntohs(addr.sin_port)};
 }
 
-static int setKeepAlive(sockfd_t fd, int on = 1)
-{
+static int set_keep_alive(sockfd_t fd, int on = 1) {
   int r{-1};
-  r = ::setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (const char *)(&on), sizeof(on));
+  r = ::setsockopt(
+    fd, SOL_SOCKET, SO_KEEPALIVE, (const char *) (&on), sizeof(on));
   return r;
 }
-static int setReuseAddr(sockfd_t fd, int on = 1)
-{
+static int set_reuse_address(sockfd_t fd, int on = 1) {
   int r{-1};
-  r = ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char *)(&on), sizeof(on));
+  r = ::setsockopt(
+    fd, SOL_SOCKET, SO_REUSEADDR, (const char *) (&on), sizeof(on));
   return r;
 }
-static int setReusePort(sockfd_t fd, int on = 1)
-{
+static int set_reuse_port(sockfd_t fd, int on = 1) {
   int r{-1};
 #ifdef SO_REUSEPORT
-  r = ::setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (const char *)&on, sizeof(on));
+  r =
+    ::setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (const char *) &on, sizeof(on));
 #endif
   return r;
 }
-static int setNoDelay(sockfd_t fd, int on = 1)
-{
+static int set_no_delay(sockfd_t fd, int on = 1) {
   int r{-1};
 #ifdef TCP_NODELAY
   r = ::setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof(on));
 #endif
   return r;
 }
-static void setNonBlocking(sockfd_t fd)
-{
+static void set_nonblocking(sockfd_t fd) {
 #if defined(__LINUX__)
   int flags = ::fcntl(fd, F_GETFL);
   flags |= O_NONBLOCK;
@@ -309,8 +284,7 @@ static void setNonBlocking(sockfd_t fd)
   ::ioctlsocket(fd, FIONBIO, &on);
 #endif
 }
-static void setBlocking(sockfd_t fd, int write_ms_timeout = 100)
-{
+static void set_blocking(sockfd_t fd, int write_ms_timeout = 100) {
 #if defined(__LINUX__)
   int flags = ::fcntl(fd, F_GETFL);
   flags &= ~O_NONBLOCK;
@@ -322,28 +296,26 @@ static void setBlocking(sockfd_t fd, int write_ms_timeout = 100)
   if (write_ms_timeout > 0) {
 #ifdef SO_SNDTIMEO
 # if defined(__LINUX__)
-    struct timeval tv = {write_ms_timeout / 1000, (write_ms_timeout % 1000) * 1000};
-    ::setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv));
+    struct timeval tv = {
+      write_ms_timeout / 1000, (write_ms_timeout % 1000) * 1000};
+    ::setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, sizeof(tv));
 # elif defined(__WIN__)
-    unsigned long ms = (unsigned long)write_ms_timeout;
-    ::setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&ms, sizeof(unsigned long));
+    unsigned long ms = (unsigned long) write_ms_timeout;
+    ::setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &ms, sizeof(unsigned long));
 # endif
 #endif
   }
 }
 
-static void setSendBufSize(sockfd_t fd, int size)
-{
-  ::setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size));
+static void set_send_buffer_size(sockfd_t fd, int size) {
+  ::setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *) &size, sizeof(size));
 }
-static void setRecvBufSize(sockfd_t fd, int size)
-{
-  ::setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *)&size, sizeof(size));
+static void set_recv_buffer_size(sockfd_t fd, int size) {
+  ::setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *) &size, sizeof(size));
 }
 
 }  // namespace socket_api
 
 NAMESPACE_END(net)
-
 LY_NAMESPACE_END
 namespace lynet = ly::net;
