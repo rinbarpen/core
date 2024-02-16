@@ -10,7 +10,7 @@ class EpollTaskScheduler final : public TaskScheduler
 {
 public:
   SHARED_REG(EpollTaskScheduler);
-#if defined(__LINUX__)
+#ifdef __LINUX__
   enum EventCTL {
     ADD = EPOLL_CTL_ADD,
     MOD = EPOLL_CTL_MOD,
@@ -44,7 +44,6 @@ public:
   EpollTaskScheduler(TaskSchedulerId id);
   ~EpollTaskScheduler();
 
-
   void updateChannel(FdChannel::ptr pChannel) override;
   void removeChannel(sockfd_t sockfd) override;
 
@@ -55,9 +54,7 @@ private:
 
 private:
   int epfd_;
-
   Mutex::type mutex_;
-
   std::unordered_map<sockfd_t, FdChannel::ptr> channels_;
 };
 

@@ -19,7 +19,7 @@ void EventLoop::start()
   pool_ = std::make_unique<ThreadPool>(capacity_);
 
   for (size_t i = 0; i < capacity_; ++i) {
-#ifdef __LINUX__
+#if defined(__LINUX__)
     auto pTaskScheduler = EpollTaskScheduler::make_shared(std::to_string(i));
 #elif defined(__WIN__)
     auto pTaskScheduler = SelectTaskScheduler::make_shared(std::to_string(i));

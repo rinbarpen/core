@@ -18,7 +18,6 @@ class XHash
 public:
   static auto md5(std::string_view raw) -> std::string
   {
-#ifdef ENABLE_OPENSSL
     unsigned char digest[MD5_DIGEST_LENGTH];
     MD5(reinterpret_cast<const unsigned char*>(raw.data()), raw.size(), digest);
 
@@ -29,16 +28,15 @@ public:
     }
 
     return std::string(hexBuffer, 2 * MD5_DIGEST_LENGTH);
-#else
-    return "";
-#endif
   }
 
-  static auto random(size_t nBytes) -> std::string
+  static auto random(size_t nbytes) -> std::string
   {
-    char buffer[nBytes];
-    ::RAND_bytes(reinterpret_cast<unsigned char*>(buffer), nBytes);
-    return std::string(buffer, nBytes);
+    char *buffer = new char[nbytes];
+    ::RAND_bytes(reinterpret_cast<unsigned char *>(buffer), nbytes);
+    std::string buf = std::string(buffer, nbytes);
+    delete[] buffer;
+    return buf;
   }
 };
 

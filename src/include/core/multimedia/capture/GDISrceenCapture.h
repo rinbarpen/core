@@ -18,7 +18,7 @@ public:
 
 	bool captureFrame(std::vector<uint8_t>& image, uint32_t& width, uint32_t& height) override;
 
-	uint32_t getWidth()  const override;
+	uint32_t getWidth() const override;
 	uint32_t getHeight() const override;
 	bool isCapturing() const override;
 
@@ -35,7 +35,7 @@ private:
 	std::thread worker_;
 
 	AVFormatContext* format_context_{nullptr};
-	const AVInputFormat* input_format_{nullptr};
+	AVInputFormat* input_format_{nullptr};
 	AVCodecContext* codec_context_{nullptr};
 	int video_index_ = -1;
 	int frame_rate_ = 25;

@@ -18,7 +18,7 @@ bool WASAPIPlayer::init() {
   hr = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL,
     IID_IMMDeviceEnumerator, (void **) enumerator_.GetAddressOf());
   if (FAILED(hr)) {
-    ILOG_ERROR_FMT(g_multimedia_capture_logger)
+    ILOG_ERROR(g_multimedia_capture_logger)
       << "[WASAPIPlayer] Failed to create instance.";
     return false;
   }
@@ -26,7 +26,7 @@ bool WASAPIPlayer::init() {
   hr = enumerator_->GetDefaultAudioEndpoint(
     eRender, eMultimedia, device_.GetAddressOf());
   if (FAILED(hr)) {
-    ILOG_ERROR_FMT(g_multimedia_capture_logger)
+    ILOG_ERROR(g_multimedia_capture_logger)
       << "[WASAPIPlayer] Failed to create device.";
     return false;
   }
@@ -34,31 +34,31 @@ bool WASAPIPlayer::init() {
   hr = device_->Activate(
     IID_IAudioClient, CLSCTX_ALL, NULL, (void **) audio_client_.GetAddressOf());
   if (FAILED(hr)) {
-    ILOG_ERROR_FMT(g_multimedia_capture_logger)
+    ILOG_ERROR(g_multimedia_capture_logger)
       << "[WASAPIPlayer] Failed to activate device.";
     return false;
   }
 
   hr = audio_client_->GetMixFormat(&mix_format_);
   if (FAILED(hr)) {
-    ILOG_ERROR_FMT(g_multimedia_capture_logger)
+    ILOG_ERROR(g_multimedia_capture_logger)
       << "[WASAPIPlayer] Failed to get mix format.";
     return false;
   }
 
-  adjustFormatTo16Bits(mix_format_);
+  this->adjustFormatTo16Bits(mix_format_);
   hns_actual_duration_ = REFTIMES_PER_SEC;
   hr = audio_client_->Initialize(
     AUDCLNT_SHAREMODE_SHARED, 0, hns_actual_duration_, 0, mix_format_, NULL);
   if (FAILED(hr)) {
-    ILOG_ERROR_FMT(g_multimedia_capture_logger)
+    ILOG_ERROR(g_multimedia_capture_logger)
       << "[WASAPIPlayer] Failed to initialize audio client.";
     return false;
   }
 
   hr = audio_client_->GetBufferSize(&buffer_frame_count_);
   if (FAILED(hr)) {
-    ILOG_ERROR_FMT(g_multimedia_capture_logger)
+    ILOG_ERROR(g_multimedia_capture_logger)
       << "[WASAPIPlayer] Failed to get buffer size.";
     return false;
   }
@@ -66,7 +66,7 @@ bool WASAPIPlayer::init() {
   hr = audio_client_->GetService(
     IID_IAudioRenderClient, (void **) audio_render_client_.GetAddressOf());
   if (FAILED(hr)) {
-    ILOG_ERROR_FMT(g_multimedia_capture_logger)
+    ILOG_ERROR(g_multimedia_capture_logger)
       << "[WASAPIPlayer] Failed to get service.";
     return false;
   }
@@ -83,13 +83,11 @@ bool WASAPIPlayer::init() {
 bool WASAPIPlayer::destroy() {
   return true;
 }
-bool WASAPIPlayer::start(AudioDataCallback callback) {
+bool WASAPIPlayer::start() {
 #ifdef __WIN__
   Mutex::lock locker(mutex_);
   if (!initialized_) { return false; }
   if (enabled_) { return true; }
-
-  callback_ = callback;
 
   HRESULT hr = audio_client_->Start();
   if (FAILED(hr)) {
@@ -131,6 +129,9 @@ bool WASAPIPlayer::stop() {
 #else
   return false;
 #endif
+}
+void WASAPIPlayer::setCallback(AudioDataCallback callback) {
+  callback_ = callback;
 }
 
 bool WASAPIPlayer::adjustFormatTo16Bits(
@@ -186,7 +187,7 @@ bool WASAPIPlayer::play() {
     }
 
     if (callback_) {
-      memset(data, 0, m_mixFormat->nBlockAlign * numFramesAvailable);
+      ::memset(data, 0, numFramesAvailable * mix_format_->nBlockAlign);
       callback_(mix_format_, data, numFramesAvailable);
     }
 

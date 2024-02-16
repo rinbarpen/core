@@ -6,10 +6,10 @@
 #include <string>
 #include <string_view>
 
-#include "core/util/marcos.h"
-#include "core/util/logger/Logger.h"
-#include "core/util/Authentication.h"
-#include "core/multimedia/net/media.h"
+#include <core/util/marcos.h>
+#include <core/util/logger/Logger.h>
+#include <core/util/Authentication.h>
+#include <core/multimedia/net/media.h>
 #include <core/multimedia/net/MediaSession.h>
 #include <core/multimedia/net/MediaSource.h>
 
@@ -47,7 +47,7 @@ public:
 
   virtual auto parseRtspUrl(std::string_view url) -> bool
   {
-    static auto rtsp_logger = GET_LOGGER("multimedia");
+    auto rtsp_logger = GET_LOGGER("multimedia.rtsp");
     char ip[100]{};
     char suffix[100]{};
     uint16_t port{};
@@ -74,7 +74,7 @@ public:
       ILOG_DEBUG_FMT(rtsp_logger, "{} matches rtsp://[username:password@]{ip}/{suffix}", url);
     }
     else {
-      ILOG_WARN_FMT(rtsp_logger, "RTSP url[{}] is INVALID", url);
+      ILOG_WARN_FMT(rtsp_logger, "{} is INVALID", url);
       return false;
     }
 

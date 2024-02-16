@@ -21,6 +21,7 @@ static std::string backtrace(
   std::ostringstream bt_ss;
   bt_ss << prefix;
 
+#ifdef __LINUX__
   auto bt = (void**)::malloc(sizeof(void*) * stack_capacity);
   int depth = ::backtrace(bt, stack_capacity);
   if (depth > 0) {
@@ -37,6 +38,7 @@ static std::string backtrace(
   }
 
   ::free(bt);
+#endif
   return bt_ss.str();
 }
 template <typename... Args>

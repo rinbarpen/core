@@ -6,14 +6,10 @@
 LY_NAMESPACE_BEGIN
 SharedString::SharedString()
 {
-
 }
-
 SharedString::SharedString(size_t capacity)
-  : capacity_(capacity), data_(new char[capacity], std::default_delete<char[]>())
-{
+  : data_(new char[capacity], std::default_delete<char[]>()), capacity_(capacity) {
 }
-
 SharedString::~SharedString()
 {
 }
@@ -34,11 +30,21 @@ void SharedString::reset(size_t newCapacity)
 
 void SharedString::resize(size_t size)
 {
-  if (size > capacity_)
-  {
+  if (size > capacity_) {
     this->reset(size);
   }
   size_ = size;
+}
+
+void SharedString::resizeAndClear(size_t size)
+{
+  this->resize(size);
+  memset(data_.get(), 0, size);
+}
+
+void SharedString::clear()
+{
+  memset(data_.get(), 0, size_);  
 }
 
 void SharedString::expand(size_t newCapacity)

@@ -4,6 +4,7 @@
 #include <future>
 
 #include <core/config/config.h>
+#include <core/util/OSUtil.h>
 #include <core/util/logger/Logger.h>
 
 LY_NAMESPACE_BEGIN
@@ -325,7 +326,7 @@ auto FileLogAppender::toYaml() const -> YAML::Node {
   node["type"] = "SyncFileLogAppender";
   node["filename"] = filename_;
   node["lines"] = lines_;
-  node["count"] = cnt_;
+  node["count"] = static_cast<uint32_t>(cnt_);
   node["today"] = today_;
 
   node["level"] = level_.toString();
@@ -398,7 +399,7 @@ auto AsyncFileLogAppender::toYaml() const -> YAML::Node {
   node["type"] = "AsyncFileLogAppender";
   node["filename"] = filename_;
   node["lines"] = lines_;
-  node["count"] = cnt_;
+  node["count"] = static_cast<uint32_t>(cnt_);
   node["today"] = today_;
 
   node["level"] = level_.toString();
@@ -628,6 +629,8 @@ auto LogManager::toYamlString() const -> std::string {
 }
 
 void LogManager::toYamlFile(std::string_view filename) const {
+  os_api::rm(filename.data());
+
   YAML::Node node;
 
   for (auto &[k, v] : loggers_) {

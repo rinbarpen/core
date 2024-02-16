@@ -188,9 +188,9 @@ AudioFormat WASAPICapture::getAudioFormat() const
 {
 #ifdef __WIN__
   AudioFormat audio_format;
-  audio_format.channels = mix_format_->channels;
-	audio_format.samples_per_sec = mix_format_->samples_per_sec;
-	audio_format.bits_per_sample = mix_format_->bits_per_sample;
+  audio_format.channels = mix_format_->nChannels;
+	audio_format.samples_per_sec = mix_format_->nSamplesPerSec;
+	audio_format.bits_per_sample = mix_format_->wBitsPerSample;
   return audio_format;
 #else
   return {};

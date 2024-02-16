@@ -21,19 +21,19 @@ Socket::~Socket()
 
 int Socket::bind(const NetAddress &addr)
 {
-  int r{};
+  int r{-1};
   r = socket_api::bind(sockfd_, addr.ip.c_str(), addr.port);
   return r;
 }
 int Socket::listen(int backlog)
 {
-  int r{};
+  int r{-1};
   r = socket_api::listen(sockfd_, backlog);
   return r;
 }
 int Socket::connect(const NetAddress &addr, std::chrono::milliseconds msec)
 {
-  int r{};
+  int r{-1};
   auto ms = msec.count();
   if (ms > 0)
     socket_api::set_blocking(sockfd_, msec.count());
@@ -62,13 +62,13 @@ int Socket::close()
 
 int Socket::send(const void *data, int len)
 {
-  int r{};
+  int r{-1};
   r = socket_api::send(sockfd_, static_cast<const char *>(data), len);
   return r;
 }
 int Socket::recv(void *data, int len)
 {
-  int r{};
+  int r{-1};
   r = socket_api::recv(sockfd_, static_cast<char *>(data), len);
   return r;
 }

@@ -92,6 +92,7 @@ public:
   UnreachableException(std::string_view msg) : ::std::runtime_error(msg.data()) {}
 };
 }  // namespace detail
+LY_NAMESPACE_END
 
 #define __UNREACHABLE_THROW()                                          \
   do {                                                                 \
@@ -119,9 +120,9 @@ public:
   CLS &operator=(CLS &&) = delete
 
 
-#define LY_UNUSED     [[maybe_unused]]
-#define LY_NODISCARD  [[nodiscard]]
-#define LY_DEPRECATED [[deprecated]]
+#define LY_UNUSED      [[maybe_unused]]
+#define LY_NODISCARD   [[nodiscard]]
+#define LY_DEPRECATED  [[deprecated]]
 #define LY_FALLTHROUGH [[fallthrough]]
 
 #if defined(__GNUC__) || defined(__llvm__)
@@ -168,8 +169,6 @@ public:
   {                           \
   BODY                        \
   }
-
-LY_NAMESPACE_END
 
 /*********************************************************************************/
 //                                cxx dependencies

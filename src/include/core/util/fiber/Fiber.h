@@ -6,7 +6,9 @@
 #include <core/util/fiber/FiberDefine.h>
 #include <core/util/fiber/FiberScheduler.h>
 
-#include <ucontext.h>
+#ifdef __LINUX__
+# include <ucontext.h>
+#endif
 
 // TODO: Add this to EpollTaskScheduler.
 // TODO: Test me!
@@ -25,7 +27,9 @@ struct FiberContext
 {
   int buffer_size{0};
   char *buffer{};
+#ifdef __LINUX__
   ucontext_t ctx;
+#endif
   FiberStatus status{FiberStatus::NONE};
 };
 

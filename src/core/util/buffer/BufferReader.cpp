@@ -1,11 +1,14 @@
-#include "core/net/SocketUtil.h"
-#include "core/util/marcos.h"
-#include <core/util/buffer/BufferReader.h>
-#include <core/config/config.h>
 #include <cstring>
 #include <memory>
 
+#include <core/util/marcos.h>
+#include <core/net/SocketUtil.h>
+#include <core/config/config.h>
+#include <core/util/buffer/BufferReader.h>
+
 LY_NAMESPACE_BEGIN
+static auto g_max_buffer_size = LY_CONFIG_GET(common.buffer.max_buffer_size);
+
 uint16_t readU16Forward(const char *p)
 {
   uint16_t res = 0;
@@ -61,29 +64,31 @@ uint32_t readU32Reverse(const char *p)
   return res;
 }
 
-auto BufferReader::read(size_t nBytes) -> std::string
-{
+auto BufferReader::read(uint32_t nbytes) -> std::string {
   size_t bytesRead = this->readableBytes();
-  if (nBytes > bytesRead) {
-    nBytes = bytesRead;
+  if (nbytes > bytesRead) {
+    nbytes = bytesRead;
   }
-  char out[nBytes];
-  std::memcpy(out, data_, nBytes);
-  return std::string(out, nBytes);
+  
+  char *out = new char[nbytes];
+  std::memcpy(out, data_, nbytes);
+  std::string r(out, nbytes);
+  delete[] out;
+  return r;
 }
 auto BufferReader::read(sockfd_t sockfd) -> int
 {
   int writeBytes = writableBytes();
-
-  if (writeBytes < g_config.common.buffer.max_buffer_size) {
+  if (writeBytes < g_max_buffer_size) {
     this->reset();
   }
 
-  char buffer[g_config.common.buffer.max_bytes_per_read];
+  char *buffer = new char[g_max_buffer_size];
   int len = net::socket_api::recv(sockfd, buffer, writeBytes);
   if (len <= 0) return 0;
 
   std::memcpy(data_, buffer, len);
+  delete[] buffer;
   return len;
 }
 auto BufferReader::readAll() -> std::string
@@ -94,12 +99,11 @@ auto BufferReader::readAll() -> std::string
 auto BufferReader::append(std::string_view data) -> int
 {
   int writeBytes = this->writableBytes();
-  if (writeBytes < g_config.common.buffer.max_buffer_size) {
+  if (writeBytes < g_max_buffer_size) {
     this->reset();
   }
 
   std::memcpy(peek(), data.data(), data.length());
-
   return data.length();
 }
 
@@ -127,7 +131,7 @@ int BufferReader::findAndSkip(std::string_view matchStr)
 int BufferReader::findLast(std::string_view matchStr)
 {
   int rbegin = put_pos_ - matchStr.length();
-  while (rbegin >= (int)get_pos_) {
+  while (rbegin >= get_pos_) {
     if (0 == std::strncmp(peek() + rbegin, matchStr.data(), matchStr.length())) {
       return rbegin - get_pos_;
     }
@@ -141,12 +145,11 @@ void BufferReader::advance(int n)
   advance(get_pos_, n);
   if (put_pos_ <= get_pos_) {
     clear();
-    return;
   }
 }
 void BufferReader::advanceTo(const char *target)
 {
-  int len = ::strlen(target);
+  int len = std::strlen(target);
   int begin = get_pos_;
   while (begin < put_pos_) {
     if (0 == ::strcmp(peek() + begin, target)) {

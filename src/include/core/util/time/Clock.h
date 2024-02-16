@@ -42,9 +42,8 @@ static std::string time2datetime(::std::time_t t, const char *dateFmt = "%Y-%m-%
   return std::string(buffer);
 }
 
-static std::string time2datetime(
-  Timestamp<T_system_clock> timestamp, const char *dateFmt = "%Y-%m-%d %H:%M:%S")
-{
+static auto time2datetime(Timestamp<T_system_clock> timestamp,
+  const char *dateFmt = "%Y-%m-%d %H:%M:%S") -> std::string {
   return time2datetime(T_system_clock::to_time_t(timestamp.current()), dateFmt);
 }
 
@@ -53,9 +52,17 @@ static auto datetime2time(
 {
   std::tm tm = {};
   memset(&tm, 0, sizeof(tm));
-  if(!strptime(datetime.c_str(), dateFmt, &tm)) {
+#if defined(__WIN__)
+  std::istringstream ss(datetime);
+  ss >> std::get_time(&tm, dateFmt);
+  if (ss.fail()) {
     return 0;
   }
+#elif defined(__LINUX__)
+  if(!::strptime(datetime.c_str(), dateFmt, &tm)) {
+    return 0;
+  }
+#endif
   return std::mktime(&tm);
 }
 

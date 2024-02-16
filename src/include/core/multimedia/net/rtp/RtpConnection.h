@@ -40,7 +40,6 @@ public:
   uint16_t getRtpPort(MediaChannelId channelId) const {
     return local_rtp_port_[channelId];
   }
-
   uint16_t getRtcpPort(MediaChannelId channelId) const {
     return local_rtcp_port_[channelId];
   }
@@ -48,14 +47,13 @@ public:
   sockfd_t getRtpSockfd(MediaChannelId channelId) const {
     return rtpfd_[channelId];
   }
-
   sockfd_t getRtcpSockfd(MediaChannelId channelId) const {
     return rtcpfd_[channelId];
   }
 
-  auto getRtspAddress() const -> NetAddress { return rtsp_address_; }
+  NetAddress getRtspAddress() const { return rtsp_address_; }
 
-  bool isMulticast() const { return multicasting_; }
+  bool isMulticastOn() const { return multicast_on_; }
   bool isSetup(MediaChannelId channelId) const {
     return media_channel_info_[channelId].is_setup;
   }
@@ -71,7 +69,7 @@ public:
 
   bool isRunning() const { return running_; }
 
-  auto getId() const -> TaskSchedulerId;
+  TaskSchedulerId getId() const;
 
   bool hasKeyFrame() const { return has_key_frame_; }
 
@@ -89,7 +87,7 @@ private:
   NetAddress rtsp_address_;
 
   TransportMode transport_mode_;
-  bool multicasting_{false};
+  bool multicast_on_{false};
 
   bool running_{true};
   bool has_key_frame_{false};

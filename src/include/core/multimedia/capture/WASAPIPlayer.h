@@ -15,7 +15,7 @@
 #endif
 
 LY_NAMESPACE_BEGIN
-class WASAPIPlayer
+class WASAPIPlayer : public AVPlayer
 {
 public:
 	using AudioDataCallback =
@@ -28,10 +28,12 @@ public:
   WASAPIPlayer();
 	~WASAPIPlayer();
 
-	bool init();
-	bool destroy();
-	bool start(AudioDataCallback callback);
-	bool stop();
+	bool init() override;
+  bool destroy() override;
+  bool start() override;
+	bool stop() override;
+
+	void setCallback(AudioDataCallback callback);
 
   LY_NONCOPYABLE(WASAPIPlayer);
 private:
@@ -43,7 +45,7 @@ private:
 #endif
 		pwfx
   );
-	bool play();
+	bool play() override;
 
 private:
 #ifdef __WIN__

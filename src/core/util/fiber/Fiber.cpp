@@ -70,6 +70,7 @@ void Fiber::reset(RunningCallback callback)
          fmt::format("The status of fiber({}) is {}, wrong status", id(), static_cast<int>(getStatus())));
   callback_ = callback;
 
+#ifdef __LINUX__
   ::getcontext(&context_.ctx);
   context_.ctx.uc_link = scheduler_ ? &scheduler_->main_fiber_->context_.ctx : nullptr;
   context_.ctx.uc_stack.ss_flags = 0;
@@ -78,10 +79,12 @@ void Fiber::reset(RunningCallback callback)
 
   ::makecontext(&context_.ctx, (void(*)())&Fiber::entry, 1,
     static_cast<void *>(this));
+#endif
 }
 
 void Fiber::resume()
 {
+#ifdef __LINUX__
   switch (context_.status) {
   case FiberStatus::RUNNABLE:
   {
@@ -98,9 +101,11 @@ void Fiber::resume()
   }
   default: break;
   } // switch
+#endif
 }
 void Fiber::yield()
 {
+#ifdef __LINUX__
   switch (context_.status) {
   case FiberStatus::RUNNING:
     context_.status = FiberStatus::SUSPEND;
@@ -109,6 +114,7 @@ void Fiber::yield()
     break;
   default: break;
   }
+#endif
 }
 
 void Fiber::saveStack()
@@ -154,6 +160,7 @@ void Fiber::entry(void *pFiber)
 
 void Fiber::init()
 {
+#ifdef __LINUX__
   ::getcontext(&context_.ctx);
   context_.ctx.uc_link = scheduler_ ? &scheduler_->main_fiber_->context_.ctx : nullptr;
   context_.ctx.uc_stack.ss_flags = 0;
@@ -162,6 +169,7 @@ void Fiber::init()
 
   ::makecontext(&context_.ctx, (void(*)())&Fiber::entry, 1,
     static_cast<void *>(this));
+#endif
   ++s_total_count;
 }
 

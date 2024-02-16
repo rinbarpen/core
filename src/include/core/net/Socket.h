@@ -52,10 +52,10 @@ public:
   sockfd_t getSockfd() const { return sockfd_; }
   bool isIpv6() const { return domain_.isIpv6(); }
   NetDomain getDomain() const { return domain_; }
-  std::string getDomainName() const { return NetDomain::toString(domain_); }
+  std::string getDomainName() const { return domain_.toString(); }
   NetProtocol getProtocol() const { return protocol_; }
-  std::string getProtocolName() const { return NetProtocol::toString(protocol_); }
-  bool isValid() const { return sockfd_ > 0; }
+  std::string getProtocolName() const { return protocol_.toString(); }
+  bool isValid() const { return socket_api::is_valid(sockfd_); }
 
   std::string getIp() const { return addr_.ip; }
   uint16_t getPort() const { return addr_.port; }

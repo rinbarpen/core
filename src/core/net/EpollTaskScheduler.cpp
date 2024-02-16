@@ -1,9 +1,6 @@
-#include <cstring>
-
 #include <core/config/config.h>
 #include <core/util/Mutex.h>
 #include <core/util/logger/Logger.h>
-#include <core/net/platform.h>
 #include <core/net/FdChannel.h>
 #include <core/net/EpollTaskScheduler.h>
 
@@ -48,6 +45,7 @@ void EpollTaskScheduler::control(int op, FdChannel::ptr pChannel)
 }
 void EpollTaskScheduler::updateChannel(FdChannel::ptr pChannel)
 {
+#ifdef __LINUX__
   Mutex::lock locker(mutex_);
 
   sockfd_t fd = pChannel->getSockfd();
@@ -66,15 +64,18 @@ void EpollTaskScheduler::updateChannel(FdChannel::ptr pChannel)
 			this->control(EPOLL_CTL_ADD, pChannel);
 		}
 	}
+#endif
 }
 void EpollTaskScheduler::removeChannel(sockfd_t sockfd)
 {
+#ifdef __LINUX__
   Mutex::lock locker(mutex_);
   if (auto it = channels_.find(sockfd);
       it != channels_.end()) {
     this->control(EPOLL_CTL_DEL, it->second);
     channels_.erase(it);
   }
+#endif
 }
 bool EpollTaskScheduler::handleEvent(std::chrono::milliseconds timeout)
 {

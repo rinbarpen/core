@@ -18,7 +18,7 @@ uint32_t readU32Reverse(const char *p);
 class BufferReader
 {
 public:
-  BufferReader(size_t capacity)
+  explicit BufferReader(uint32_t capacity)
     : capacity_(capacity)
   {
     data_ = new char[capacity];
@@ -31,7 +31,7 @@ public:
   auto peek() -> char *{ return data_ + get_pos_; }
   auto peek() const -> const char *{ return data_ + get_pos_; }
 
-  auto read(size_t nBytes) -> std::string;
+  auto read(uint32_t nbytes) -> std::string;
   auto read(sockfd_t sockfd) -> int;
   auto readAll() -> std::string;
 
@@ -44,14 +44,16 @@ public:
   void advance(int n);
   void advanceTo(const char *target);
 
-  size_t readableBytes() const { return size(); }
-  size_t writableBytes() const { return capacity() - size(); }
+  uint32_t readableBytes() const { return size(); }
+  uint32_t writableBytes() const { return capacity() - size(); }
 
   void clear() { get_pos_ = put_pos_ = 0; }
 	bool full() const { return size() == capacity_; }
 	bool empty() const { return put_pos_ == get_pos_; }
-	size_t size() const { return (capacity_ + 1 + put_pos_ - get_pos_) % (capacity_ + 1); }
-	size_t capacity() const { return capacity_; }
+  uint32_t size() const {
+    return (capacity_ + 1 + put_pos_ - get_pos_) % (capacity_ + 1);
+  }
+  uint32_t capacity() const { return capacity_; }
 
   LY_NONCOPYABLE(BufferReader);
 private:
@@ -61,7 +63,7 @@ private:
 private:
   int get_pos_{0};
   int put_pos_{0};
-  size_t capacity_;
+  uint32_t capacity_;
   char *data_{nullptr};
 };
 

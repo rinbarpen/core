@@ -38,9 +38,17 @@
 #include <yaml-cpp/yaml.h>
 
 #ifdef LOG_MORE_FUNCTION_INFO_ENABLED
-# define LY_FUNC __PRETTY_FUNCTION__
+# if defined(_MSC_VER)
+#  define LY_FUNC __FUNCSIG__
+# else
+#  define LY_FUNC __PRETTY_FUNCTION__
+# endif
 #else
-# define LY_FUNC __func__
+# if defined(_MSC_VER)
+#  define LY_FUNC __FUNCTION__
+# else
+#  define LY_FUNC __func__
+# endif
 #endif
 
 #define __LogEventGen(level, timestamp) \
@@ -50,7 +58,8 @@
 #define __LogEventGen2(level)                                          \
   std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, LY_FUNC, \
     std::chrono::duration_cast<std::chrono::milliseconds>(             \
-      std::chrono::system_clock::now().time_since_epoch())             \
+      std::chrono::system_clock::now() \
+      .time_since_epoch())             \
       .count())
 
 #define __LogEventWrapperGen(pLogger, level, timestamp) \
@@ -195,14 +204,14 @@ public:
   std::string toString() const {
     switch (level_) {
 #define XX(x) \
-  case LogLevel::Level::L##x: return #x;
+    case LogLevel::Level::L##x: return #x;
 
       XX(TRACE)
       XX(DEBUG)
       XX(INFO)
       XX(CRITICAL)
       XX(WARN)
-      XX(ERROR)
+    case LogLevel::Level::LERROR: return "ERROR"; 
       XX(FATAL)
 #undef XX
 
@@ -231,7 +240,9 @@ public:
     XX(INFO)
     XX(CRITICAL)
     XX(WARN)
-    XX(ERROR)
+    if (str == "ERROR") {
+      return LogLevel(LERROR);
+    }
     XX(FATAL)
 #undef XX
 
@@ -331,7 +342,8 @@ private:
 struct LogFormatterItem
 {
   using ptr = std::shared_ptr<LogFormatterItem>;
-
+  
+  LogFormatterItem() = default;
   virtual ~LogFormatterItem() = default;
 
   virtual void format(std::ostream &os, LogEvent::ptr pLogEvent,
@@ -584,11 +596,11 @@ public:
  */
 
 static void log_export_config() {
-  LogManager::instance()->toYamlFile("config.yml");
+  LogManager::instance()->toYamlFile("config/log.yml");
 }
 
 static void log_load_config() {
-  LogIniter::loadYamlFile("config.yml");
+  LogIniter::loadYamlFile("config/log.yml");
 }
 
 LY_NAMESPACE_END

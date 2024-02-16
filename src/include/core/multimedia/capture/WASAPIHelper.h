@@ -21,11 +21,10 @@ struct Monitor
 	int bottom;
 };
 
-static auto monitors() -> std::vector<Monitor>
-{
+static std::vector<Monitor> monitors() {
 	std::vector<Monitor> monitors;
 #ifdef __WIN__
-	HRESULT hr = S_OK;
+	HRESULT hr = D3D_OK;
 
 	IDirect3D9Ex* d3d9ex = nullptr;
 	hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &d3d9ex);

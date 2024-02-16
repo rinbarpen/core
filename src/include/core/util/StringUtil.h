@@ -1,10 +1,9 @@
 #pragma once
 
-#include <algorithm>
-#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <clocale>
+#include <algorithm>
 #include <initializer_list>
 #include <array>
 #include <unordered_map>
@@ -14,6 +13,7 @@
 #include <string_view>
 #include <type_traits>
 #include <optional>
+#include <utility>
 
 #include <core/util/marcos.h>
 #include <core/util/Traits.h>
@@ -182,7 +182,7 @@ static auto split(
     for (auto &delim : delimList) {
       expectedEnd = s.find(delim, start);
       if (expectedEnd != std::string::npos) {
-        end = std::min(expectedEnd, end);
+        if (expectedEnd < end) end = expectedEnd;
         matched = delim;
       }
     }

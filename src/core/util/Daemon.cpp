@@ -1,6 +1,4 @@
 #include <core/util/Deamon.h>
-#include <unistd.h>
-
 
 LY_NAMESPACE_BEGIN
 Deamon::Deamon(const char *path)

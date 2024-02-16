@@ -8,7 +8,7 @@ class SharedString final
 {
 public:
   SharedString();
-  SharedString(size_t capacity);
+  explicit SharedString(size_t capacity);
   ~SharedString();
 
   void reset();
@@ -25,6 +25,8 @@ public:
 
   SharedString clone();
   void resize(size_t size);
+  void clear();
+  void resizeAndClear(size_t size);
 
   bool empty() const { return size_ == 0; }
   LY_NODISCARD size_t size() const { return size_; }

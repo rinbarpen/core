@@ -121,13 +121,12 @@ bool GDIScreenCapture::destroy()
 bool GDIScreenCapture::captureFrame(std::vector<uint8_t>& image, uint32_t& width, uint32_t& height)
 {
 	Mutex::lock locker(mutex_);
-
 	if (!started_) {
 		image.clear();
 		return false;
 	}
 
-	if (image_.get() == nullptr || image_.size() == 0) {
+	if (image_.get() == nullptr || image_.empty()) {
 		image.clear();
 		return false;
 	}
@@ -142,7 +141,7 @@ bool GDIScreenCapture::captureFrame(std::vector<uint8_t>& image, uint32_t& width
 	return true;
 }
 
-uint32_t GDIScreenCapture::getWidth()  const { return width_; }
+uint32_t GDIScreenCapture::getWidth() const { return width_; }
 uint32_t GDIScreenCapture::getHeight() const { return height_; }
 bool GDIScreenCapture::isCapturing() const { return started_; }
 
@@ -210,14 +209,16 @@ bool GDIScreenCapture::decode(ffmpeg::AVFramePtr frame, ffmpeg::AVPacketPtr pack
 		return false;
 	}
 
-	Mutex::lock locker(mutex_);
-	image_.reset(frame->pkt_size);
-	image_.resize(frame->pkt_size);
-	width_ = frame->width;
-	height_ = frame->height;
+	{
+    Mutex::lock locker(mutex_);
+    image_.resizeAndClear(frame->pkt_size);
+    width_ = frame->width;
+    height_ = frame->height;
 
-	for (uint32_t i = 0; i < height_; i++) {
-		memcpy(image_.get() + i * width_ * 4, frame->data[0] + i * frame->linesize[0], frame->linesize[0]);
+    for (uint32_t i = 0; i < height_; i++) {
+      memcpy(image_.get() + i * width_ * 4,
+        frame->data[0] + i * frame->linesize[0], frame->linesize[0]);
+    }
 	}
 
 	av_frame_unref(frame.get());

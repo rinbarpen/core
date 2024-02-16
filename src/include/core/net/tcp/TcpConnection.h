@@ -42,7 +42,9 @@ public:
   sockfd_t getSockfd() const { return channel_->getSockfd(); }
   NetAddress getAddress() const { return socket_api::peer_address(channel_->getSockfd()); }
 
-  uint32_t getId() const { return reinterpret_cast<uintptr_t>(task_scheduler_); }
+  uintptr_t getId() const {
+    return reinterpret_cast<uintptr_t>(task_scheduler_);
+  }
 
 protected:
   virtual void onRead();

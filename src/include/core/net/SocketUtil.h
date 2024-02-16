@@ -2,9 +2,9 @@
 
 #include <cstdint>
 #include <cstring>
+#include <core/util/marcos.h>
 #include <core/net/platform.h>
 #include <core/net/NetAddress.h>
-#include <core/util/marcos.h>
 #include <core/util/logger/Logger.h>
 
 
@@ -30,8 +30,8 @@ struct NetDomain
       return {IPV6};
     return {NONE};
   }
-  static std::string toString(NetDomain domain) {
-    switch (domain.type) {
+  std::string toString() const {
+    switch (type) {
     case IPV4: return "IPV4";
     case IPV6: return "IPV6";
     default: return "NONE";
@@ -62,8 +62,8 @@ struct NetProtocol
       return {TCP};
     return {NONE};
   }
-  static std::string toString(NetProtocol protocol) {
-    switch (protocol.type) {
+  std::string toString() const {
+    switch (type) {
     case UDP: return "UDP";
     case TCP: return "TCP";
     default: return "NONE";
@@ -78,7 +78,11 @@ static constexpr sockfd_t kInvalidSockfd = -1;
 namespace socket_api
 {
 static bool is_valid(sockfd_t fd) {
+#ifdef __LINUX__
   return fd > 0;
+#elif defined(__WIN__)
+  return fd != SOCKET_ERROR;
+#endif
 }
 static sockfd_t socket(int domain, int type, int protocol) {
   return ::socket(domain, type, protocol);
@@ -90,10 +94,10 @@ static sockfd_t socket_udp() {
   return ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 }
 static int bind(sockfd_t sockfd, const char *ip, uint16_t port) {
-  int r;
+  int r{-1};
 
   struct sockaddr_in addr;
-  memset(&addr, 0, sizeof(addr));
+  std::memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   addr.sin_port = ::htons(port);
 
@@ -104,12 +108,18 @@ static int bind(sockfd_t sockfd, const char *ip, uint16_t port) {
 
   r = ::bind(
     sockfd, reinterpret_cast<const struct sockaddr *>(&addr), INET_ADDRSTRLEN);
-  if (r == SOCKET_ERROR) {
-    return r;
-  }
 
   return r;
 }
+
+static int close(sockfd_t sockfd) {
+#ifdef __WIN__
+  return ::closesocket(sockfd);
+#elif defined(__LINUX__)
+  return ::close(sockfd);
+#endif
+}
+
 /**
  * @brief create a udp socket and bind a (ip, port)
  *        close socket if fail to bind
@@ -120,20 +130,17 @@ static int bind(sockfd_t sockfd, const char *ip, uint16_t port) {
  */
 static sockfd_t socket_udp_bind(const char *ip, uint16_t port) {
   sockfd_t sockfd = socket_udp();
-  if (sockfd == SOCKET_ERROR) return kInvalidSockfd;
+  if (is_valid(sockfd)) return sockfd;
 
   if (bind(sockfd, ip, port) < 0) {
     close(sockfd);
   }
-  return kInvalidSockfd;
+  return sockfd;
 }
 
 static int listen(sockfd_t fd, int backlog) {
-  int r;
+  int r{-1};
   r = ::listen(fd, backlog);
-  if (r < 0) {
-    return r;
-  }
   return r;
 }
 
@@ -152,11 +159,11 @@ static int listen(sockfd_t fd, int backlog) {
 static sockfd_t socket_bind_listen(int domain, int type, int protocol,
   const char *ip, uint16_t port, int backlog) {
   sockfd_t fd = socket(domain, type, protocol);
-  if (fd == SOCKET_ERROR) {
-    return kInvalidSockfd;
+  if (is_valid(fd)) {
+    return fd;
   }
 
-  int r{};
+  int r{-1};
   r = bind(fd, ip, port);
   if (r < 0) {
     close(fd);
@@ -169,14 +176,6 @@ static sockfd_t socket_bind_listen(int domain, int type, int protocol,
   }
 
   return fd;
-}
-
-static int close(sockfd_t sockfd) {
-#ifdef __WIN__
-  return ::closesocket(sockfd);
-#elif defined(__LINUX__)
-  return ::close(sockfd);
-#endif
 }
 
 static sockfd_t accept(sockfd_t sockfd, char *ip, uint16_t *port) {
@@ -209,7 +208,6 @@ static int send(sockfd_t sockfd, const char *buf, size_t len, int flags = 0) {
 static int recv(sockfd_t sockfd, char *buf, size_t len, int flags = 0) {
   return ::recv(sockfd, buf, len, flags);
 }
-
 static int sendto(sockfd_t fd, const char *buf, uint32_t len, int flags,
   const char *ip, uint16_t port) {
   int r{};
@@ -262,8 +260,7 @@ static int set_reuse_address(sockfd_t fd, int on = 1) {
 static int set_reuse_port(sockfd_t fd, int on = 1) {
   int r{-1};
 #ifdef SO_REUSEPORT
-  r =
-    ::setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (const char *) &on, sizeof(on));
+  r = ::setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (const char *) &on, sizeof(on));
 #endif
   return r;
 }
