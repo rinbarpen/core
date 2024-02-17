@@ -14,7 +14,6 @@ public:
   virtual bool destroy() = 0;
   virtual bool captureFrame(std::vector<uint8_t> &image, uint32_t &width, uint32_t &height) = 0;
 
-
   virtual bool isCapturing() const = 0;
   virtual uint32_t getWidth() const = 0;
   virtual uint32_t getHeight() const = 0;

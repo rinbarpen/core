@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/util/marcos.h"
-#include <core/multimedia/ffmpeg/AACEncoder.h>
 #include <cstdint>
+#include <core/util/marcos.h>
+#include <core/multimedia/ffmpeg/AACEncoder.h>
 
 LY_NAMESPACE_BEGIN
 class AACEncoder
@@ -11,8 +11,8 @@ public:
   AACEncoder() = default;
   ~AACEncoder() = default;
 
-  bool init(int sample_rate, int channels, int format, int bit_rate_bps);
-  bool destroy();
+  bool prepare(int sample_rate, int channels, int format, int bit_rate_bps);
+  bool close();
 
   int getFramesCount() const;
   int getSampleRate() const;

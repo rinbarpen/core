@@ -136,18 +136,32 @@ target_link_directories(${CoreProjectName}
     PUBLIC
         ${FFMPEG_LIBRARIES_DIR}
 )
-target_link_libraries(${CoreProjectName}
-    PUBLIC
-        fmt::fmt
-        yaml-cpp::yaml-cpp
-        OpenSSL::SSL
-        OpenSSL::Crypto
-        ${FFMPEG_LIBRARIES}
-        range-v3
-        D3D9.lib
-#        glfw
-#        yuvconvert
-)
+if(WIN32)
+    target_link_libraries(${CoreProjectName}
+        PUBLIC
+            fmt::fmt
+            yaml-cpp::yaml-cpp
+            OpenSSL::SSL
+            OpenSSL::Crypto
+            ${FFMPEG_LIBRARIES}
+            range-v3
+            D3D9.lib
+    #        glfw
+    #        yuvconvert
+    )
+elseif(UNIX)
+    target_link_libraries(${CoreProjectName}
+        PUBLIC
+            fmt::fmt
+            yaml-cpp::yaml-cpp
+            OpenSSL::SSL
+            OpenSSL::Crypto
+            ${FFMPEG_LIBRARIES}
+            range-v3
+    #        glfw
+    #        yuvconvert
+    )
+endif()
 target_compile_features(${CoreProjectName}
     PUBLIC
         cxx_std_17

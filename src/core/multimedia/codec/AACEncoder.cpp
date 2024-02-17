@@ -2,8 +2,8 @@
 
 LY_NAMESPACE_BEGIN
 
-bool AACEncoder::init(int sample_rate, int channels, int format, int bit_rate_bps)
-{
+bool AACEncoder::prepare(
+  int sample_rate, int channels, int format, int bit_rate_bps) {
 	// if (aac_encoder_.getAVCodecContext()) {
 	// 	return false;
 	// }
@@ -21,7 +21,7 @@ bool AACEncoder::init(int sample_rate, int channels, int format, int bit_rate_bp
 	return true;
 }
 
-bool AACEncoder::destroy()
+bool AACEncoder::close()
 {
 	sample_rate_ = 0;
 	channels_ = 0;
