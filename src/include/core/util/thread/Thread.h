@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <thread>
+#include <future>
 
 #include <core/util/marcos.h>
 #include <core/util/FunctionWrapper.h>
@@ -9,7 +10,6 @@
 // TODO: complement ThreadContext and Thread. Thread supports to be derived. Use our special Thread instead of ThreadPool's std::thread. Then input thread info into Logger
 
 LY_NAMESPACE_BEGIN
-
 struct ThreadContext
 {
   std::thread::id id;
@@ -33,31 +33,26 @@ public:
   ~Thread();
 
   template <typename Fn, typename... Args>
-  void dispatch(Fn&& fn, Args&&... args)
+  auto dispatch(Fn&& fn, Args&&... args) -> std::future<std::invoke_result_t<Fn, Args...>>
   {
-    if (running_) return;
+    using ResultType = std::invoke_result_t<Fn, Args...>;
+
+    if (running_) this->destroy();
+
+    auto task = std::make_shared<std::packaged_task<ResultType(Args...)>>(std::forward<Fn>(fn));
+    auto res = task->get_future();
 
     running_ = true;
-    thread_ = std::thread(std::forward<Fn>(fn), std::forward<Args>(args)...);
+    thread_ = std::thread([task, &args...]{(*task)(std::forward<Args>(args)...);});
     this->fillContext();
-  }
-  template <typename Fn, typename... Args>
-  void dispatch(FunctionWrapper<Fn, Args...>&& fn)
-  {
-    if (running_) return;
 
-    running_ = true;
-    thread_ = std::thread([=]() {
-      (void)fn();
-    });
-    this->fillContext();
+    return res;
   }
   void destroy();
 
   ThreadContext context() const;
 
   LY_NONCOPYABLE(Thread);
-
 private:
   void fillContext();
 

@@ -47,7 +47,7 @@ void TcpConnection::recv(std::string &data, size_t len)
   if (running_) {
     {
       Mutex::lock locker(mutex_);
-      data = read_buffer_->read(len);
+      data = read_buffer_->read((uint32_t)len);
     }
 
     this->onRead();

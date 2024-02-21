@@ -1,11 +1,15 @@
-#include "include/ScreenLive.h"
-
-#include "include/core/multimedia/net/AACSource.h"
-#include "include/core/util/logger/Logger.h"
-
-//#include <ScreenLive.h>
+#include <chrono>
+#include <core/util/logger/Logger.h>
+#include <core/multimedia/net/AACSource.h>
+#include <core/multimedia/net/H264Source.h>
+#include <core/multimedia/net/H264Parser.h>
+#include <core/multimedia/capture/WASAPIHelper.h>
+#include <core/multimedia/capture/GDISrceenCapture.h>
+#include <ScreenLive.h>
+#include <cstdint>
 
 LY_NAMESPACE_BEGIN
+using namespace net;
 static auto g_screen_live_logger = GET_LOGGER("screen.live");
 
 ScreenLive::ScreenLive()
@@ -77,12 +81,12 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
       config.server.ip = "0.0.0.0";
     }
 
-    if (!rtsp_server->start(config.server.ip, config.server.port)) {
+    if (!rtsp_server->start(config.server.ip.c_str(), config.server.port, 1000)) {
       return false;
     }
 
     MediaSession *session = MediaSession::create(config.server.suffix);
-    session->addSource(channel_0, H264Source::create());
+    session->addSource(channel_0, H264Source::create(screen_live_config_.frame_rate));
     session->addSource(
       channel_1, AACSource::create(sample_rate, channels, false));
     session->addNotifyConnectedCallback(
@@ -112,13 +116,13 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
   else if (type == ScreenLiveType::RTSP_PUSHER) {
     auto rtsp_pusher = RtspPusher::create(event_loop_.get());
     MediaSession *session = MediaSession::create();
-    session->addSource(channel_0, H264Source::create());
+    session->addSource(channel_0, H264Source::create(screen_live_config_.frame_rate));
     session->addSource(
       channel_1, AACSource::create(audio_capture_->getSampleRate(),
                         audio_capture_->getChannels(), false));
 
     rtsp_pusher->addSession(session);
-    if (rtsp_pusher->openUrl(config.pusher.rtsp_url, 1000) != 0) {
+    if (rtsp_pusher->openUrl(config.pusher.rtsp_url, 1000ms) != 0) {
       rtsp_pusher = nullptr;
       ILOG_INFO_FMT(g_screen_live_logger, "RTSP Pusher: Open url({}) failed.",
         config.pusher.rtsp_url);
@@ -127,7 +131,7 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
 
     Mutex::lock locker(mutex_);
     rtsp_pusher_ = rtsp_pusher;
-    ILOG_INFO_FMT(g_screen_live_logger, "RTSP Pusher start: Push stream to {} ...", 
+    ILOG_INFO_FMT(g_screen_live_logger, "RTSP Pusher start: Push stream to {} ...",
       config.pusher.rtsp_url);
   }
   else if (type == ScreenLiveType::RTMP_PUSHER) {
@@ -137,7 +141,7 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
     uint8_t extradata[1024] = {0};
     int extradata_size = 0;
 
-    extradata_size = aac_encoder_->getSpecificConfig(extradata, 1024);
+    extradata_size = aac_encoder_.getSpecificConfig(extradata, 1024);
     if (extradata_size <= 0) {
       ILOG_ERROR_FMT(g_screen_live_logger, "Get audio specific config failed.");
       return false;
@@ -156,29 +160,29 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
     }
 
     Nal sps = H264Parser::findNal((uint8_t *) extradata, extradata_size);
-    if (sps.first != nullptr && sps.second != nullptr
-        && ((*sps.first & 0x1F) == 7)) {
-      mediaInfo.sps_size = sps.second - sps.first + 1;
+    if (sps.start_pos != nullptr && sps.end_pos != nullptr
+        && ((*sps.start_pos & 0x1F) == 7)) {
+      mediaInfo.sps_size = sps.end_pos - sps.start_pos + 1;
       mediaInfo.sps.reset(
         new uint8_t[mediaInfo.sps_size], std::default_delete<uint8_t[]>());
-      memcpy(mediaInfo.sps.get(), sps.first, mediaInfo.sps_size);
+      memcpy(mediaInfo.sps.get(), sps.start_pos, mediaInfo.sps_size);
 
       Nal pps = H264Parser::findNal(
-        sps.second, extradata_size - (sps.second - (uint8_t *) extradata));
-      if (pps.first != nullptr && pps.second != nullptr
-          && ((*pps.first & 0x1f) == 8)) {
-        mediaInfo.pps_size = pps.second - pps.first + 1;
+        sps.end_pos, extradata_size - (sps.end_pos - (uint8_t *) extradata));
+      if (pps.start_pos != nullptr && pps.end_pos != nullptr
+          && ((*pps.start_pos & 0x1f) == 8)) {
+        mediaInfo.pps_size = pps.end_pos - pps.start_pos + 1;
         mediaInfo.pps.reset(
           new uint8_t[mediaInfo.pps_size], std::default_delete<uint8_t[]>());
-        memcpy(mediaInfo.pps.get(), pps.first, mediaInfo.pps_size);
+        memcpy(mediaInfo.pps.get(), pps.start_pos, mediaInfo.pps_size);
       }
     }
 
     rtmp_pusher->setMediaInfo(mediaInfo);
 
     std::string status;
-    if (rtmp_pusher->openUrl(config.pusher.rtmp_url, 1000, status) < 0) {
-      ILOG_ERROR_FMT(g_screen_live_logger, 
+    if (rtmp_pusher->openUrl(config.pusher.rtmp_url, 1000ms, status) < 0) {
+      ILOG_ERROR_FMT(g_screen_live_logger,
         "RTMP Pusher: Open url({}) failed.", config.pusher.rtmp_url);
       return false;
     }
@@ -236,7 +240,7 @@ bool ScreenLive::startCapture()
   }
 
   for (size_t index = 0; index < monitors.size(); index++) {
-    ILOG_INFO_FMT(g_screen_live_logger, "Monitor({}) info: {}x{}", 
+    ILOG_INFO_FMT(g_screen_live_logger, "Monitor({}) info: {}x{}",
       index,
       monitors[index].right - monitors[index].left,
       monitors[index].bottom - monitors[index].top);
@@ -306,8 +310,8 @@ bool ScreenLive::startEncoder(ScreenLiveConfig &config)
   screen_live_config_ = config;
 
   ffmpeg::AVConfig encoder_config;
-  encoder_config.video.framerate = screen_live_config_.frame_rate;
-  encoder_config.video.bitrate = screen_live_config_.bit_rate_bps;
+  encoder_config.video.frame_rate = screen_live_config_.frame_rate;
+  encoder_config.video.bit_rate = screen_live_config_.bit_rate_bps;
   encoder_config.video.gop = screen_live_config_.frame_rate;
   encoder_config.video.format = AV_PIX_FMT_BGRA;
   encoder_config.video.width = screen_capture_->getWidth();
@@ -426,14 +430,14 @@ void ScreenLive::encodeVideo()
   std::vector<uint8_t> out_frame;
 
   while (encoder_started_ && capture_started_) {
-    if (update_ts.elapsed() >= 1000) {
+    if (update_ts.elapsed().count() >= 1000) {
       update_ts.reset();
       encoding_fps_ = encoding_fps;
       encoding_fps = 0;
     }
 
     uint32_t delay = msec;
-    uint32_t elapsed = (uint32_t) encoding_ts.elapsed();
+    uint32_t elapsed = (uint32_t) encoding_ts.elapsed().count();
     if (elapsed > delay) {
       delay = 0;
     }
@@ -466,7 +470,7 @@ void ScreenLive::encodeAudio()
 {
   std::shared_ptr<uint8_t> pcm_buffer(
     new uint8_t[48000 * 8], std::default_delete<uint8_t[]>());
-  uint32_t frame_samples = aac_encoder_.getFramesNum();
+  uint32_t frame_samples = aac_encoder_.getFramesCount();
   uint32_t channel = audio_capture_->getChannels();
   uint32_t sample_rate = audio_capture_->getSampleRate();
 
@@ -492,56 +496,49 @@ void ScreenLive::encodeAudio()
 void ScreenLive::pushVideo(
   const uint8_t *data, uint32_t size, uint32_t timestamp)
 {
-  AVFrame video_frame(size);
-  video_frame.size = size - 4; /* -4 去掉H.264起始码 */
+  SimAVFrame video_frame(size - 4);
+  // video_frame.size() = size - 4;
   video_frame.type = this->isKeyFrame(data, size) ? VIDEO_FRAME_I : VIDEO_FRAME_P;
   video_frame.timestamp = timestamp;
-  memcpy(video_frame.buffer.get(), data + 4, size - 4);
+  memcpy(video_frame.data.get(), data + 4, size - 4);
 
   if (size > 0) {
     Mutex::lock locker(mutex_);
 
-    /* RTSP服务器 */
     if (rtsp_server_ != nullptr && this->rtsp_clients_.size() > 0) {
       rtsp_server_->pushFrame(media_session_id_, channel_0, video_frame);
     }
 
-    /* RTSP推流 */
     if (rtsp_pusher_ != nullptr && rtsp_pusher_->isConnected()) {
       rtsp_pusher_->pushFrame(channel_0, video_frame);
     }
 
-    /* RTMP推流 */
     if (rtmp_pusher_ != nullptr && rtmp_pusher_->isConnected()) {
-      rtmp_pusher_->pushVideoFrame(video_frame.buffer.get(), video_frame.size);
+      rtmp_pusher_->pushVideoFrame((uint8_t*)video_frame.data.get(), video_frame.size());
     }
   }
 }
 void ScreenLive::pushAudio(
   const uint8_t *data, uint32_t size, uint32_t timestamp)
 {
-  AVFrame audio_frame(size);
+  SimAVFrame audio_frame(size);
   audio_frame.timestamp = timestamp;
   audio_frame.type = AUDIO_FRAME;
-  audio_frame.size = size;
-  memcpy(audio_frame.buffer.get(), data, size);
+  memcpy(audio_frame.data.get(), data, size);
 
   if (size > 0) {
     Mutex::lock locker(mutex_);
 
-    /* RTSP服务器 */
     if (rtsp_server_ != nullptr && this->rtsp_clients_.size() > 0) {
-      rtsp_server_->PushFrame(media_session_id_, channel_1, audio_frame);
+      rtsp_server_->pushFrame(media_session_id_, channel_1, audio_frame);
     }
 
-    /* RTSP推流 */
     if (rtsp_pusher_ && rtsp_pusher_->isConnected()) {
       rtsp_pusher_->pushFrame(channel_1, audio_frame);
     }
 
-    /* RTMP推流 */
     if (rtmp_pusher_ != nullptr && rtmp_pusher_->isConnected()) {
-      rtmp_pusher_->pushAudioFrame(audio_frame.buffer.get(), audio_frame.size);
+      rtmp_pusher_->pushAudioFrame(audio_frame.data.get(), audio_frame.size());
     }
   }
 }

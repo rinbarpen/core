@@ -8,6 +8,8 @@ LY_NAMESPACE_BEGIN
 template <typename Fn, typename... Args>
 struct FunctionWrapper
 {
+  using ResultType = std::invoke_result_t<Fn, Args...>;
+
   Fn fn;
   std::tuple<Args...> args;
 

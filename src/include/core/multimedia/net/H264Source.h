@@ -1,6 +1,5 @@
 #pragma once
 
-#include <chrono>
 #include <core/util/time/Clock.h>
 #include <core/multimedia/net/MediaSource.h>
 

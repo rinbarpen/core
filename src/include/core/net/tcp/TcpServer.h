@@ -12,7 +12,7 @@ NAMESPACE_BEGIN(net)
 class TcpServer
 {
 public:
-  explicit TcpServer(EventLoop *eventLoop);
+  explicit TcpServer(EventLoop *event_loop);
   virtual ~TcpServer();
 
   virtual bool start(const char *ip, uint16_t port, int max_backlog);

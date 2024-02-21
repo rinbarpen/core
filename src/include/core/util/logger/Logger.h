@@ -211,7 +211,7 @@ public:
       XX(INFO)
       XX(CRITICAL)
       XX(WARN)
-    case LogLevel::Level::LERROR: return "ERROR"; 
+    case LogLevel::Level::LERROR: return "ERROR";
       XX(FATAL)
 #undef XX
 
@@ -342,7 +342,7 @@ private:
 struct LogFormatterItem
 {
   using ptr = std::shared_ptr<LogFormatterItem>;
-  
+
   LogFormatterItem() = default;
   virtual ~LogFormatterItem() = default;
 

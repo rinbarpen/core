@@ -15,8 +15,6 @@ public:
   virtual bool start(const char *ip, uint16_t port, int max_backlog);
   virtual bool stop();
 
-  void doEventLoop() const { event_loop_->start(); }
-
   virtual auto type() const -> std::string { return "UdpServer"; }
 
   LY_NONCOPYABLE(UdpServer);

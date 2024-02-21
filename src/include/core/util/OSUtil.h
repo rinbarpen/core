@@ -40,7 +40,7 @@ static int lstat(const char *file, struct stat *st = nullptr) {
   return r;
 }
 static bool touch(
-  const std::string &filename, int oflag = _S_IREAD | _S_IWRITE) {
+  const std::string &filename, int oflag = 0644) {
   int fd{-1};
 #if defined(__LINUX__)
   if ((fd = ::open(filename.c_str(), O_CREAT | O_WRONLY, oflag)) == 0) {

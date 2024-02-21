@@ -23,6 +23,9 @@ public:
 
   LY_NODISCARD char *get() const { return data_.get(); }
 
+  char& operator[](size_t index) { return data_.get()[index]; }
+  char& operator[](size_t index) const { return data_.get()[index]; }
+
   SharedString clone();
   void resize(size_t size);
   void clear();

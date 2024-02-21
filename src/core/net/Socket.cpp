@@ -1,5 +1,6 @@
 #include <core/net/platform.h>
 #include <core/net/Socket.h>
+#include "core/net/SocketUtil.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -15,15 +16,19 @@ Socket::Socket(NetProtocol protocol)
 }
 Socket::~Socket()
 {
-  if (isValid())
-    socket_api::close(sockfd_);
+  // if (isValid())
+  //   socket_api::close(sockfd_);
 }
 
-int Socket::bind(const NetAddress &addr)
+int Socket::bind(const char *ip, uint16_t port)
 {
   int r{-1};
-  r = socket_api::bind(sockfd_, addr.ip.c_str(), addr.port);
+  r = socket_api::bind(sockfd_, ip, port);
   return r;
+}
+int Socket::bind(const NetAddress &addr)
+{
+  return this->bind(addr.ip.c_str(), addr.port);
 }
 int Socket::listen(int backlog)
 {
@@ -31,16 +36,19 @@ int Socket::listen(int backlog)
   r = socket_api::listen(sockfd_, backlog);
   return r;
 }
-int Socket::connect(const NetAddress &addr, std::chrono::milliseconds msec)
+int Socket::connect(const char *ip, uint16_t port, int msec)
 {
   int r{-1};
-  auto ms = msec.count();
-  if (ms > 0)
-    socket_api::set_blocking(sockfd_, msec.count());
-  r = socket_api::connect(sockfd_, addr.ip.c_str(), addr.port);
-  if (ms > 0)
+  if (msec > 0)
+    socket_api::set_blocking(sockfd_, msec);
+  r = socket_api::connect(sockfd_, ip, port);
+  if (msec > 0)
     socket_api::set_nonblocking(sockfd_);
   return r;
+}
+int Socket::connect(const NetAddress &addr, std::chrono::milliseconds msec)
+{
+  return this->connect(addr.ip.c_str(), addr.port, msec.count());
 }
 SockfdAddressPair Socket::accept()
 {

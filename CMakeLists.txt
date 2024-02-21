@@ -22,11 +22,13 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     # Gcc specific flags
 #    list(APPEND CMAKE_CXX_FLAGS "-fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Clang specific flags
 #    list(APPEND CMAKE_CXX_FLAGS "-fPIC")
 #    list(APPEND CMAKE_CXX_FLAGS "-stdlib=libc++")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -stdlib=libc++")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
 elseif (MSVC)
     # MSVC specific flags
 #    list(APPEND CMAKE_CXX_FLAGS "/MP")
@@ -71,28 +73,13 @@ else()
     message(STATUS "Unknown platform")
 endif()
 
-if (WIN32)
-    set(FFMPEG_LIBRARIES_DIR "${FFMPEG_DIR}/lib/${SYSTEM_NAME}")
-else()
-    set(FFMPEG_LIBRARIES_DIR "${FFMPEG_DIR}/lib")
-endif()
+# set(FFMPEG_LIBRARIES_DIR "${FFMPEG_DIR}/lib/${SYSTEM_NAME}")
 set(FFMPEG_INCLUDE "${FFMPEG_DIR}/include")
 set(FFMPEG_LIBRARIES
     "avcodec" "avformat" "avutil"
     "avdevice" "avfilter" "postproc"
     "swresample" "swscale")
 
-#if (WIN32)
-#    foreach(lib ${FFMPEG_LIBRARIES})
-#        file(COPY "${FFMPEG_LIBRARIES_DIR}/${CMAKE_BUILD_TYPE}/${lib}.dll" DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${lib}.dll")
-#        message(STATUS "Copy ${FFMPEG_LIBRARIES_DIR}/${CMAKE_BUILD_TYPE}/${lib}.dll to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${lib}.dll")
-#    endforeach()
-#elseif (UNIX)
-#    foreach(lib ${FFMPEG_LIBRARIES})
-#        file(COPY "${FFMPEG_LIBRARIES_DIR}/${lib}.so" DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${lib}.so")
-#        message(STATUS "Copy ${FFMPEG_LIBRARIES_DIR}/${lib}.so to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${lib}.so")
-#    endforeach()
-#endif()
 ######################################### Library End   ############################################
 
 add_definitions(-DLOG_MORE_FUNCTION_INFO_ENABLED)
@@ -112,6 +99,7 @@ file(GLOB_RECURSE
 message(STATUS "SOURCE FILES: ${CoreSrcs}")
 
 #add_definitions(-DENABLE_TEST)
+add_subdirectory(examples)
 if (ENABLE_TEST)
     add_subdirectory(test)
 endif()
@@ -124,9 +112,9 @@ target_include_directories(${CoreProjectName}
         "${PROJECT_SOURCE_DIR}/src/include"
         "${FFMPEG_INCLUDE}"
         "3rdparty/yaml-cpp/include"
+        "3rdparty/fmt/include"
         "3rdparty/googletest/googletest/include"
         "3rdparty/googletest/googlemock/include"
-        "3rdparty/fmt/include"
         "3rdparty/range-v3/include"
 #        "3rdparty/sqlite3pp/include"
 #        "3rdparty/glfw/include"

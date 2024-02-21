@@ -16,7 +16,7 @@ public:
   using AcceptCallbackFn = std::function<void()>;
   using NewConnectionCallback = std::function<void(sockfd_t)>;
 
-  Acceptor(EventLoop* event_loop);
+  Acceptor(EventLoop* event_loop, bool is_tcp = true);
   ~Acceptor() = default;
 
   void listen(const char *ip, uint16_t port, int backlog);
@@ -33,6 +33,7 @@ private:
 
 private:
   EventLoop *event_loop_;
+  bool is_tcp_;
   std::unique_ptr<Socket> socket_;
   AcceptCallbackFn accept_callback_;
   NewConnectionCallback new_connection_callback_;

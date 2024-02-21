@@ -4,17 +4,18 @@
 #include <string>
 #include <vector>
 
-#include "core/util/marcos.h"
-#include "core/util/Mutex.h"
-#include "core/util/Singleton.h"
-#include "core/multimedia/capture/AudioCapture.h"
-#include "core/multimedia/capture/ScreenCapture.h"
-#include "core/multimedia/codec/AACEncoder.h"
-#include "core/multimedia/codec/H264Encoder.h"
-#include "core/multimedia/net/media.h"
-#include "core/multimedia/net/rtsp/RtspPusher.h"
-#include "core/multimedia/net/rtsp/RtspServer.h"
-#include "core/net/EventLoop.h"
+#include <core/util/marcos.h>
+#include <core/util/Mutex.h>
+#include <core/util/Singleton.h>
+#include <core/net/EventLoop.h>
+#include <core/multimedia/net/media.h>
+#include <core/multimedia/net/rtsp/RtspPusher.h>
+#include <core/multimedia/net/rtsp/RtspServer.h>
+#include <core/multimedia/net/rtmp/RtmpPublisher.h>
+#include <core/multimedia/codec/AACEncoder.h>
+#include <core/multimedia/codec/H264Encoder.h>
+#include <core/multimedia/capture/AudioCapture.h>
+#include <core/multimedia/capture/ScreenCapture.h>
 
 
 LY_NAMESPACE_BEGIN
@@ -80,7 +81,7 @@ public:
 
   bool isInitialized() const { return initialized_; }
   bool isEncoderInitialized() const { return encoder_started_; }
-  bool isConnected(ScreenLiveType type); 
+  bool isConnected(ScreenLiveType type);
 
   LY_NONCOPYABLE(ScreenLive);
 private:
@@ -105,16 +106,16 @@ private:
 
   // encoder
   H264Encoder h264_encoder_;
-  AACEncoder acc_encoder_;
+  AACEncoder aac_encoder_;
   std::thread encode_video_thread_;
   std::thread encode_audio_thread_;
 
   // streamer
-  MediaSessionId media_session_id_{0};
+  net::MediaSessionId media_session_id_{0};
   std::unique_ptr<net::EventLoop> event_loop_;
-  std::shared_ptr<RtspServer> rtsp_server_;
-  std::shared_ptr<RtspPusher> rtsp_pusher_;
-  std::shared_ptr<RtmpPublisher> rtmp_pusher_;
+  std::shared_ptr<net::RtspServer> rtsp_server_;
+  std::shared_ptr<net::RtspPusher> rtsp_pusher_;
+  std::shared_ptr<net::RtmpPublisher> rtmp_pusher_;
 
   // status info
   std::atomic_int encoding_fps_;

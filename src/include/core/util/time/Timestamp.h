@@ -58,6 +58,15 @@ public:
     return ::std::chrono::duration_cast<TimeDurationType>(tp_ - begin.current());
   }
 
+  template <class TimeDurationType = std::chrono::milliseconds>
+  auto elapsed() -> TimestampDuration<TimeDurationType>
+  {
+    auto now = Timestamp<ClockType>::tp();
+    auto r = ::std::chrono::duration_cast<TimeDurationType>(now - tp_);
+    tp_ = now;
+    return r;
+  }
+
   template <typename U>
   auto operator+(TimestampDuration<U> duration) const -> Timestamp<ClockType>
   {

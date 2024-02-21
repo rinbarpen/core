@@ -7,6 +7,7 @@
 #include <core/util/Record.h>
 #include <core/util/Util.h>
 #include <core/util/logger/Logger.h>
+#include <core/util/thread/Thread.h>
 #include <core/util/thread/ThreadPool.h>
 #include <core/util/time/Clock.h>
 #include <core/util/time/Timestamp.h>
@@ -17,6 +18,12 @@
 #include <core/multimedia/net/rtsp/RtspServer.h>
 
 #include <fmt/core.h>
+
+#include <range/v3/algorithm.hpp>
+#include <range/v3/range.hpp>
+#include <range/v3/action.hpp>
+#include <thread>
+#include "ScreenLive.h"
 
 using namespace ly;
 using namespace lynet;
@@ -93,12 +100,27 @@ int main() {
   //   kDefaultFormatPattern, true, "multimedia", false)
   //   ->setLogger(GET_LOGGER("multimedia"));
 
-  fmt::println("{}", LogManager::instance()->toYamlString());
-
+  // fmt::println("{}", LogManager::instance()->toYamlString());
 
   //rtsp_server_on();
-  
-  
+
+  ScreenLive live;
+  ScreenLiveConfig config = {
+    .frame_rate = 25,
+    .bit_rate_bps = 800 * 1000,
+    .codec = "x264",
+    .gop = 25
+  };
+  live.init(config);
+  LiveConfig live_config = {
+    .server.ip = "127.0.0.1",
+    .server.port = 12345,
+    .server.suffix = "/live/test",
+    .pusher.rtsp_url = "rtsp://127.0.0.1/live/test",
+    .pusher.rtmp_url = "rtmp://127.0.0.1/live/test"
+  };
+  live.startLive(ScreenLive::ScreenLiveType::RTSP_SERVER, live_config);
+
 #ifdef __WIN__
   WSACleanup();
 #endif

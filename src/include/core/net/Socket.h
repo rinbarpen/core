@@ -3,6 +3,7 @@
 #include <core/util/marcos.h>
 #include <core/net/SocketUtil.h>
 #include <core/net/NetAddress.h>
+#include <cstdint>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -26,6 +27,7 @@ public:
    * \brief warp the socket_api::bind
    * \param[in] addr
    */
+  int bind(const char *ip, uint16_t port);
   int bind(const NetAddress &addr);
   /**
    * \brief warp the socket_api::listen
@@ -36,6 +38,7 @@ public:
    * \brief warp the socket_api::connect, use NetAddress instead of the raw data
    * \param[in] addr
    */
+  int connect(const char *ip, uint16_t port, int msec = 0);
   int connect(const NetAddress &addr, std::chrono::milliseconds msec = 0ms);
   /**
    * \brief warp the socket_api::accept
