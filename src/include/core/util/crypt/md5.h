@@ -6,10 +6,10 @@
 #include <core/util/marcos.h>
 
 #ifdef ENABLE_OPENSSL
-#include <openssl/md5.h>
-#include <openssl/rand.h>
+# include <openssl/md5.h>
+# include <openssl/rand.h>
 #else
-#error "Need to use openssl!"
+# error "Need to use openssl!"
 #endif
 
 LY_NAMESPACE_BEGIN

@@ -54,6 +54,16 @@ static void loop(FunctionWrapper<Fn, Args...> fn)
 {
   for (;;) fn();
 }
+template <typename Pred, typename RollbackFn>
+void call_transaction(Pred &&callback, RollbackFn &&rollback_callback)
+{
+  constexpr bool is_bool = std::is_same_v<decltype(callback()), bool>;
+  LY_CHECK(is_bool, "The function should return a bool value");
+
+  if (!callback()) {
+    rollback_callback();
+  }
+}
 
 LY_NAMESPACE_END
 

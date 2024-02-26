@@ -100,12 +100,10 @@ message(STATUS "SOURCE FILES: ${CoreSrcs}")
 
 #add_definitions(-DENABLE_TEST)
 add_subdirectory(examples)
-if (ENABLE_TEST)
-    add_subdirectory(test)
-endif()
+add_subdirectory(test)
 
 # add_library(${PROJECT_NAME} STATIC ${CoreSrcs})
-add_executable (${CoreProjectName} "src/main.cpp" ${CoreSrcs})
+add_executable (${CoreProjectName} "src/main.cpp" ${CoreSrcs} "src/ScreenLive.cpp")
 
 target_include_directories(${CoreProjectName}
     PUBLIC

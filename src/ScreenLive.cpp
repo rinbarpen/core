@@ -1,4 +1,4 @@
-#include <chrono>
+#include <cstdint>
 #include <core/util/logger/Logger.h>
 #include <core/multimedia/net/AACSource.h>
 #include <core/multimedia/net/H264Source.h>
@@ -6,7 +6,6 @@
 #include <core/multimedia/capture/WASAPIHelper.h>
 #include <core/multimedia/capture/GDISrceenCapture.h>
 #include <ScreenLive.h>
-#include <cstdint>
 
 LY_NAMESPACE_BEGIN
 using namespace net;
@@ -538,7 +537,7 @@ void ScreenLive::pushAudio(
     }
 
     if (rtmp_pusher_ != nullptr && rtmp_pusher_->isConnected()) {
-      rtmp_pusher_->pushAudioFrame(audio_frame.data.get(), audio_frame.size());
+      rtmp_pusher_->pushAudioFrame((uint8_t*)audio_frame.data.get(), audio_frame.size());
     }
   }
 }

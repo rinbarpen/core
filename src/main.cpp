@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 
 #include <core/config/config.h>
 #include <core/net/EventLoop.h>
@@ -16,14 +17,13 @@
 #include <core/multimedia/ffmpeg/FFmpegUtil.h>
 #include <core/multimedia/net/rtsp/RtspPusher.h>
 #include <core/multimedia/net/rtsp/RtspServer.h>
+#include <ScreenLive.h>
 
 #include <fmt/core.h>
 
 #include <range/v3/algorithm.hpp>
 #include <range/v3/range.hpp>
 #include <range/v3/action.hpp>
-#include <thread>
-#include "ScreenLive.h"
 
 using namespace ly;
 using namespace lynet;
@@ -105,21 +105,22 @@ int main() {
   //rtsp_server_on();
 
   ScreenLive live;
-  ScreenLiveConfig config = {
-    .frame_rate = 25,
-    .bit_rate_bps = 800 * 1000,
-    .codec = "x264",
-    .gop = 25
-  };
+  ScreenLiveConfig config;
+  config.frame_rate = 25;
+  config.bit_rate_bps = 800 * 1000;
+  config.codec = "x264";
+  config.gop = 25;
+
   live.init(config);
-  LiveConfig live_config = {
-    .server.ip = "127.0.0.1",
-    .server.port = 12345,
-    .server.suffix = "/live/test",
-    .pusher.rtsp_url = "rtsp://127.0.0.1/live/test",
-    .pusher.rtmp_url = "rtmp://127.0.0.1/live/test"
-  };
+  LiveConfig live_config;
+  live_config.server.ip = "127.0.0.1";
+  live_config.server.port = 12345;
+  live_config.server.suffix = "/live/test";
+  live_config.pusher.rtsp_url = "rtsp://127.0.0.1/live/test";
+  live_config.pusher.rtmp_url = "rtmp://127.0.0.1/live/test";
   live.startLive(ScreenLive::ScreenLiveType::RTSP_SERVER, live_config);
+  live.startLive(ScreenLive::ScreenLiveType::RTSP_PUSHER, live_config);
+  live.startLive(ScreenLive::ScreenLiveType::RTMP_PUSHER, live_config);
 
 #ifdef __WIN__
   WSACleanup();

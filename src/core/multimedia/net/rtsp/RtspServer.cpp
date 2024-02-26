@@ -8,7 +8,7 @@
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
-auto create(EventLoop* event_loop) -> std::shared_ptr<RtspServer>
+auto RtspServer::create(EventLoop* event_loop) -> std::shared_ptr<RtspServer>
 {
   return std::make_shared<RtspServer>(event_loop);
 }

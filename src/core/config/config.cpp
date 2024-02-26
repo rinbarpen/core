@@ -1,26 +1,23 @@
 #include <fstream>
 
-#include <core/util/logger/Logger.h>
 #include <core/config/config.h>
+#include <core/util/logger/Logger.h>
+
 
 LY_NAMESPACE_BEGIN
 
-void Config::toFile(const std::string &filename) const
-{
+void Config::toFile(const std::string &filename) const {
   std::ofstream out(filename);
-  if (out.is_open())
-  {
+  if (out.is_open()) {
     out << this->toYamlNode();
     out.flush();
   }
-  else
-  {
+  else {
     throw std::runtime_error("Config: There is no target file");
   }
 }
 
-auto Config::fromFile(const std::string &filename) -> Config
-{
+auto Config::fromFile(const std::string &filename) -> Config {
   Config config;
   YAML::Node root = YAML::LoadFile(filename);
   // parse common
@@ -28,15 +25,12 @@ auto Config::fromFile(const std::string &filename) -> Config
     YAML::Node common = root["common"];
     YAML::Node logger = common["logger"];
 
-    if (logger.IsDefined())
-      LogIniter::loadYamlNode(logger);
+    if (logger.IsDefined()) LogIniter::loadYamlNode(logger);
 
     YAML::Node buffer = common["buffer"];
 
     YAML::Node thread_pool = common["thread_pool"];
     config.common.threadpool.thread_num = thread_pool["thread_num"].as<int>();
-
-
   }
 
   // parse net
@@ -45,15 +39,12 @@ auto Config::fromFile(const std::string &filename) -> Config
   }
 
   // parse multimedia
-  {
-
-  }
+  {}
   return config;
 }
 
 
-auto Config::toYamlNode() const -> YAML::Node
-{
+auto Config::toYamlNode() const -> YAML::Node {
   YAML::Node root;
   // parse common
   {
@@ -77,9 +68,7 @@ auto Config::toYamlNode() const -> YAML::Node
   }
 
   // parse multimedia
-  {
-
-  }
+  {}
 
   return root;
 }

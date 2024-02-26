@@ -31,6 +31,19 @@ bool AACEncoder::close()
   return true;
 }
 
+ffmpeg::AVPacketPtr AACEncoder::encode(const uint8_t *pcm, int samples)
+{
+	if (nullptr == aac_encoder_.getAVCodecContext())
+	{
+		return nullptr;
+	}
+
+	ffmpeg::AVEncodeContext ctx;
+	ctx.pcm = pcm;
+	ctx.samples = samples;
+	return aac_encoder_.encode(ctx);
+}
+
 int AACEncoder::getFramesCount() const
 {
 	// if (!aac_encoder_.GetAVCodecContext()) {
