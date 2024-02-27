@@ -1,6 +1,8 @@
+#include <cstdint>
 #include <cstring>
 #include <core/util/buffer/BufferReader.h>
 #include <core/util/buffer/BufferWriter.h>
+#include <core/util/buffer/ByteConverter.h>
 #include <core/multimedia/net/rtmp/rtmp.h>
 #include <core/multimedia/net/rtmp/RtmpChunk.h>
 
@@ -54,7 +56,7 @@ int RtmpChunk::createChunk(
 	buf_offset += createBasicHeader(0, csid, buf + buf_offset);  // first chunk
 	buf_offset += createMessageHeader(0, rtmp_msg, buf + buf_offset);
 	if (rtmp_msg.long_timestamp >= 0xFFFFFF) {
-		writeU32Forward(buf + buf_offset, (uint32_t)rtmp_msg.long_timestamp);
+		ByteConverter::writeU32Forward(buf + buf_offset, static_cast<uint32_t>(rtmp_msg.long_timestamp));
 		buf_offset += 4;
 	}
 
@@ -73,7 +75,7 @@ int RtmpChunk::createChunk(
 
 		buf_offset += createBasicHeader(3, csid, buf + buf_offset);
 		if (rtmp_msg.long_timestamp >= 0xFFFFFF) {
-			writeU32Forward(buf + buf_offset, (uint32_t)rtmp_msg.long_timestamp);
+			ByteConverter::writeU32Forward(buf + buf_offset, static_cast<uint32_t>(rtmp_msg.long_timestamp));
 			buf_offset += 4;
 		}
 	}
@@ -126,7 +128,7 @@ int RtmpChunk::parseChunkHeader(BufferReader& buffer)
 	chunk_stream_id_ = rtmp_msg.csid = csid;
 
 	if (fmt == RTMP_CHUNK_TYPE_0 || fmt == RTMP_CHUNK_TYPE_1) {
-		uint32_t length = readU24Forward((const char*)header.length);
+		uint32_t length = ByteConverter::readU24Forward((const char*)header.length);
 		if (rtmp_msg.length != length || !rtmp_msg.payload) {
 			rtmp_msg.length = length;
 			rtmp_msg.payload.reset(new char[rtmp_msg.length], std::default_delete<char[]>());
@@ -136,16 +138,16 @@ int RtmpChunk::parseChunkHeader(BufferReader& buffer)
 	}
 
 	if (fmt == RTMP_CHUNK_TYPE_0) {
-		rtmp_msg.stream_id = readU24Reverse((const char*)header.stream_id);
+		rtmp_msg.stream_id = ByteConverter::readU24Reverse((const char*)header.stream_id);
 	}
 
-	uint32_t timestamp = readU24Forward((const char*)header.timestamp);
+	uint32_t timestamp = ByteConverter::readU24Forward((const char*)header.timestamp);
 	uint32_t extend_timestamp = 0;
 	if (timestamp >= 0xFFFFFF || rtmp_msg.timestamp >= 0xFFFFFF) {
 		if (bufSize < (4 + bytesUsed)) {
 			return 0;
 		}
-		extend_timestamp = readU32Forward((const char*)buf + bytesUsed);
+		extend_timestamp = ByteConverter::readU32Forward((const char*)buf + bytesUsed);
 		bytesUsed += 4;
 	}
 
@@ -230,20 +232,20 @@ int RtmpChunk::createMessageHeader(uint8_t fmt, RtmpMessage& rtmp_msg, char* buf
 
 	if (fmt <= 2) {
 		if (rtmp_msg.long_timestamp < 0xFFFFFF) {
-			writeU24Forward(buf, (uint32_t)rtmp_msg.long_timestamp);
+			ByteConverter::writeU24Forward(buf, (uint32_t)rtmp_msg.long_timestamp);
 		}
 		else {
-			writeU24Forward(buf, 0xFFFFFF);
+			ByteConverter::writeU24Forward(buf, 0xFFFFFF);
 		}
 		len += 3;
 	}
 	if (fmt <= 1) {
-		writeU24Forward(buf + len, rtmp_msg.length);
+		ByteConverter::writeU24Forward(buf + len, rtmp_msg.length);
 		len += 3;
 		buf[len++] = rtmp_msg.type_id;
 	}
 	if (fmt == 0) {
-		writeU32Reverse(buf + len, rtmp_msg.stream_id);
+		ByteConverter::writeU32Reverse(buf + len, rtmp_msg.stream_id);
 		len += 4;
 	}
 

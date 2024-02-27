@@ -4,6 +4,7 @@
 #include <core/multimedia/net/rtmp/RtmpPublisher.h>
 #include <core/util/buffer/BufferWriter.h>
 #include <core/util/buffer/BufferReader.h>
+#include <core/util/buffer/ByteConverter.h>
 #include <core/util/logger/Logger.h>
 #include <core/util/timer/TimerTask.h>
 
@@ -139,7 +140,7 @@ bool RtmpConnection::handleMessage(RtmpMessage &rtmp_msg) {
     r = false;
     break;
   case RTMP_SET_CHUNK_SIZE:
-    rtmp_chunk_->setInChunkSize(readU32Forward(rtmp_msg.payload.get()));
+    rtmp_chunk_->setInChunkSize(ByteConverter::readU32Forward(rtmp_msg.payload.get()));
     break;
   case RTMP_BANDWIDTH_SIZE: break;
   case RTMP_FLASH_VIDEO:
@@ -760,7 +761,7 @@ bool RtmpConnection::sendMetaData(AmfObjectMap metaData) {
 
 void RtmpConnection::setPeerBandwidth() {
   std::shared_ptr<char> data(new char[5], std::default_delete<char[]>());
-  writeU32Forward(data.get(), peer_bandwidth_);
+  ByteConverter::writeU32Forward(data.get(), peer_bandwidth_);
 
   data.get()[4] = 2;
   RtmpMessage rtmp_msg;
@@ -772,7 +773,7 @@ void RtmpConnection::setPeerBandwidth() {
 
 void RtmpConnection::sendAcknowledgement() {
   std::shared_ptr<char> data(new char[4], std::default_delete<char[]>());
-  writeU32Forward(data.get(), acknowledgement_size_);
+  ByteConverter::writeU32Forward(data.get(), acknowledgement_size_);
 
   RtmpMessage rtmp_msg;
   rtmp_msg.type_id = RTMP_ACK_SIZE;
@@ -784,7 +785,7 @@ void RtmpConnection::sendAcknowledgement() {
 void RtmpConnection::setChunkSize() {
   rtmp_chunk_->setOutChunkSize(max_chunk_size_);
   std::shared_ptr<char> data(new char[4], std::default_delete<char[]>());
-  writeU32Forward(data.get(), max_chunk_size_);
+  ByteConverter::writeU32Forward(data.get(), max_chunk_size_);
 
   RtmpMessage rtmp_msg;
   rtmp_msg.type_id = RTMP_SET_CHUNK_SIZE;

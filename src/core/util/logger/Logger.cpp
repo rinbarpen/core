@@ -260,7 +260,7 @@ void LogFormatter::init() {
   }
 }
 
-auto LogFormatter::toYaml() const -> YAML::Node {
+YAML::Node LogFormatter::toYaml() const {
   YAML::Node node;
   node["pattern"] = pattern_;
   return node;
@@ -321,7 +321,7 @@ bool FileLogAppender::reopen() {
   return file_stream_.is_open();
 }
 
-auto FileLogAppender::toYaml() const -> YAML::Node {
+YAML::Node FileLogAppender::toYaml() const {
   YAML::Node node;
   node["type"] = "SyncFileLogAppender";
   node["filename"] = filename_;
@@ -394,7 +394,7 @@ void AsyncFileLogAppender::log(
   }
 }
 
-auto AsyncFileLogAppender::toYaml() const -> YAML::Node {
+YAML::Node AsyncFileLogAppender::toYaml() const {
   YAML::Node node;
   node["type"] = "AsyncFileLogAppender";
   node["filename"] = filename_;
@@ -497,7 +497,7 @@ void StdoutLogAppender::log(
   }
 }
 
-auto StdoutLogAppender::toYaml() const -> YAML::Node {
+YAML::Node StdoutLogAppender::toYaml() const {
   YAML::Node node;
   node["type"] = "StdoutLogAppender";
 
@@ -563,7 +563,7 @@ LogFormatter::ptr Logger::getFormatter() const {
   return formatter_;
 }
 
-auto Logger::toYaml() const -> YAML::Node {
+YAML::Node Logger::toYaml() const {
   YAML::Node node;
 
   node["name"] = this->name_;
@@ -618,7 +618,7 @@ bool LogManager::putLogger(Logger::ptr pLogger) {
   return true;
 }
 
-auto LogManager::toYamlString() const -> std::string {
+std::string LogManager::toYamlString() const {
   YAML::Node node;
 
   for (auto &[k, v] : loggers_) {

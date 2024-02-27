@@ -2,6 +2,7 @@
 #include <memory>
 #include <core/util/buffer/BufferReader.h>
 #include <core/util/buffer/BufferWriter.h>
+#include <core/util/buffer/ByteConverter.h>
 #include <core/multimedia/net/rtmp/amf.h>
 
 LY_NAMESPACE_BEGIN
@@ -119,15 +120,15 @@ int AmfDecoder::decodeObject(
   return bytesUsed;
 }
 uint16_t AmfDecoder::decodeInt16(const char *data, int size) {
-  uint16_t val = readU16Forward((char *) data);
+  uint16_t val = ByteConverter::readU16Forward((char *) data);
   return val;
 }
 uint32_t AmfDecoder::decodeInt24(const char *data, int size) {
-  uint32_t val = readU24Forward((char *) data);
+  uint32_t val = ByteConverter::readU24Forward((char *) data);
   return val;
 }
 uint32_t AmfDecoder::decodeInt32(const char *data, int size) {
-  uint32_t val = readU32Forward((char *) data);
+  uint32_t val = ByteConverter::readU32Forward((char *) data);
   return val;
 }
 
@@ -248,7 +249,7 @@ void AmfEncoder::encodeInt16(int16_t value) {
     this->realloc(size_ + 1024);
   }
 
-  writeU16Forward(data_.get() + index_, value);
+  ByteConverter::writeU16Forward(data_.get() + index_, value);
   index_ += 2;
 }
 void AmfEncoder::encodeInt24(int32_t value) {
@@ -256,7 +257,7 @@ void AmfEncoder::encodeInt24(int32_t value) {
     this->realloc(size_ + 1024);
   }
 
-  writeU24Forward(data_.get() + index_, value);
+  ByteConverter::writeU24Forward(data_.get() + index_, value);
   index_ += 3;
 }
 void AmfEncoder::encodeInt32(int32_t value) {
@@ -264,7 +265,7 @@ void AmfEncoder::encodeInt32(int32_t value) {
     this->realloc(size_ + 1024);
   }
 
-  writeU32Forward(data_.get() + index_, value);
+  ByteConverter::writeU32Forward(data_.get() + index_, value);
   index_ += 4;
 }
 void AmfEncoder::realloc(uint32_t size) {

@@ -1,4 +1,5 @@
 #include <core/util/StringUtil.h>
+#include <core/util/buffer/ByteConverter.h>
 #include <core/util/logger/Logger.h>
 #include <core/multimedia/net/http/HttpFlvConnection.h>
 
@@ -166,13 +167,13 @@ int HttpFlvConnection::sendFlvTag(uint8_t type, uint64_t timestamp, std::shared_
 	char previous_tag_size[4] = { 0x0, 0x0, 0x0, 0x0 };
 
 	tag_header[0] = type;
-	writeU24Forward(tag_header + 1, payload_size);
+	ByteConverter::writeU24Forward(tag_header + 1, payload_size);
 	tag_header[4] = (timestamp >> 16) & 0xFF;
 	tag_header[5] = (timestamp >> 8)  & 0xFF;
 	tag_header[6] = (timestamp >> 0)  & 0xFF;
 	tag_header[7] = (timestamp >> 24) & 0xFF;
 
-	writeU32Forward(previous_tag_size, payload_size + 11);
+	ByteConverter::writeU32Forward(previous_tag_size, payload_size + 11);
 
 	this->send(tag_header, 11);
 	this->send(payload.get(), payload_size);

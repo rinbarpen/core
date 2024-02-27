@@ -5,7 +5,9 @@ LY_NAMESPACE_BEGIN
 Thread::Thread(const ThreadContext &context)
   : context_(context)
 {}
-
+Thread::Thread(std::string_view name)
+  : context_(name)
+{}
 Thread::~Thread()
 {
   if (thread_.joinable()) {
@@ -18,7 +20,7 @@ void Thread::destroy()
   if (!running_) return;
 
   thread_.join();
-  context_.reset(context_.name);
+  context_.clear();
 
   running_ = false;
 }
@@ -26,11 +28,6 @@ void Thread::destroy()
 ThreadContext Thread::context() const
 {
   return context_;
-}
-
-void Thread::fillContext()
-{
-  context_.id = std::thread::id{};
 }
 
 LY_NAMESPACE_END

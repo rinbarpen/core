@@ -1,5 +1,5 @@
-#include "core/multimedia/capture/AudioBuffer.h"
 #include <cstring>
+#include <core/multimedia/capture/AudioBuffer.h>
 
 LY_NAMESPACE_BEGIN
 AudioBuffer::AudioBuffer(size_t capacity) :

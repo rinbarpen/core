@@ -65,7 +65,7 @@ void UdpConnection::onRead()
   Mutex::lock locker(mutex_);
   if (!running_) return;
 
-  int r = read_buffer_->read(channel_->getSockfd());
+  int r = read_buffer_->readFromSocket(channel_->getSockfd());
   if (r <= 0) {
     this->close();
     return;
