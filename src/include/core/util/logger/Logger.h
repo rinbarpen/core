@@ -379,7 +379,7 @@ public:
   std::string lastError() const { return error_; }
   std::string getPattern() const { return pattern_; }
 
-  auto toYaml() const -> YAML::Node;
+  YAML::Node toYaml() const;
 
 private:
   PatArgsWrapper parsePatToken(const std::string &patToken);
@@ -409,7 +409,7 @@ public:
   LogLevel getLevel() const { return level_; }
   void setLevel(LogLevel level) { level_ = level; }
 
-  virtual auto toYaml() const -> YAML::Node = 0;
+  virtual YAML::Node toYaml() const = 0;
 
 protected:
   LogLevel level_{LogLevel::LTRACE};
@@ -429,7 +429,7 @@ public:
   virtual void log(
     LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) override;
   bool reopen();
-  auto toYaml() const -> YAML::Node override;
+  YAML::Node toYaml() const override;
 
 private:
   std::string getWholeFilename();
@@ -454,7 +454,7 @@ public:
   virtual void log(
     LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) override;
 
-  auto toYaml() const -> YAML::Node override;
+  YAML::Node toYaml() const override;
 
 private:
   bool reopen(struct tm *tm);
@@ -479,7 +479,7 @@ public:
 
   virtual void log(
     LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) override;
-  auto toYaml() const -> YAML::Node override;
+  YAML::Node toYaml() const override;
 };
 
 class Logger : public std::enable_shared_from_this<Logger>
@@ -497,7 +497,7 @@ public:
   void removeAppender(LogAppender::ptr pAppender);
   void clearAppenders();
 
-  auto toYaml() const -> YAML::Node;
+  YAML::Node toYaml() const;
 
 
   LogLevel getLevel() const { return level_; }
@@ -556,7 +556,7 @@ public:
   // TODO: For future do
   void init() {}
   LY_NODISCARD Logger::ptr getRoot() const { return root_; }
-  LY_NODISCARD auto toYamlString() const -> std::string;
+  LY_NODISCARD std::string toYamlString() const;
   void toYamlFile(std::string_view filename) const;
 
 private:

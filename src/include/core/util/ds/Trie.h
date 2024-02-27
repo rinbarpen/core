@@ -1,16 +1,15 @@
 #pragma once
 
-#include "core/util/marcos.h"
 #include <memory>
 #include <unordered_map>
 #include <optional>
 #include <string_view>
 #include <atomic>
-#include <mutex>
+#include <core/util/marcos.h>
+#include <core/util/Mutex.h>
 
 
 LY_NAMESPACE_BEGIN
-
 class TrieNode
 {
   friend class Trie;
@@ -40,7 +39,7 @@ public:
   LY_NONCOPYABLE(TrieNode);
 
 private:
-  mutable std::mutex mutex_;
+  mutable Mutex::type mutex_;
   const char token_;
   std::atomic_bool is_end_{false};
   std::unordered_map<char, std::shared_ptr<TrieNode>> children_;

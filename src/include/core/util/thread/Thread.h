@@ -12,17 +12,29 @@
 LY_NAMESPACE_BEGIN
 struct ThreadContext
 {
-  std::thread::id id;
+  std::thread::id id{};
   std::string name;
 
-  explicit ThreadContext(std::string_view threadName)
+  ThreadContext(std::string_view threadName)
     : name(threadName)
   {}
+  ThreadContext(std::thread::id threadId, std::string_view threadName)
+    : id(threadId), name(threadName)
+  {}
 
-  void reset(std::string_view threadName)
+  void reset(std::thread::id threadId, std::string_view threadName)
+  {
+    id = threadId;
+    name = threadName;
+  }
+  void reset(std::thread::id threadId)
+  {
+    id = threadId;
+  }
+  void clear()
   {
     id = std::thread::id{};
-    name = threadName;
+    name = "";
   }
 };
 
@@ -30,10 +42,12 @@ class Thread
 {
 public:
   explicit Thread(const ThreadContext &context);
+  Thread(std::string_view name);
   ~Thread();
 
   template <typename Fn, typename... Args>
-  auto dispatch(Fn&& fn, Args&&... args) -> std::future<std::invoke_result_t<Fn, Args...>>
+  std::future<std::invoke_result_t<Fn, Args...>>
+    dispatch(Fn&& fn, Args&&... args)
   {
     using ResultType = std::invoke_result_t<Fn, Args...>;
 
@@ -44,7 +58,7 @@ public:
 
     running_ = true;
     thread_ = std::thread([task, &args...]{(*task)(std::forward<Args>(args)...);});
-    this->fillContext();
+    context_.reset(thread_.get_id());
 
     return res;
   }
@@ -53,9 +67,6 @@ public:
   ThreadContext context() const;
 
   LY_NONCOPYABLE(Thread);
-private:
-  void fillContext();
-
 private:
   std::thread thread_;
   std::atomic_bool running_{false};
