@@ -1,20 +1,11 @@
 #pragma once
 
-#include "core/net/platform.h"
-#include "core/util/marcos.h"
-#include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include <core/util/marcos.h>
+#include <core/net/platform.h>
 
 LY_NAMESPACE_BEGIN
-
-uint16_t readU16Forward(const char *p);
-uint16_t readU16Reverse(const char *p);
-uint32_t readU24Forward(const char *p);
-uint32_t readU24Reverse(const char *p);
-uint32_t readU32Forward(const char *p);
-uint32_t readU32Reverse(const char *p);
-
 class BufferReader
 {
 public:
@@ -28,14 +19,14 @@ public:
     delete[] data_;
   }
 
-  auto peek() -> char *{ return data_ + get_pos_; }
-  auto peek() const -> const char *{ return data_ + get_pos_; }
+  char * peek() { return data_ + get_pos_; }
+  const char * peek() const { return data_ + get_pos_; }
 
-  auto read(uint32_t nbytes) -> std::string;
-  auto read(sockfd_t sockfd) -> int;
-  auto readAll() -> std::string;
+  std::string read(uint32_t nbytes);
+  int readFromSocket(sockfd_t sockfd);
+  std::string readAll();
 
-  auto append(std::string_view data) -> int;
+  int append(std::string_view data);
 
   int findFirst(std::string_view matchStr);
   int findAndSkip(std::string_view matchStr);

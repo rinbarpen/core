@@ -1,49 +1,9 @@
 #include <cstring>
 
-#include "core/util/marcos.h"
-#include "core/net/platform.h"
-#include <core/util/buffer/BufferWriter.h>
 #include <core/net/SocketUtil.h>
+#include <core/util/buffer/BufferWriter.h>
 
 LY_NAMESPACE_BEGIN
-
-void writeU16Forward(char *p, uint16_t value)
-{
-  p[0] = value >> 8;
-  p[1] = value & 0xFF;
-}
-void writeU16Reverse(char *p, uint16_t value)
-{
-  p[1] = value >> 8;
-  p[0] = value & 0xFF;
-}
-void writeU24Forward(char *p, uint32_t value)
-{
-  p[0] = value >> 16;
-  p[1] = value >> 8;
-  p[2] = value & 0xFF;
-}
-void writeU24Reverse(char *p, uint32_t value)
-{
-  p[2] = value >> 16;
-  p[1] = value >> 8;
-  p[0] = value & 0xFF;
-}
-void writeU32Forward(char *p, uint32_t value)
-{
-  p[0] = value >> 24;
-  p[1] = value >> 16;
-  p[2] = value >> 8;
-  p[3] = value & 0xFF;
-}
-void writeU32Reverse(char *p, uint32_t value)
-{
-  p[3] = value >> 24;
-  p[2] = value >> 16;
-  p[1] = value >> 8;
-  p[0] = value & 0xFF;
-}
-
 BufferWriter::BufferWriter(uint32_t capacity)
 	: max_queue_length_(capacity)
 {
@@ -84,10 +44,14 @@ bool BufferWriter::append(const char* data, uint32_t size, uint32_t index)
 	return true;
 }
 
-int BufferWriter::send(sockfd_t sockfd, int timeout)
+int BufferWriter::send(sockfd_t sockfd, std::chrono::milliseconds timeout)
 {
-	if (timeout > 0) {
-		net::socket_api::set_blocking(sockfd, timeout);
+	return this->send(sockfd, timeout.count());
+}
+int BufferWriter::send(sockfd_t sockfd, int ms_timeout)
+{
+	if (ms_timeout > 0) {
+		net::socket_api::set_blocking(sockfd, ms_timeout);
 	}
 
 	int r = 0;
@@ -120,13 +84,11 @@ int BufferWriter::send(sockfd_t sockfd, int timeout)
 		}
 	} while (count > 0);
 
-	if (timeout > 0) {
+	if (ms_timeout > 0) {
 		net::socket_api::set_nonblocking(sockfd);
 	}
 
 	return r;
 }
-
-
 
 LY_NAMESPACE_END

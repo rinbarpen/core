@@ -1,20 +1,13 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <queue>
 
-#include "core/util/marcos.h"
+#include <core/util/marcos.h>
 #include <core/net/platform.h>
 
 LY_NAMESPACE_BEGIN
-
-void writeU16Forward(char *p, uint16_t value);
-void writeU16Reverse(char *p, uint16_t value);
-void writeU24Forward(char *p, uint32_t value);
-void writeU24Reverse(char *p, uint32_t value);
-void writeU32Forward(char *p, uint32_t value);
-void writeU32Reverse(char *p, uint32_t value);
-
 class BufferWriter
 {
 public:
@@ -23,7 +16,8 @@ public:
 
 	bool append(std::shared_ptr<char> data, uint32_t size, uint32_t index=0);
 	bool append(const char* data, uint32_t size, uint32_t index=0);
-	int send(sockfd_t sockfd, int timeout = 0);
+	int send(sockfd_t sockfd, std::chrono::milliseconds timeout);
+	int send(sockfd_t sockfd, int ms_timeout = 0);
 
 	bool empty() const
 	{ return buffer_.empty(); }
