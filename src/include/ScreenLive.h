@@ -51,16 +51,15 @@ struct LiveConfig
   } server;
 };
 
+enum class ScreenLiveType
+{
+  RTSP_SERVER,
+  RTSP_PUSHER,
+  RTMP_PUSHER,
+};
 class ScreenLive
 {
 public:
-  enum class ScreenLiveType
-  {
-    RTSP_SERVER,
-    RTSP_PUSHER,
-    RTMP_PUSHER,
-  };
-
   ScreenLive();
   ~ScreenLive();
 

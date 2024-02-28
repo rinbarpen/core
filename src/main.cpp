@@ -1,5 +1,4 @@
 #include <iostream>
-#include <thread>
 
 #include <core/config/config.h>
 #include <core/net/EventLoop.h>
@@ -14,24 +13,14 @@
 #include <core/util/time/Timestamp.h>
 #include <core/util/time/TimestampDuration.h>
 
-#include <core/multimedia/ffmpeg/FFmpegUtil.h>
-#include <core/multimedia/net/rtsp/RtspPusher.h>
-#include <core/multimedia/net/rtsp/RtspServer.h>
 #include <ScreenLive.h>
 
 #include <fmt/core.h>
-
-#include <range/v3/algorithm.hpp>
-#include <range/v3/range.hpp>
-#include <range/v3/action.hpp>
 
 using namespace ly;
 using namespace lynet;
 using namespace ly::literals;
 using namespace std::literals;
-
-#include <libyuv.h>
-#include <GLFW/glfw3.h>
 
 void rtsp_server_on() {
   GET_LOGGER("net")->setLevel(LogLevel::LINFO);
@@ -118,9 +107,9 @@ int main() {
   live_config.server.suffix = "/live/test";
   live_config.pusher.rtsp_url = "rtsp://127.0.0.1/live/test";
   live_config.pusher.rtmp_url = "rtmp://127.0.0.1/live/test";
-  live.startLive(ScreenLive::ScreenLiveType::RTSP_SERVER, live_config);
-  live.startLive(ScreenLive::ScreenLiveType::RTSP_PUSHER, live_config);
-  live.startLive(ScreenLive::ScreenLiveType::RTMP_PUSHER, live_config);
+  live.startLive(ScreenLiveType::RTSP_SERVER, live_config);
+  live.startLive(ScreenLiveType::RTSP_PUSHER, live_config);
+  live.startLive(ScreenLiveType::RTMP_PUSHER, live_config);
 
 #ifdef __WIN__
   WSACleanup();

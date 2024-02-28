@@ -1,21 +1,27 @@
 #include <chrono>
 
-#include "core/net/SocketUtil.h"
-#include "core/util/time/Timestamp.h"
-#include <core/multimedia/net/rtsp/RtspPusher.h>
+#include <core/util/time/Timestamp.h>
 #include <core/net/tcp/TcpSocket.h>
+#include <core/multimedia/net/rtsp/RtspPusher.h>
 #include <core/multimedia/net/rtsp/RtspConnection.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
-
 static auto g_rtsp_logger = GET_LOGGER("multimedia.rtsp");
 
-auto RtspPusher::create(EventLoop *eventLoop) -> std::shared_ptr<RtspPusher>
+std::shared_ptr<RtspPusher> RtspPusher::create(EventLoop *eventLoop)
 {
   return std::make_shared<RtspPusher>(eventLoop);
 }
-RtspPusher::~RtspPusher(){this->close();}
+RtspPusher::RtspPusher(EventLoop *eventLoop)
+  : event_loop_(eventLoop)
+{
+
+}
+RtspPusher::~RtspPusher()
+{
+	this->close();
+}
 
 void RtspPusher::addSession(MediaSession *session)
 {
@@ -53,7 +59,6 @@ bool RtspPusher::openUrl(std::string_view url, std::chrono::milliseconds msec)
 	if (!tcp_socket->connect({rtsp_url_info_.ip, rtsp_url_info_.port}, msec))
 	{
 		tcp_socket->close();
-		return false;
 
 		task_scheduler_ = event_loop_->getTaskScheduler().get();
 		rtsp_conn_.reset(new RtspConnection(shared_from_this(), task_scheduler_, tcp_socket->getSockfd()));
@@ -61,7 +66,7 @@ bool RtspPusher::openUrl(std::string_view url, std::chrono::milliseconds msec)
 			rtsp_conn_->sendOptions(RtspConnection::ConnectionMode::RTSP_PUSHER);
 		});
 
-		auto duration = Clock<T_steady_clock>::now().duration<std::chrono::milliseconds>(timestamp);
+		auto duration = timestamp.elapsed();
 		int64_t rest = msec.count() - duration.count();
 
 		do {
@@ -74,9 +79,9 @@ bool RtspPusher::openUrl(std::string_view url, std::chrono::milliseconds msec)
 			sockfd_t sockfd = rtspConn->getSockfd();
 			task_scheduler_->addTriggerEvent([sockfd, rtspConn]() {
 				rtspConn->disconnect();
-		});
-		rtsp_conn_ = nullptr;
-		return false;
+			});
+			rtsp_conn_ = nullptr;
+			return false;
 		}
 	}
 
@@ -114,12 +119,7 @@ bool RtspPusher::pushFrame(MediaChannelId channel_id, SimAVFrame frame)
 	return media_session_->handleFrame(channel_id, frame);
 }
 
-RtspPusher::RtspPusher(EventLoop *eventLoop)
-  : event_loop_(eventLoop)
-{
-
-}
-auto RtspPusher::lookMediaSession(MediaSessionId session_id) -> MediaSession::ptr
+MediaSession::ptr RtspPusher::lookMediaSession(MediaSessionId session_id)
 {
 	return media_session_;
 }
