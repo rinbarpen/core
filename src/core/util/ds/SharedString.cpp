@@ -2,32 +2,25 @@
 #include <memory>
 
 #include <core/util/ds/SharedString.h>
-#include <type_traits>
-#include "core/util/Traits.h"
-
 LY_NAMESPACE_BEGIN
-template <typename CharT>
-SharedString<CharT>::SharedString()
+SharedString::SharedString()
 {
 }
-template <typename CharT>
-SharedString<CharT>::SharedString(size_t capacity)
+SharedString::SharedString(size_t capacity)
   : data_(new char[capacity], std::default_delete<char[]>()), capacity_(capacity) {
 }
-template <typename CharT>
-SharedString<CharT>::~SharedString()
+SharedString::~SharedString()
 {
 }
 
-template <typename CharT>
-void SharedString<CharT>::reset()
+void SharedString::reset()
 {
   data_.reset(new char[capacity_]);
   size_ = 0;
 }
 
-template <typename CharT>
-void SharedString<CharT>::reset(size_t newCapacity)
+
+void SharedString::reset(size_t newCapacity)
 {
   std::shared_ptr<char> new_data(new char[capacity_], std::default_delete<char[]>());
   data_ = new_data;
@@ -35,8 +28,8 @@ void SharedString<CharT>::reset(size_t newCapacity)
   size_ = 0;
 }
 
-template <typename CharT>
-void SharedString<CharT>::resize(size_t size)
+
+void SharedString::resize(size_t size)
 {
   if (size > capacity_) {
     this->reset(size);
@@ -44,21 +37,21 @@ void SharedString<CharT>::resize(size_t size)
   size_ = size;
 }
 
-template <typename CharT>
-void SharedString<CharT>::resizeAndClear(size_t size)
+
+void SharedString::resizeAndClear(size_t size)
 {
   this->resize(size);
   memset(data_.get(), 0, size);
 }
 
-template <typename CharT>
-void SharedString<CharT>::clear()
+
+void SharedString::clear()
 {
   memset(data_.get(), 0, size_);
 }
 
-template <typename CharT>
-void SharedString<CharT>::expand(size_t newCapacity)
+
+void SharedString::expand(size_t newCapacity)
 {
   std::shared_ptr<char> new_data(new char[capacity_], std::default_delete<char[]>());
   if (size_ > newCapacity)
@@ -68,8 +61,8 @@ void SharedString<CharT>::expand(size_t newCapacity)
   capacity_ = newCapacity;
 }
 
-template <typename CharT>
-void SharedString<CharT>::append(const CharT* data, size_t len)
+
+void SharedString::append(const char* data, size_t len)
 {
   if (capacity_ - size_ < len) {
     capacity_ = size_ + len;
@@ -83,14 +76,14 @@ void SharedString<CharT>::append(const CharT* data, size_t len)
     size_ += len;
   }
 }
-template <typename CharT>
-void SharedString<CharT>::append(std::string_view data)
+
+void SharedString::append(std::string_view data)
 {
-  if constexpr (is_any_of_v<CharT, char, unsigned char, signed char>)
+  // if constexpr (is_any_of_v<char, char, unsigned char, signed char>)
     this->append(data.data(), data.length());
 }
-template <typename CharT>
-void SharedString<CharT>::fill(const CharT *data, size_t len, size_t startPos)
+
+void SharedString::fill(const char *data, size_t len, size_t startPos)
 {
   if (startPos + len > size_) {
     return;
@@ -98,17 +91,16 @@ void SharedString<CharT>::fill(const CharT *data, size_t len, size_t startPos)
 
   memcpy(data_.get() + startPos, data, len);
 }
-template <typename CharT>
-void SharedString<CharT>::fill(std::string_view data, size_t startPos)
+
+void SharedString::fill(std::string_view data, size_t startPos)
 {
-  if constexpr (is_any_of_v<CharT, char, unsigned char, signed char>)
+  // if constexpr (is_any_of_v<char, char, unsigned char, signed char>)
     this->fill(data.data(), data.length(), startPos);
 }
 
-template <typename CharT>
-SharedString<CharT> SharedString<CharT>::clone()
+SharedString SharedString::clone()
 {
-  auto cloned = SharedString<CharT>(capacity_);
+  auto cloned = SharedString(capacity_);
   cloned.append(data_.get(), size_);
   return cloned;
 }
