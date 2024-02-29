@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <memory>
+#include <string>
 #include <core/util/marcos.h>
 
 LY_NAMESPACE_BEGIN

@@ -1,6 +1,4 @@
-#include <core/net/platform.h>
 #include <core/net/Socket.h>
-#include "core/net/SocketUtil.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)

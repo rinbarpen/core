@@ -5,7 +5,6 @@
 #include <fmt/core.h>
 
 LY_NAMESPACE_BEGIN
-
 NAMESPACE_BEGIN(net)
 
 struct NetAddress

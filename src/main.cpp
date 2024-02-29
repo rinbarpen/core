@@ -1,6 +1,5 @@
 #include <iostream>
 
-#include <core/config/config.h>
 #include <core/net/EventLoop.h>
 #include <core/net/tcp/TcpServer.h>
 #include <core/util/Library.h>
@@ -8,11 +7,9 @@
 #include <core/util/Util.h>
 #include <core/util/logger/Logger.h>
 #include <core/util/thread/Thread.h>
-#include <core/util/thread/ThreadPool.h>
 #include <core/util/time/Clock.h>
-#include <core/util/time/Timestamp.h>
-#include <core/util/time/TimestampDuration.h>
-
+#include <core/multimedia/net/rtsp/RtspPusher.h>
+#include <core/multimedia/net/rtsp/RtspServer.h>
 #include <ScreenLive.h>
 
 #include <fmt/core.h>
@@ -38,8 +35,8 @@ void rtsp_server_on() {
 
 int main() {
 #ifdef __WIN__
-  WSADATA wsaData;
-  if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+  ::WSADATA wsaData;
+  if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
   {
     return -1;
   }
@@ -93,25 +90,25 @@ int main() {
 
   //rtsp_server_on();
 
-  ScreenLive live;
-  ScreenLiveConfig config;
-  config.frame_rate = 25;
-  config.bit_rate_bps = 800 * 1000;
-  config.codec = "x264";
-  config.gop = 25;
-
-  live.init(config);
-  LiveConfig live_config;
-  live_config.server.ip = "127.0.0.1";
-  live_config.server.port = 12345;
-  live_config.server.suffix = "/live/test";
-  live_config.pusher.rtsp_url = "rtsp://127.0.0.1/live/test";
-  live_config.pusher.rtmp_url = "rtmp://127.0.0.1/live/test";
-  live.startLive(ScreenLiveType::RTSP_SERVER, live_config);
-  live.startLive(ScreenLiveType::RTSP_PUSHER, live_config);
-  live.startLive(ScreenLiveType::RTMP_PUSHER, live_config);
+  // ScreenLive live;
+  // ScreenLiveConfig config;
+  // config.frame_rate = 25;
+  // config.bit_rate_bps = 800 * 1000;
+  // config.codec = "x264";
+  // config.gop = 25;
+  //
+  // live.init(config);
+  // LiveConfig live_config;
+  // live_config.server.ip = "127.0.0.1";
+  // live_config.server.port = 12345;
+  // live_config.server.suffix = "/live/test";
+  // live_config.pusher.rtsp_url = "rtsp://127.0.0.1/live/test";
+  // live_config.pusher.rtmp_url = "rtmp://127.0.0.1/live/test";
+  // live.startLive(ScreenLiveType::RTSP_SERVER, live_config);
+  // live.startLive(ScreenLiveType::RTSP_PUSHER, live_config);
+  // live.startLive(ScreenLiveType::RTMP_PUSHER, live_config);
 
 #ifdef __WIN__
-  WSACleanup();
+  ::WSACleanup();
 #endif
 }
