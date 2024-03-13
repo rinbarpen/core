@@ -1,7 +1,5 @@
 #include <core/config/config.h>
-#include <core/util/Mutex.h>
 #include <core/util/logger/Logger.h>
-#include <core/net/FdChannel.h>
 #include <core/net/EpollTaskScheduler.h>
 
 LY_NAMESPACE_BEGIN

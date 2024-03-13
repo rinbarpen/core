@@ -13,7 +13,6 @@
 # include <ws2tcpip.h>
 # include <iphlpapi.h>
 # pragma comment(lib, "ws2_32.lib")
-# pragma comment(lib, "iphlpapi.lib")
 
 using sockfd_t = SOCKET;
 #elif (defined(__linux__) || defined(__linux)) && !defined(LINUX_SOCK_DEFINED)

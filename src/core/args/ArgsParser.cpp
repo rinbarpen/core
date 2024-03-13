@@ -78,7 +78,7 @@ void ArgsParser::verbose(std::ostream &os) const {
             key,
             (op.hasValue() ? op.value() : ""),
             (op.isRequired() ? "[Required]" : "[Selective]"),
-            (op.hasValue() ? "√" : "x"), 
+            op.hasValue() ? "√" : "x", 
             op.comment());
   }
 }
