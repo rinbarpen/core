@@ -1,16 +1,32 @@
 # TODO
- - [x] add sqlite3
- - [ ] add more ffmpeg functions
- - [ ] add optimization for socket buffer
- - [ ] add udp support
- - [x] add multicast for net
- - [x] add rtsp for multimedia
- - [ ] add rtmp for multimedia
- - [ ] add opengl and libyuv
- - [ ] use config instead of some magic numbers
- - [ ] complete Bitmap in cow version
- - [ ] test all
- - [ ] use ByteSteam instead of BufferWriter, BufferReader
+## for util
+ - [ ] support mysql
+ - [ ] support to load config automatically
+ - [x] support logger(async, sync, command line)
+ - [x] add time module
+ - [x] add fiber
+ - [ ] support Deamon
+
+## for net
  - [ ] support ipv6
- - [ ] support msvc and windows
- - [ ] support camera and microphone
+ - [x] support tcp
+ - [ ] support udp
+ - [x] support multicast
+ - [x] support http
+ - [x] support websocket
+
+## for multimedia
+ - [x] support rtsp, add rtp
+ - [x] rtmp based on http-flv
+ - [ ] add rtcp
+ - [ ] support hls
+ - [x] support windows capture(d3d9, wasapi, d3d11(future))
+ - [ ] support linux capture
+ - [ ] support h264(x), aac(x), h265, g711a, vp8, vp9, av1
+ - [ ] support webrtc
+ - [ ] support recording
+ - [ ] support playing
+
+## for app
+ - [ ] screen live
+ - [ ] media file live

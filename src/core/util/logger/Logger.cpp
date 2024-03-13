@@ -2,6 +2,8 @@
 #include <iostream>
 #include <functional>
 #include <future>
+#include <string>
+#include <set>
 
 #include <core/config/config.h>
 #include <core/util/OSUtil.h>
@@ -280,7 +282,7 @@ LogFormatter::ptr LogAppender::getFormatter() const {
 
 /***************************************** FileLogAppender *******************************************/
 FileLogAppender::FileLogAppender(const std::string &filename)
-  : filename_(filename) {
+  : filename_(kLogBasePath + filename) {
   reopen();
 }
 
@@ -317,6 +319,7 @@ bool FileLogAppender::reopen() {
   }
 
   // file_stream_.open(filename_, std::ios::app);
+  os_api::touch(getWholeFilename());
   file_stream_.open(getWholeFilename(), std::ios::app);
   return file_stream_.is_open();
 }
@@ -372,7 +375,8 @@ std::string FileLogAppender::getWholeFilename() {
 /*************************************** AsyncFileLogAppender
  * ***************************************/
 AsyncFileLogAppender::AsyncFileLogAppender(const std::string &filename)
-  : filename_(filename) {}
+  : filename_(kLogBasePath + filename) {
+}
 void AsyncFileLogAppender::log(
   LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) {
   if (pLogEvent->getLevel() >= level_) {
@@ -415,6 +419,7 @@ bool AsyncFileLogAppender::reopen(tm *tm) {
     file_stream_.close();
   }
 
+  os_api::touch(getWholeFilename(tm));
   file_stream_.open(getWholeFilename(tm), std::ios::app);
   return file_stream_.is_open();
 }
@@ -525,8 +530,8 @@ void Logger::log(LogEvent::ptr pLogEvent) {
         pAppender->log(pLogEvent, self);
       }
     }
-    else if (root_)
-      root_->log(pLogEvent);
+    else if (parent_)
+      parent_->log(pLogEvent);
   }
 }
 
@@ -574,6 +579,7 @@ YAML::Node Logger::toYaml() const {
     }
   }
   node["formatter"] = formatter_->toYaml();
+  node["parent"] = parent_ ? parent_->getName() : "root";
 
   return node;
 }
@@ -605,17 +611,28 @@ Logger::ptr LogManager::getLogger(const std::string &name) {
   }
 
   auto pLogger = std::make_shared<Logger>(name);
-  pLogger->setLogger(root_);
+  pLogger->setParent(root_);
   loggers_[name] = pLogger;
   return pLogger;
+}
+Logger::ptr LogManager::getLogger2(const std::string &name) {
+  Mutex::lock locker(mutex_);
+  auto it = loggers_.find(name);
+  if (it != loggers_.end()) {
+    return it->second;
+  }
+  return nullptr;
 }
 bool LogManager::putLogger(Logger::ptr pLogger) {
   if (auto it = loggers_.find(pLogger->getName());
       it != loggers_.end()) {
     return false;
   }
-  loggers_.emplace(pLogger->getName(), pLogger);
+  loggers_[pLogger->getName()] = pLogger;
   return true;
+}
+void LogManager::insert(Logger::ptr pLogger) {
+  loggers_[pLogger->getName()] = pLogger;
 }
 
 std::string LogManager::toYamlString() const {
@@ -629,20 +646,18 @@ std::string LogManager::toYamlString() const {
 }
 
 void LogManager::toYamlFile(std::string_view filename) const {
-  os_api::rm(filename.data());
+  os_api::rm(std::string{filename});
 
   YAML::Node node;
-
   for (auto &[k, v] : loggers_) {
     node["logger"].push_back(v->toYaml());
   }
-
   std::ofstream{filename.data()} << node;
 }
 
 /******************************************** LogIniter
  * *********************************************/
-Logger::ptr LogIniter::getLogger(const std::string &log_name, LogLevel log_level,
+Logger::ptr LogIniter::reg(const std::string &log_name, LogLevel log_level,
   const std::string &format_pattern, bool write2file,
   const std::string &filename, bool async) {
   auto pLogger = LogManager::instance()->getLogger(log_name);
@@ -663,15 +678,57 @@ Logger::ptr LogIniter::getLogger(const std::string &log_name, LogLevel log_level
   return pLogger;
 }
 
-void LogIniter::loadYamlFile(std::string_view filename) {
-  auto node = YAML::LoadFile(filename.data());
+Logger::ptr LogIniter::reg(const std::string &name, const std::string &split, uint8_t flags, LogLevel level, const std::string &pattern) {
+  if ((flags & CONSOLE) != CONSOLE
+   && (flags & SYNC_FILE) != SYNC_FILE
+   && (flags & ASYNC_FILE) != ASYNC_FILE) {
+    // invalid_argument
+    // throw std::invalid_argument("No such flags");
+    return nullptr;
+  }
+
+  auto firstDot = name.find(split);
+  auto lastDot = name.rfind(split);
+  auto pLogger = std::make_shared<Logger>(name);
+  pLogger->setLevel(level);
+  pLogger->setFormatter(pattern);
+
+  auto filename = name.substr(0, firstDot);  // if no dot, this is myself
+  if ((flags & CONSOLE) == CONSOLE) {
+    pLogger->addAppender(std::make_shared<StdoutLogAppender>());
+  }
+  if ((flags & SYNC_FILE) == SYNC_FILE) {
+    pLogger->addAppender(std::make_shared<FileLogAppender>(filename));
+  }
+  else if ((flags & ASYNC_FILE) == ASYNC_FILE) {
+    pLogger->addAppender(std::make_shared<AsyncFileLogAppender>(filename));
+  }
+
+  if (firstDot != std::string::npos) {
+    pLogger->setParent(reg(name.substr(0, lastDot), split, flags, level, pattern));
+  }
+
+  LogManager::instance()->insert(pLogger);
+  return pLogger;
+}
+
+void LogIniter::loadYamlFile(const std::string& filename) {
+  auto node = YAML::LoadFile(filename);
   if (!node["logger"].IsDefined()) return;
+
+  (void)os_api::mkdir(kLogBasePath);
 
   loadYamlNode(node);
 }
 
 void LogIniter::loadYamlNode(YAML::Node node) {
-  for (auto it = node["logger"].begin(); it != node["logger"].end(); ++it) {
+  auto compare = [](const YAML::Node &lhs, const YAML::Node &rhs){
+    return lhs["name"].as<std::string>() < lhs["name"].as<std::string>();
+  };
+
+  std::set<YAML::Node, decltype(compare)> loggers(node["logger"].begin(), node["logger"].end(), compare);
+
+  for (auto it = loggers.begin(); it != loggers.end(); ++it) {
     YAML::Node cur = *it;
     // parse logger
     auto pLogger = std::make_shared<Logger>(cur["name"].as<std::string>(),
@@ -720,6 +777,7 @@ void LogIniter::loadYamlNode(YAML::Node node) {
         }
         pLogger->addAppender(pAppender);
       }
+      pLogger->setParent(GET_LOGGER(cur["parent"].as<std::string>()));
     }
     LogManager::instance()->putLogger(pLogger);
   }

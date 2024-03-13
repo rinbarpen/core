@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdexcept>
-#include <core/util/marcos.h>
 #include <core/multimedia/ffmpeg/FFmpegUtil.h>
+#include "libavutil/samplefmt.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(ffmpeg)
@@ -12,6 +12,16 @@ struct AudioInfo
   int channels;
   int bits_per_sample;
   ::AVSampleFormat format;
+
+  bool operator==(const AudioInfo &rhs) const {
+    return sample_rate == rhs.sample_rate
+        && channels == rhs.channels
+        && bits_per_sample == rhs.bits_per_sample
+        && format == rhs.format;
+  }
+  bool operator!=(const AudioInfo &rhs) const {
+    return !(*this == rhs);
+  }
 };
 // pcm lr 8 44100
 /**
@@ -98,3 +108,27 @@ protected:
 };
 NAMESPACE_END(ffmpeg)
 LY_NAMESPACE_END
+
+#include <fmt/core.h>
+#include <fmt/args.h>
+#ifdef FMT_VERSION
+template <>
+struct fmt::formatter<::ly::ffmpeg::AudioInfo>
+{
+  constexpr auto parse(fmt::format_parse_context &ctx) {
+   return ctx.begin();
+  }
+  template <typename FormatContext>
+  auto format(const ::ly::ffmpeg::AudioInfo &obj, FormatContext &ctx) {
+    return fmt::format_to(ctx.out(),
+      "sample rate = {sample rate}\n"
+      "channels = {channels}\n"
+      "bits per sample = {bits per sample}\n"
+      "sample format = {format}\n" ,
+      fmt::arg("sample rate", obj.sample_rate),
+      fmt::arg("channels", obj.channels),
+      fmt::arg("bits per sample", obj.bits_per_sample),
+      fmt::arg("format", av_get_sample_fmt_name(obj.format)));
+  }
+};
+#endif

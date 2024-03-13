@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cstdint>
 #include <algorithm>
 #include <array>
@@ -25,11 +26,11 @@ AACSource* AACSource::create(uint32_t sample_rate, uint32_t channels, bool adts_
 
 uint32_t AACSource::getTimestamp(uint32_t sample_rate)
 {
-  auto now = Timestamp<T_steady_clock>::now<std::chrono::milliseconds>();
+  auto now = Timestamp<T_steady_clock>::now<std::chrono::microseconds>();
 	return (now + 500) / 1000 * sample_rate / 1000;
 }
 
-std::string AACSource::getAttribute()
+std::string AACSource::getAttribute() const
 {
 	static std::array<uint32_t, 16> s_aac_sample_rate =
 	{
@@ -40,7 +41,7 @@ std::string AACSource::getAttribute()
 	};
 
 	char buf[500] = { 0 };
-	sprintf(buf, "a=rtpmap:97 MPEG4-GENERIC/%u/%u\r\n", sample_rate_, channels_);
+	snprintf(buf, 500, "a=rtpmap:97 MPEG4-GENERIC/%u/%u\r\n", sample_rate_, channels_);
 
 	auto it = std::find(s_aac_sample_rate.cbegin(), s_aac_sample_rate.cend(), sample_rate_);
 	if (it == s_aac_sample_rate.cend()) {
@@ -64,7 +65,7 @@ std::string AACSource::getAttribute()
 std::string AACSource::getMediaDescription(uint16_t port) const
 {
   char buf[100] = { 0 };
-  sprintf(buf, "m=audio %hu RTP/AVP 97", port); // \r\nb=AS:64
+  snprintf(buf, 100, "m=audio %hu RTP/AVP 97", port); // \r\nb=AS:64
   return std::string(buf);
 }
 

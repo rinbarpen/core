@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/util/ds/SharedString.h>
+#include <cstdint>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -30,7 +31,7 @@ struct SimAVFrame
 
   size_t size() const { return data.size(); }
 
-  SharedString data;
+  SharedString<uint8_t> data;
   uint8_t type;
   uint32_t timestamp;
 };

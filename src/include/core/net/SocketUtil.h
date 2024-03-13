@@ -7,7 +7,6 @@
 #include <core/net/NetAddress.h>
 #include <core/util/logger/Logger.h>
 
-
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
 

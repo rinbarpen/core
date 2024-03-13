@@ -6,17 +6,19 @@
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
-H265Source::H265Source(uint32_t framerate) : framerate_(framerate) {
+H265Source::H265Source(uint32_t frame_rate)
+  : frame_rate_(frame_rate) {
   payload_ = 96;
   media_type_ = MediaType::H265;
   clock_rate_ = 90000;
 }
-
-auto H265Source::create(uint32_t framerate) -> H265Source * {
-  return new H265Source(framerate);
+H265Source::~H265Source() {
 }
-auto H265Source::handleFrame(MediaChannelId channel_id, SimAVFrame frame)
-  -> bool {
+
+H265Source* H265Source::create(uint32_t frame_rate) {
+  return new H265Source(frame_rate);
+}
+bool H265Source::handleFrame(MediaChannelId channel_id, SimAVFrame frame) {
   auto frame_buf = frame.data.get();
   uint32_t frame_size = frame.data.size();
 
@@ -100,16 +102,16 @@ auto H265Source::handleFrame(MediaChannelId channel_id, SimAVFrame frame)
   return true;
 }
 
-auto H265Source::getMediaDescription(uint16_t port) const -> std::string {
+std::string H265Source::getMediaDescription(uint16_t port) const {
   char buf[100] = {0};
   sprintf(buf, "m=video %hu RTP/AVP 96", port);
   return std::string(buf);
 }
-auto H265Source::getAttribute() -> std::string {
+std::string H265Source::getAttribute() const {
   return std::string("a=rtpmap:96 H265/90000");
 }
 
-auto H265Source::getTimestamp() -> uint32_t {
+uint32_t H265Source::getTimestamp() {
   auto timestamp = Timestamp<T_steady_clock>::now<std::chrono::milliseconds>();
   return ((timestamp / 1000 + 500) / 1000 * 90);
 }

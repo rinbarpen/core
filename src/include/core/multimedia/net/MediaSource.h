@@ -16,7 +16,7 @@ public:
   virtual ~MediaSource() = default;
 
   virtual std::string getMediaDescription(uint16_t port = 0) const = 0;
-  virtual std::string getAttribute() = 0;
+  virtual std::string getAttribute() const = 0;
 
   virtual bool handleFrame(MediaChannelId channel_id, SimAVFrame frame) = 0;
 

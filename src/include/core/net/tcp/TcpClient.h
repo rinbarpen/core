@@ -2,12 +2,15 @@
 
 #include <core/net/Connector.h>
 #include <core/net/tcp/TcpConnection.h>
+#include "core/util/marcos.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
 class TcpClient
 {
 public:
+  SHARED_PTR_USING(TcpClient, ptr);
+
   explicit TcpClient(EventLoop *event_loop);
   virtual ~TcpClient();
 

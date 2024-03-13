@@ -1,8 +1,7 @@
 #include <core/multimedia/ffmpeg/AACEncoder.h>
-#include <core/multimedia/ffmpeg/Exception.h>
 #include <core/util/logger/Logger.h>
 
-static auto g_multimedia_logger = GET_LOGGER("multimedia");
+static auto g_ffmpeg_logger = GET_LOGGER("multimedia.ffmpeg");
 
 LY_NAMESPACE_BEGIN
 namespace ffmpeg
@@ -13,17 +12,18 @@ AACEncoder::~AACEncoder()
 {
   this->close();
 }
-auto AACEncoder::prepare(AVConfig &config) -> bool
+bool AACEncoder::prepare(AVConfig &config)
 {
   const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_AAC);
+  // const AVCodec *codec = avcodec_find_decoder_by_name("libfdk-aac");
   if (nullptr == codec) {
-    ILOG_ERROR_FMT(g_multimedia_logger, "AAC not found");
+    ILOG_ERROR_FMT(g_ffmpeg_logger, "[AACEncoder] AAC not found");
     return false;
   }
 
   codec_context_ = avcodec_alloc_context3(codec);
   if (nullptr == codec_context_) {
-    ILOG_ERROR_FMT(g_multimedia_logger, "Out of memory in allocating AAC context");
+    ILOG_ERROR_FMT(g_ffmpeg_logger, "[AACEncoder] Out of memory in allocating codec context");
     return false;
   }
 
@@ -35,11 +35,11 @@ auto AACEncoder::prepare(AVConfig &config) -> bool
 
   if (::avcodec_open2(codec_context_, codec, 0) != 0) {
     ::avcodec_free_context(&codec_context_);
-    ILOG_ERROR_FMT(g_multimedia_logger, "Fail to open AAC codec");
+    ILOG_ERROR_FMT(g_ffmpeg_logger, "[AACEncoder] Fail to open codec");
     return false;
   }
 
-  ILOG_DEBUG_FMT(g_multimedia_logger, "Initalize AAC encoder successfully");
+  ILOG_DEBUG_FMT(g_ffmpeg_logger, "[AACEncoder] Initialize successfully");
 
   AudioInfo in;
   in.sample_rate = config.audio.sample_rate;
@@ -52,16 +52,15 @@ auto AACEncoder::prepare(AVConfig &config) -> bool
   out.bits_per_sample = config.audio.bit_rate;
   out.format = AV_SAMPLE_FMT_FLTP;
 
+  config_ = config;
   resampler_.reset(new Resampler(in, out));
   return true;
 }
 void AACEncoder::close()
 {
   if (codec_context_) {
-    avcodec_close(codec_context_);
     avcodec_free_context(&codec_context_);
-    codec_context_ = nullptr;
-    ILOG_DEBUG_FMT(g_multimedia_logger, "Close AAC encoder successfully");
+    ILOG_DEBUG_FMT(g_ffmpeg_logger, "[AACEncoder] Close successfully");
   }
 
   pts_ = 0;
@@ -79,13 +78,13 @@ AVPacketPtr AACEncoder::encode(AVEncodeContext ctx)
   pts_ += in_frame->nb_samples;
 
   if (av_frame_get_buffer(in_frame.get(), 0) < 0) {
-    ILOG_ERROR_FMT(g_multimedia_logger, "Out of memory in allocating aac frame buffer");
+    ILOG_ERROR_FMT(g_ffmpeg_logger, "[AACEncoder] Out of memory in allocating frame buffer");
     return nullptr;
   }
 
   int bytes_per_sample = av_get_bytes_per_sample(AV_SAMPLE_FMT_FLTP);
   if (bytes_per_sample == 0) {
-    ILOG_CRITICAL_FMT(g_multimedia_logger, "Layout AV_SAMPLE_FMT_FLTP is zero bytes, FFmpeg may be broken");
+    ILOG_ERROR_FMT(g_ffmpeg_logger, "[AACEncoder] Layout AV_SAMPLE_FMT_FLTP is zero bytes, FFmpeg may be broken");
     return nullptr;
   }
 
@@ -98,27 +97,22 @@ AVPacketPtr AACEncoder::encode(AVEncodeContext ctx)
 
   int r = avcodec_send_frame(codec_context_, fltp_frame.get());
   if (r < 0) {
-    ILOG_WARN_FMT(g_multimedia_logger, "Error occurs while sending fltp frame from AAC encoder");
+    ILOG_WARN_FMT(g_ffmpeg_logger, "[AACEncoder] Error occurs while sending fltp frame");
     return nullptr;
   }
 
   AVPacketPtr packet = makePacketPtr();
   r = avcodec_receive_packet(codec_context_, packet.get());
   if (r == AVERROR(EAGAIN) || r == AVERROR_EOF) {
-    ILOG_INFO_FMT(g_multimedia_logger, "No packet to get in AAC encoder");
+    ILOG_INFO_FMT(g_ffmpeg_logger, "[AACEncoder] No packet to be gotten");
     return nullptr;
   }
   else if (r < 0) {
-    ILOG_WARN_FMT(g_multimedia_logger, "Error occurs while receiving packet from AAC encoder");
+    ILOG_WARN_FMT(g_ffmpeg_logger, "[AACEncoder] Error occurs while receiving packet");
     return nullptr;
   }
 
   return packet;
-}
-
-uint32_t AACEncoder::getFrameNum() const
-{
-  return codec_context_->frame_size;
 }
 }  // namespace ffmpeg
 LY_NAMESPACE_END

@@ -8,6 +8,15 @@
 LY_NAMESPACE_BEGIN
 static auto g_max_buffer_size = LY_CONFIG_GET(common.buffer.max_buffer_size);
 
+void BufferReader::read(char *data, uint32_t nbytes)
+{
+  size_t bytesRead = this->readableBytes();
+  if (nbytes <= bytesRead) {
+    bytesRead = nbytes;
+  }
+
+  ::memcpy(data, data_, bytesRead);
+}
 std::string BufferReader::read(uint32_t nbytes) {
   size_t bytesRead = this->readableBytes();
   if (nbytes <= bytesRead) {

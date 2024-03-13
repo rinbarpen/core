@@ -36,7 +36,7 @@ void RtspPusher::removeSession(MediaSessionId session_id)
 
 bool RtspPusher::openUrl(std::string_view url, std::chrono::milliseconds msec)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Mutex::lock locker(mutex_);
 
 	static Timestamp<T_steady_clock> timestamp;
 	timestamp.reset();

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <memory>
+#include <string>
 #include <core/util/marcos.h>
 
 LY_NAMESPACE_BEGIN
@@ -88,27 +89,23 @@ public:
     char streamName[400] = {0};
     uint16_t port = 0;
 
-    if (auto pos = url.find("rtmp://"); pos == std::string::npos) {
-      return false;
+    if (sscanf(url.c_str(), "rtmp://%[^:]:%hu/%s", ip, &port, streamPath) == 3) {
     }
-
-    if (sscanf(url.c_str() + 7, "%[^:]:%hu/%s", ip, &port, streamPath) == 3) {
-      port_ = port;
-    }
-    else if (sscanf(url.c_str() + 7, "%[^/]/%s", ip, streamPath) == 2) {
-      port_ = 1935;
+    else if (sscanf(url.c_str(), "rtmp://%[^/]/%s", ip, streamPath) == 2) {
+      port = 1935;
     }
     else {
       return false;
     }
 
     ip_ = ip;
-    stream_path_ += "/";
+    port_ = port;
+    stream_path_ = "/";
     stream_path_ += streamPath;
     url_ = url;
 
     if (sscanf(stream_path_.c_str(), "/%[^/]/%s", app, streamName) != 2) {
-      return -1;
+      return false;
     }
 
     app_ = app;

@@ -1,13 +1,12 @@
 #pragma once
 
-#include "core/util/ds/SharedString.h"
 #include <memory>
 #include <cstdint>
 
 #include <core/util/marcos.h>
 
 static constexpr int RTP_HEADER_SIZE = 12;
-static constexpr int MAX_RTP_PAYLOAD_SIZE = 1420; //1460  1500-20-12-8
+static constexpr int MAX_RTP_PAYLOAD_SIZE = 1420;  // 1460
 static constexpr int RTP_VERSION = 2;
 static constexpr int RTP_TCP_HEAD_SIZE = 4;
 

@@ -22,6 +22,7 @@ public:
   char * peek() { return data_ + get_pos_; }
   const char * peek() const { return data_ + get_pos_; }
 
+  void read(char *data, uint32_t nbytes);
   std::string read(uint32_t nbytes);
   int readFromSocket(sockfd_t sockfd);
   std::string readAll();

@@ -1,22 +1,30 @@
-﻿cmake_minimum_required (VERSION 3.4)
+﻿cmake_minimum_required (VERSION 3.6)
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CoreProjectName "lycore")
 
-project (${CoreProjectName} VERSION 0.1 LANGUAGES C CXX)
+project (${CoreProjectName} VERSION 0.4 LANGUAGES C CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif()
 message("Build ${CoreProjectName} with ${CMAKE_BUILD_TYPE}")
 
+if (WIN32)
+    set(SYSTEM_NAME "windows")
+    message(STATUS "This is Window platform")
+elseif(UNIX)
+    set(SYSTEM_NAME "linux")
+    message(STATUS "This is Linux platform")
+else()
+    message(STATUS "Unknown platform")
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     # Gcc specific flags
@@ -45,12 +53,14 @@ include_directories("3rdparty/googletest/googletest/include")
 include_directories("3rdparty/googletest/googlemock/include")
 add_subdirectory("3rdparty/fmt")
 include_directories("3rdparty/fmt/include")
-add_subdirectory("3rdparty/range-v3")
-include_directories("3rdparty/range-v3/include")
-add_subdirectory("3rdparty/glfw")
-include_directories("3rdparty/glfw/include")
-add_subdirectory("3rdparty/libyuv")
-include_directories("3rdparty/libyuv/include")
+add_subdirectory("3rdparty/jsoncpp")
+include_directories("3rdparty/jsoncpp/include")
+#add_subdirectory("3rdparty/range-v3")
+#include_directories("3rdparty/range-v3/include")
+#add_subdirectory("3rdparty/glfw")
+#include_directories("3rdparty/glfw/include")
+#add_subdirectory("3rdparty/libyuv")
+#include_directories("3rdparty/libyuv/include")
 ######################################### Requirments End   ########################################
 
 ######################################### Library Begin ############################################
@@ -64,16 +74,10 @@ else()
 endif()
 
 if (WIN32)
-    set(SYSTEM_NAME "win")
-    message(STATUS "This is Window platform")
-elseif(UNIX)
-    set(SYSTEM_NAME "linux")
-    message(STATUS "This is Linux platform")
+    set(FFMPEG_LIBRARIES_DIR "${FFMPEG_DIR}/lib/${SYSTEM_NAME}/${CMAKE_BUILD_TYPE}")
 else()
-    message(STATUS "Unknown platform")
+    set(FFMPEG_LIBRARIES_DIR "${FFMPEG_DIR}/lib/${SYSTEM_NAME}")
 endif()
-
-# set(FFMPEG_LIBRARIES_DIR "${FFMPEG_DIR}/lib/${SYSTEM_NAME}")
 set(FFMPEG_INCLUDE "${FFMPEG_DIR}/include")
 set(FFMPEG_LIBRARIES
     "avcodec" "avformat" "avutil"
@@ -95,28 +99,87 @@ file(GLOB_RECURSE
         "src/core/util/*.cpp"
         "src/core/multimedia/*.cpp"
         "src/core/config/*.cpp"
+        "src/core/args/*.cpp"
 )
-message(STATUS "SOURCE FILES: ${CoreSrcs}")
+# message(STATUS "SOURCE FILES: ${CoreSrcs}")
 
 #add_definitions(-DENABLE_TEST)
 add_subdirectory(examples)
-add_subdirectory(test)
+add_subdirectory(tests)
 
-# add_library(${PROJECT_NAME} STATIC ${CoreSrcs})
+if (GEN_SHARED)
+    add_library ("${CoreProjectName}.${PROJECT_VERSION}" SHARED ${CoreSrcs})
+else()
+    add_library ("${CoreProjectName}.${PROJECT_VERSION}" STATIC ${CoreSrcs})
+endif()
+
+target_include_directories(${CoreProjectName}.${PROJECT_VERSION}
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/include"
+        "${FFMPEG_INCLUDE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/yaml-cpp/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fmt/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/googletest/googletest/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/googletest/googlemock/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/jsoncpp/include"
+#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/range-v3/include"
+#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/sqlite3pp/include"
+#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw/include"
+#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libyuv/include"
+)
+target_link_directories(${CoreProjectName}.${PROJECT_VERSION}
+    PUBLIC
+        ${FFMPEG_LIBRARIES_DIR}
+)
+if(WIN32)
+    target_link_libraries(${CoreProjectName}.${PROJECT_VERSION}
+        PUBLIC
+            fmt::fmt
+            yaml-cpp::yaml-cpp
+            jsoncpp
+            OpenSSL::SSL
+            OpenSSL::Crypto
+            ${FFMPEG_LIBRARIES}
+    #        range-v3
+            D3D9.lib
+    #        glfw
+    #        yuvconvert
+    )
+elseif(UNIX)
+    target_link_libraries(${CoreProjectName}.${PROJECT_VERSION}
+        PUBLIC
+            fmt::fmt
+            yaml-cpp::yaml-cpp
+            jsoncpp
+            OpenSSL::SSL
+            OpenSSL::Crypto
+            ${FFMPEG_LIBRARIES}
+    #        range-v3
+    #        glfw
+    #        yuvconvert
+    )
+endif()
+target_compile_features(${CoreProjectName}.${PROJECT_VERSION}
+    PUBLIC
+        cxx_std_17
+        c_std_11
+)
+
+
 add_executable (${CoreProjectName} "src/main.cpp" ${CoreSrcs} "src/ScreenLive.cpp")
-
 target_include_directories(${CoreProjectName}
     PUBLIC
-        "${PROJECT_SOURCE_DIR}/src/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/include"
         "${FFMPEG_INCLUDE}"
-        "3rdparty/yaml-cpp/include"
-        "3rdparty/fmt/include"
-        "3rdparty/googletest/googletest/include"
-        "3rdparty/googletest/googlemock/include"
-        "3rdparty/range-v3/include"
-#        "3rdparty/sqlite3pp/include"
-#        "3rdparty/glfw/include"
-#        "3rdparty/libyuv/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/yaml-cpp/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fmt/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/googletest/googletest/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/googletest/googlemock/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/jsoncpp/include"
+#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/range-v3/include"
+#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/sqlite3pp/include"
+#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw/include"
+#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libyuv/include"
 )
 target_link_directories(${CoreProjectName}
     PUBLIC
@@ -127,10 +190,11 @@ if(WIN32)
         PUBLIC
             fmt::fmt
             yaml-cpp::yaml-cpp
+            jsoncpp
             OpenSSL::SSL
             OpenSSL::Crypto
             ${FFMPEG_LIBRARIES}
-            range-v3
+    #        range-v3
             D3D9.lib
     #        glfw
     #        yuvconvert
@@ -140,10 +204,11 @@ elseif(UNIX)
         PUBLIC
             fmt::fmt
             yaml-cpp::yaml-cpp
+            jsoncpp
             OpenSSL::SSL
             OpenSSL::Crypto
             ${FFMPEG_LIBRARIES}
-            range-v3
+    #        range-v3
     #        glfw
     #        yuvconvert
     )
@@ -151,4 +216,5 @@ endif()
 target_compile_features(${CoreProjectName}
     PUBLIC
         cxx_std_17
+        c_std_11
 )

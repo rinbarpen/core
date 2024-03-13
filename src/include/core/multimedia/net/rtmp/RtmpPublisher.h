@@ -4,6 +4,7 @@
 #include <core/util/Mutex.h>
 #include <core/util/time/Timestamp.h>
 #include <core/net/EventLoop.h>
+#include <core/net/tcp/TcpSocket.h>
 #include <core/multimedia/net/rtmp/RtmpConnection.h>
 
 LY_NAMESPACE_BEGIN
@@ -36,6 +37,7 @@ private:
 	EventLoop *event_loop_ = nullptr;
 	TaskScheduler *task_scheduler_ = nullptr;
 	std::shared_ptr<RtmpConnection> rtmp_conn_;
+	std::unique_ptr<TcpSocket> tcp_socket_;
 
 	MediaInfo media_info_;
 	std::shared_ptr<char> avc_sequence_header_;

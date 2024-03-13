@@ -11,7 +11,7 @@ public:
   AACEncoder();
   ~AACEncoder();
 
-  auto prepare(AVConfig &config) -> bool override;
+  bool prepare(AVConfig &config) override;
   void close() override;
   /**
    * \brief convert pcm to frame,
@@ -21,7 +21,7 @@ public:
    */
   AVPacketPtr encode(AVEncodeContext ctx) override;
 
-  uint32_t getFrameNum() const override;
+  uint32_t getFrameSize() const { return codec_context_->frame_size; }
 
 private:
   std::unique_ptr<Resampler> resampler_;

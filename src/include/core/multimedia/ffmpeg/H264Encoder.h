@@ -1,5 +1,4 @@
 #pragma once
-#include "core/util/marcos.h"
 #include <core/multimedia/ffmpeg/Converter.h>
 #include <core/multimedia/ffmpeg/Encoder.h>
 
@@ -14,7 +13,7 @@ public:
   H264Encoder();
   ~H264Encoder();
 
-  auto prepare(AVConfig &config) -> bool override;
+  bool prepare(AVConfig &config) override;
   void close() override;
   /**
    * @brief encode video

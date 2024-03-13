@@ -12,21 +12,33 @@
 #include <core/multimedia/net/rtsp/RtspPusher.h>
 #include <core/multimedia/net/rtsp/RtspServer.h>
 #include <core/multimedia/net/rtmp/RtmpPublisher.h>
-#include <core/multimedia/codec/AACEncoder.h>
-#include <core/multimedia/codec/H264Encoder.h>
-#include <core/multimedia/capture/AudioCapture.h>
-#include <core/multimedia/capture/ScreenCapture.h>
+#include <core/multimedia/codec/encoder/AACEncoder.h>
+#include <core/multimedia/codec/encoder/H264Encoder.h>
+#include <core/multimedia/capture/audio_capture/AudioCapture.h>
+#include <core/multimedia/capture/screen_capture/ScreenCapture.h>
 
 
 LY_NAMESPACE_BEGIN
 struct ScreenLiveConfig
 {
+  // for video
   uint32_t bit_rate_bps = 800 * 1000;
   uint32_t frame_rate = 25;
   uint32_t gop = 25;
 
-  // [software codec: "x264"]  [hardware codec: "h264_nvenc, h264_qsv"]
-  std::string codec = "x264";
+  // [software codec: "h264.ffmpeg"]  [hardware codec: "h264.nvenc, h264.qsv"]
+  // h264.ffmpeg, h264.nvenc, h264.qsv
+  // h265.ffmpeg
+  std::string codec = "h264.ffmpeg";
+
+  uint32_t width = 800, height = 600;  // -1 for auto
+  uint32_t offset_x = 0, offset_y = 0;
+  int display_index = 0;  // -1 for auto
+
+  bool video_on = true, audio_on = true;
+  // for audio
+  int volume = 100;
+  bool muted = false;
 
   bool operator==(const ScreenLiveConfig& rhs) const {
     return rhs.bit_rate_bps == bit_rate_bps

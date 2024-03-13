@@ -3,13 +3,16 @@
 #include <core/multimedia/net/AACSource.h>
 #include <core/multimedia/net/H264Source.h>
 #include <core/multimedia/net/H264Parser.h>
-#include <core/multimedia/capture/WASAPIHelper.h>
-#include <core/multimedia/capture/GDISrceenCapture.h>
+#include <core/multimedia/capture/screen_capture/WASAPIHelper.h>
+#include <core/multimedia/capture/screen_capture/GDISrceenCapture.h>
+#include <core/multimedia/capture/screen_capture/X11ScreenCapture.h>
+#include <core/multimedia/capture/audio_capture/WASAPIAudioCapture.h>
+#include <core/multimedia/capture/audio_capture/PulseCapture.h>
 #include <ScreenLive.h>
 
 LY_NAMESPACE_BEGIN
 using namespace net;
-static auto g_screen_live_logger = GET_LOGGER("screen.live");
+static auto g_screen_live_logger = GET_LOGGER("app.screen.live");
 
 ScreenLive::ScreenLive()
   : event_loop_(new net::EventLoop{}),
@@ -69,8 +72,8 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
     return false;
   }
 
-  uint32_t sample_rate = audio_capture_->getSampleRate();
-  uint32_t channels = audio_capture_->getChannels();
+  // uint32_t sample_rate = audio_capture_->getSampleRate();
+  // uint32_t channels = audio_capture_->getChannels();
 
   if (type == ScreenLiveType::RTSP_SERVER) {
     auto rtsp_server = RtspServer::create(event_loop_.get());
@@ -86,8 +89,8 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
 
     MediaSession *session = MediaSession::create(config.server.suffix);
     session->addSource(channel_0, H264Source::create(screen_live_config_.frame_rate));
-    session->addSource(
-      channel_1, AACSource::create(sample_rate, channels, false));
+    // session->addSource(
+    //   channel_1, AACSource::create(sample_rate, channels, false));
     session->addNotifyConnectedCallback(
       [this](MediaSessionId session_id, std::string peer_ip,
         uint16_t peer_port) {
@@ -103,35 +106,36 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
           << "RTSP client: " << this->rtsp_clients_.size();
      });
 
-
     session_id = rtsp_server->addSession(session);
-    ILOG_INFO_FMT(g_screen_live_logger, "RTSP Server start: rtsp://{}:{}/{}",
-      config.server.ip, config.server.port, config.server.suffix);
+    ILOG_INFO_FMT(g_screen_live_logger, "RTSP Server start: tcp://{}:{}",
+      config.server.ip, config.server.port);
 
     Mutex::lock locker(mutex_);
     rtsp_server_ = rtsp_server;
     media_session_id_ = session_id;
+    return true;
   }
   else if (type == ScreenLiveType::RTSP_PUSHER) {
     auto rtsp_pusher = RtspPusher::create(event_loop_.get());
     MediaSession *session = MediaSession::create();
     session->addSource(channel_0, H264Source::create(screen_live_config_.frame_rate));
-    session->addSource(
-      channel_1, AACSource::create(audio_capture_->getSampleRate(),
-                        audio_capture_->getChannels(), false));
+    // session->addSource(
+    //   channel_1, AACSource::create(audio_capture_->getSampleRate(),
+    //                     audio_capture_->getChannels(), false));
 
     rtsp_pusher->addSession(session);
-    if (rtsp_pusher->openUrl(config.pusher.rtsp_url, 1000ms) != 0) {
+    if (!rtsp_pusher->openUrl(config.pusher.rtsp_url, 1000ms)) {
       rtsp_pusher = nullptr;
-      ILOG_INFO_FMT(g_screen_live_logger, "RTSP Pusher: Open url({}) failed.",
+      ILOG_ERROR_FMT(g_screen_live_logger, "RTSP Pusher: Fail to open url({}).",
         config.pusher.rtsp_url);
       return false;
     }
 
-    Mutex::lock locker(mutex_);
-    rtsp_pusher_ = rtsp_pusher;
     ILOG_INFO_FMT(g_screen_live_logger, "RTSP Pusher start: Push stream to {} ...",
       config.pusher.rtsp_url);
+    Mutex::lock locker(mutex_);
+    rtsp_pusher_ = rtsp_pusher;
+    return true;
   }
   else if (type == ScreenLiveType::RTMP_PUSHER) {
     auto rtmp_pusher = RtmpPublisher::create(event_loop_.get());
@@ -140,21 +144,21 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
     uint8_t extradata[1024] = {0};
     int extradata_size = 0;
 
-    extradata_size = aac_encoder_.getSpecificConfig(extradata, 1024);
-    if (extradata_size <= 0) {
-      ILOG_ERROR_FMT(g_screen_live_logger, "Get audio specific config failed.");
-      return false;
-    }
+    // extradata_size = aac_encoder_.getSpecificConfig(extradata, 1024);
+    // if (extradata_size < 0) {
+    //   ILOG_ERROR_FMT(g_screen_live_logger, "Get audio specific config failed.");
+    //   return false;
+    // }
 
-    mediaInfo.audio_specific_config_size = extradata_size;
-    mediaInfo.audio_specific_config.reset(
-      new uint8_t[mediaInfo.audio_specific_config_size],
-      std::default_delete<uint8_t[]>());
-    memcpy(mediaInfo.audio_specific_config.get(), extradata, extradata_size);
+    // mediaInfo.audio_specific_config_size = extradata_size;
+    // mediaInfo.audio_specific_config.reset(
+    //   new uint8_t[mediaInfo.audio_specific_config_size],
+    //   std::default_delete<uint8_t[]>());
+    // memcpy(mediaInfo.audio_specific_config.get(), extradata, extradata_size);
 
     extradata_size = h264_encoder_.getSequenceParams(extradata, 1024);
-    if (extradata_size <= 0) {
-      ILOG_ERROR_FMT(g_screen_live_logger, "Get video specific config failed.");
+    if (extradata_size < 0) {
+      ILOG_ERROR_FMT(g_screen_live_logger, "Fail to get video specific config.");
       return false;
     }
 
@@ -169,7 +173,7 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
       Nal pps = H264Parser::findNal(
         sps.end_pos, extradata_size - (sps.end_pos - (uint8_t *) extradata));
       if (pps.start_pos != nullptr && pps.end_pos != nullptr
-          && ((*pps.start_pos & 0x1f) == 8)) {
+          && ((*pps.start_pos & 0x1F) == 8)) {
         mediaInfo.pps_size = pps.end_pos - pps.start_pos + 1;
         mediaInfo.pps.reset(
           new uint8_t[mediaInfo.pps_size], std::default_delete<uint8_t[]>());
@@ -180,22 +184,20 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
     rtmp_pusher->setMediaInfo(mediaInfo);
 
     std::string status;
-    if (rtmp_pusher->openUrl(config.pusher.rtmp_url, 1000ms, status) < 0) {
+    if (!rtmp_pusher->openUrl(config.pusher.rtmp_url, 1000ms, status)) {
       ILOG_ERROR_FMT(g_screen_live_logger,
-        "RTMP Pusher: Open url({}) failed.", config.pusher.rtmp_url);
+        "RTMP Pusher: Fail to open url({}). status:{}", config.pusher.rtmp_url, status);
       return false;
     }
 
-    Mutex::lock locker(mutex_);
-    rtmp_pusher_ = rtmp_pusher;
     ILOG_INFO_FMT(g_screen_live_logger, "RTMP Pusher start: Push stream to {} ...",
       config.pusher.rtmp_url);
-  }
-  else {
-    return false;
+    Mutex::lock locker(mutex_);
+    rtmp_pusher_ = rtmp_pusher;
+    return true;
   }
 
-  return true;
+  return false;
 }
 
 bool ScreenLive::stopLive(ScreenLiveType type) {
@@ -232,6 +234,24 @@ bool ScreenLive::stopLive(ScreenLiveType type) {
 
 bool ScreenLive::startCapture()
 {
+  int display_index = screen_live_config_.display_index;  // monitor index
+#if defined(__LINUX__)
+  if (!screen_capture_) {
+    screen_capture_.reset(new X11ScreenCapture{screen_live_config_.width, screen_live_config_.height});
+    if (!screen_capture_->init(display_index)) {
+      ILOG_ERROR(g_screen_live_logger) << "Fail to open X11 screen capture, monitor index: " << display_index;
+      // (void)screen_capture_.release();
+      return false;
+    }
+    // audio_capture_.reset(new PulseAudioCapture{});
+    // if (!audio_capture_->init()) {
+    //   ILOG_ERROR(g_screen_live_logger) << "Fail to open Pulse audio capture";
+    //   // (void)screen_capture_.release();
+    //   // (void)audio_capture_.release();
+    //   return false;
+    // }
+  }
+#elif defined(__WIN__)
   auto monitors = DX::monitors();
   if (monitors.empty()) {
     ILOG_ERROR(g_screen_live_logger) << "Monitor not found.";
@@ -245,10 +265,8 @@ bool ScreenLive::startCapture()
       monitors[index].bottom - monitors[index].top);
   }
 
-  int display_index = 0;  // monitor index
-
   if (!screen_capture_) {
-#if 0
+# if 0
 		if (IsWindows8OrGreater()) {
 			printf("DXGI Screen capture start, monitor index: %d \n", display_index);
 			screen_capture_ = new DXGIScreenCapture();
@@ -264,21 +282,28 @@ bool ScreenLive::startCapture()
 			printf("GDI Screen capture start, monitor index: %d \n", display_index);
 			screen_capture_ = new GDIScreenCapture();
 		}
-#else
+# else
     ILOG_INFO(g_screen_live_logger) << "GDI Screen capture start, monitor index: " << display_index;
     screen_capture_.reset(new GDIScreenCapture{});
-#endif
-
     if (!screen_capture_->init(display_index)) {
       ILOG_ERROR(g_screen_live_logger) << "Screen capture start failed, monitor index: " << display_index;
       screen_capture_.release();
       return false;
     }
   }
-
-  if (audio_capture_  && !audio_capture_->init()) {
+# endif
+  audio_capture_.reset(new WASAPIAudioCapture{});
+  if (!audio_capture_->init()) {
+    ILOG_ERROR(g_screen_live_logger) << "Fail to open Pulse audio capture";
+    // (void)screen_capture_.release();
+    // (void)audio_capture_.release();
     return false;
   }
+#endif
+
+  // if (audio_capture_  && !audio_capture_->init()) {
+  //   return false;
+  // }
 
   capture_started_ = true;
   return true;
@@ -288,11 +313,11 @@ bool ScreenLive::stopCapture()
   if (capture_started_) {
     if (screen_capture_) {
       screen_capture_->destroy();
-      screen_capture_.release();
+      (void)screen_capture_.release();
     }
     if (audio_capture_) {
       audio_capture_->destroy();
-      audio_capture_.release();
+      (void)audio_capture_.release();
     }
     capture_started_ = false;
   }
@@ -319,21 +344,21 @@ bool ScreenLive::startEncoder(ScreenLiveConfig &config)
   h264_encoder_.setCodec(config.codec);
 
   if (!h264_encoder_.prepare(screen_live_config_.frame_rate,
-        screen_live_config_.bit_rate_bps / 1000,
+        screen_live_config_.bit_rate_bps,
         AV_PIX_FMT_BGRA, screen_capture_->getWidth(),
         screen_capture_->getHeight())) {
     return false;
   }
 
-  int sample_rate = audio_capture_->getSampleRate();
-  int channels = audio_capture_->getChannels();
-  if (!aac_encoder_.prepare(sample_rate, channels, AV_SAMPLE_FMT_S16, 64)) {
-    return false;
-  }
+  // int sample_rate = audio_capture_->getSampleRate();
+  // int channels = audio_capture_->getChannels();
+  // if (!aac_encoder_.prepare(sample_rate, channels, AV_SAMPLE_FMT_S16, config.bit_rate_bps)) {
+  //   return false;
+  // }
 
   encoder_started_ = true;
   encode_video_thread_ = std::thread(&ScreenLive::encodeVideo, this);
-  encode_audio_thread_ = std::thread(&ScreenLive::encodeAudio, this);
+  // encode_audio_thread_ = std::thread(&ScreenLive::encodeAudio, this);
   return true;
 }
 bool ScreenLive::stopEncoder()
@@ -345,12 +370,12 @@ bool ScreenLive::stopEncoder()
       encode_video_thread_.join();
     }
 
-    if (encode_audio_thread_.joinable()) {
-      encode_audio_thread_.join();
-    }
+    // if (encode_audio_thread_.joinable()) {
+    //   encode_audio_thread_.join();
+    // }
 
     h264_encoder_.close();
-    aac_encoder_.close();
+    // aac_encoder_.close();
   }
 
   return true;

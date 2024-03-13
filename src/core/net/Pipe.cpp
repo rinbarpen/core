@@ -2,12 +2,8 @@
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
-
-static auto g_net_logger = GET_LOGGER("net");
-
 bool Pipe::create()
 {
-  ILOG_DEBUG(g_net_logger) << "Create a pipe";
 #if defined(__WIN__)
 	fds_[0] = socket_api::socket_tcp();
 	fds_[1] = socket_api::socket_tcp();

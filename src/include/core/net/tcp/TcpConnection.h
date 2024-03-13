@@ -27,6 +27,7 @@ public:
   virtual ~TcpConnection();
 
   void send(const char *data, size_t len);
+  size_t recv(char *data, size_t len);
   void recv(std::string &data, size_t len);
 
   void disconnect();

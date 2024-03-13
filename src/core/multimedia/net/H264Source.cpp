@@ -1,22 +1,24 @@
+#include <chrono>
 #include <core/multimedia/net/H264Source.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
-H264Source::H264Source(uint32_t framerate) :
+H264Source::H264Source(uint32_t frame_rate) :
   MediaSource(),
-  framerate_(framerate)
+  frame_rate_(frame_rate)
 {
   payload_ = 96;
   media_type_ = H264;
   clock_rate_ = 90000;
 }
-
-H264Source* H264Source::create(uint32_t framerate)
+H264Source::~H264Source() {
+}
+H264Source* H264Source::create(uint32_t frame_rate)
 {
-  return new H264Source(framerate);
+  return new H264Source(frame_rate);
 }
 
-std::string H264Source::getAttribute()
+std::string H264Source::getAttribute() const
 {
   // "a=rtpmap:$payload H264/$clock_rate"
   return "a=rtpmap:96 H264/90000";
@@ -106,7 +108,7 @@ bool H264Source::handleFrame(MediaChannelId channel_id, SimAVFrame frame)
 }
 uint32_t H264Source::getTimestamp()
 {
-  auto timestamp = Timestamp<T_steady_clock>::now<std::chrono::milliseconds>();
+  auto timestamp = Timestamp<T_steady_clock>::now<std::chrono::microseconds>();
   return ((timestamp / 1000 + 500) / 1000 * 96);
 }
 NAMESPACE_END(net)

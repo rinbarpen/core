@@ -2,6 +2,7 @@
 #include <core/config/config.h>
 #include <core/net/TaskScheduler.h>
 #include <core/net/tcp/TcpConnection.h>
+#include <cstring>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -41,6 +42,21 @@ void TcpConnection::send(const char* data, size_t len)
 
     this->onWrite();
   }
+}
+size_t TcpConnection::recv(char *data, size_t len)
+{
+  if (running_) {
+    std::string r;
+    {
+      Mutex::lock locker(mutex_);
+      r = read_buffer_->read((uint32_t)len);
+      ::memcpy(data, r.c_str(), r.length());
+    }
+
+    this->onRead();
+    return r.length();
+  }
+  return 0;
 }
 void TcpConnection::recv(std::string &data, size_t len)
 {

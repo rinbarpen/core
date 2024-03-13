@@ -1,45 +1,70 @@
 #pragma once
+#include <cstddef>
+#include <cstring>
 #include <memory>
 
+#include <core/util/Traits.h>
 #include <core/util/marcos.h>
 
+
 LY_NAMESPACE_BEGIN
+template <typename CharT = char>
 class SharedString final
 {
+  static_assert(is_any_of_v<CharT, char, unsigned char, signed char>,
+    "It should be char or unsigned char or signed char");
+
 public:
-  SharedString();
-  explicit SharedString(size_t capacity);
-  ~SharedString();
+  SharedString() : data_(nullptr), size_(0) {}
+  explicit SharedString(size_t size)
+    : data_(new CharT[size], std::default_delete<CharT>()), size_(size) {}
+  ~SharedString() = default;
 
-  void reset();
-  void reset(size_t newCapacity);
+  void reset() { data_.reset(new CharT[size_], std::default_delete<CharT>()); }
+  void reset(size_t newSize) {
+    data_.reset(new CharT[newSize], std::default_delete<CharT>());
+  }
 
-  void expand(size_t newCapacity);
+  void fill(const CharT *data, size_t len, size_t startPos = 0) {
+    for (size_t i = 0; i < len; ++i) {
+      data_.get()[i + startPos] = data[i];
+    }
+  }
 
-  void append(const char *data, size_t len);
-  // use for char and unsigned char and signed char
-  void append(std::string_view data);
-  void fill(const char *data, size_t len, size_t startPos);
-  // use for char and unsigned char and signed char
-  void fill(std::string_view data, size_t startPos);
+  CharT *get() const { return data_.get(); }
 
-  LY_NODISCARD char *get() const { return data_.get(); }
+  CharT &operator[](size_t index) { return data_.get()[index]; }
+  CharT &operator[](size_t index) const { return data_.get()[index]; }
 
-  char& operator[](size_t index) { return data_.get()[index]; }
-  char& operator[](size_t index) const { return data_.get()[index]; }
-
-  SharedString clone();
-  void resize(size_t size);
-  void clear();
-  void resizeAndClear(size_t size);
+  SharedString clone() {
+    SharedString newStr(size_);
+    newStr.fill(data_.get(), size_, 0);
+    return newStr;
+  }
+  void resize(size_t newSize) {
+    if (size_ < newSize) {
+      std::shared_ptr<CharT> newData(
+        new CharT[newSize], std::default_delete<CharT>());
+      memcpy(newData.get(), data_.get(), size_);
+      data_ = newData;
+      size_ = newSize;
+    }
+    else {
+      std::shared_ptr<CharT> newData(
+        new CharT[newSize], std::default_delete<CharT>());
+      memcpy(newData.get(), data_.get(), newSize);
+      data_ = newData;
+      size_ = newSize;
+    }
+  }
+  void clear() { memset(data_.get(), 0, size_); }
 
   bool empty() const { return size_ == 0; }
-  LY_NODISCARD size_t size() const { return size_; }
-  LY_NODISCARD size_t capacity() const { return capacity_; }
+  size_t size() const { return size_; }
 
 private:
-  std::shared_ptr<char> data_;
-  size_t size_{0};
-  size_t capacity_{0};
+  std::shared_ptr<CharT> data_;
+  size_t size_;
 };
+
 LY_NAMESPACE_END

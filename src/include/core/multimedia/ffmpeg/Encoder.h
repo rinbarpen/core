@@ -12,7 +12,7 @@ public:
   Encoder() = default;
   virtual ~Encoder() = default;
 
-  virtual auto prepare(AVConfig &config) -> bool = 0;
+  virtual bool prepare(AVConfig &config) = 0;
   virtual void close() = 0;
   virtual AVPacketPtr encode(AVEncodeContext ctx) = 0;
 

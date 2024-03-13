@@ -40,6 +40,10 @@ public:
   {
     std::this_thread::sleep_for(sleep_time);
   }
+  static void sleepMS(int sleep_time)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds{sleep_time});
+  }
 
 private:
   TimestampType current_;

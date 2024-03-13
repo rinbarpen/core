@@ -6,8 +6,12 @@
 #include <core/util/marcos.h>
 
 #ifdef ENABLE_OPENSSL
+namespace openssl {
+extern "C" {
 # include <openssl/md5.h>
 # include <openssl/rand.h>
+}
+}
 #else
 # error "Need to use openssl!"
 #endif
@@ -16,10 +20,10 @@ LY_NAMESPACE_BEGIN
 class XHash
 {
 public:
-  static auto md5(std::string_view raw) -> std::string
+  static std::string md5(std::string_view raw)
   {
     unsigned char digest[MD5_DIGEST_LENGTH];
-    MD5(reinterpret_cast<const unsigned char*>(raw.data()), raw.size(), digest);
+    openssl::MD5(reinterpret_cast<const unsigned char*>(raw.data()), raw.size(), digest);
 
     // 将 digest 转换为字符串表示
     char hexBuffer[2 * MD5_DIGEST_LENGTH];
@@ -30,10 +34,10 @@ public:
     return std::string(hexBuffer, 2 * MD5_DIGEST_LENGTH);
   }
 
-  static auto random(size_t nbytes) -> std::string
+  static std::string random(size_t nbytes)
   {
     char *buffer = new char[nbytes];
-    ::RAND_bytes(reinterpret_cast<unsigned char *>(buffer), nbytes);
+    openssl::RAND_bytes(reinterpret_cast<unsigned char *>(buffer), nbytes);
     std::string buf = std::string(buffer, nbytes);
     delete[] buffer;
     return buf;

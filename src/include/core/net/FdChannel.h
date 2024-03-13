@@ -3,7 +3,6 @@
 
 #include <core/util/marcos.h>
 #include <core/net/Socket.h>
-#include <core/util/logger/Logger.h>
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -36,23 +35,17 @@ public:
 
   virtual void handleEvent(int events)
   {
-    auto g_net_logger = GET_LOGGER("net");
-    ILOG_DEBUG(g_net_logger) << "FdChannel handle events: " << events;
     if (events & (EVENT_PRI | EVENT_IN)) {
-      ILOG_DEBUG(g_net_logger) << "FdChannel handle READ event";
       read_callback_();
     }
     if (events & EVENT_OUT) {
-      ILOG_DEBUG(g_net_logger) << "FdChannel handle WRITE event";
       write_callback_();
     }
     if (events & EVENT_HUP) {
-      ILOG_DEBUG(g_net_logger) << "FdChannel handle CLOSE event";
       close_callback_();
       return;
     }
     if (events & EVENT_ERR) {
-      ILOG_DEBUG(g_net_logger) << "FdChannel handle ERROR event";
       error_callback_();
     }
   }

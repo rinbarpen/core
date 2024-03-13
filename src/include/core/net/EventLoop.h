@@ -5,12 +5,15 @@
 #include <core/util/thread/ThreadPool.h>
 #include <core/net/EpollTaskScheduler.h>
 #include <core/net/SelectTaskScheduler.h>
+#include "core/util/marcos.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
 class EventLoop
 {
 public:
+  SHARED_PTR_USING(EventLoop, ptr);
+
   EventLoop(size_t nThreads = std::thread::hardware_concurrency());
   virtual ~EventLoop();
 

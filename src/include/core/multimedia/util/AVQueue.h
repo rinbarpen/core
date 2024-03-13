@@ -17,15 +17,15 @@ public:
   void open();
   void close();
 
-  auto push(const T &x) -> bool;
-  auto push(T &&x) -> bool;
-  auto pop() -> std::optional<T>;
-  auto pop(T &x) -> bool;
+  bool push(const T &x);
+  bool push(T &&x);
+  std::optional<T> pop();
+  bool pop(T &x);
 
-  auto empty() const -> bool;
-  auto size() const -> size_t;
+  bool empty() const;
+  size_t size() const;
 
-  auto isOpen() const -> bool { return opening_; }
+  bool isOpen() const { return opening_; }
 
 private:
   bool opening_{true};

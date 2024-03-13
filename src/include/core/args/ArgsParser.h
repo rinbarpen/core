@@ -2,7 +2,6 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include <core/util/marcos.h>
 #include <core/args/Option.h>
 
 LY_NAMESPACE_BEGIN

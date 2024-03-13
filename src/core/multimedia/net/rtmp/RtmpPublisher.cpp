@@ -4,6 +4,7 @@
 #include "core/net/platform.h"
 #include "core/net/tcp/TcpSocket.h"
 #include "core/util/logger/Logger.h"
+#include "core/util/marcos.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -124,8 +125,6 @@ bool RtmpPublisher::openUrl(std::string url, int msec, std::string &status) {
     return false;
   }
 
-  ILOG_INFO_FMT(g_rtmp_logger, "[RtmpPublisher] ip:{}, port:{}, stream path:{}",
-    ip_, port_, stream_path_);
   if (rtmp_conn_ != nullptr) {
     std::shared_ptr<RtmpConnection> rtmpConn = rtmp_conn_;
     sockfd_t sockfd = rtmpConn->getSockfd();
@@ -134,16 +133,20 @@ bool RtmpPublisher::openUrl(std::string url, int msec, std::string &status) {
     rtmp_conn_ = nullptr;
   }
 
-  // FIXME: fix me
-  std::unique_ptr<TcpSocket> tcp_socket = std::make_unique<TcpSocket>();
-  if (!tcp_socket->connect({ip_, port_}, std::chrono::milliseconds(timeout))) {
-    tcp_socket->close();
+  if (tcp_socket_) {
+    tcp_socket_->close();
+  }
+  tcp_socket_.reset(new TcpSocket());
+  if (!tcp_socket_->connect(ip_.c_str(), port_, timeout)) {
+    tcp_socket_->close();
     return false;
   }
+  ILOG_INFO_FMT(g_rtmp_logger, "[RtmpPublisher] ip:{}, port:{}, stream path:{}",
+    ip_, port_, stream_path_);
 
   task_scheduler_ = event_loop_->getTaskScheduler().get();
   rtmp_conn_.reset(new RtmpConnection(
-    shared_from_this(), task_scheduler_, tcp_socket->getSockfd()));
+    shared_from_this(), task_scheduler_, tcp_socket_->getSockfd()));
   task_scheduler_->addTriggerEvent([this]() { rtmp_conn_->handshake(); });
 
   timeout -= timestamp.elapsed().count();
@@ -197,15 +200,18 @@ bool RtmpPublisher::isConnected() const {
 }
 
 bool RtmpPublisher::isKeyFrame(uint8_t *data, uint32_t size) const {
-  int startCode = 0;
+  int startCodeOffset = 0;
   if (data[0] == 0 && data[1] == 0 && data[2] == 1) {
-    startCode = 3;
+    startCodeOffset = 3;
   }
   else if (data[0] == 0 && data[1] == 0 && data[2] == 0 && data[3] == 1) {
-    startCode = 4;
+    startCodeOffset = 4;
+  } 
+  else [[unlikely]] {
+    LY_UNREACHABLE();
   }
 
-  int type = data[startCode] & 0x1F;
+  int type = data[startCodeOffset] & 0x1F;
   if (type == 5 || type == 7) {  // sps_pps_idr or idr
     return true;
   }

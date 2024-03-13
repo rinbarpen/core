@@ -14,6 +14,18 @@ public:
     T_INT32 = 4,
   };
 
+  static uint8_t readU8Forward(const char *p)
+  {
+    uint8_t val{0};
+    val |= p[0] << 8;
+    return val;
+  }
+  static uint8_t readU8Reverse(const char *p)
+  {
+    uint8_t val{0};
+    val |= p[0] << 8;
+    return val;
+  }
   static uint16_t readU16Forward(const char *p)
   {
     uint16_t val{0};
@@ -84,6 +96,14 @@ public:
     else return readReverse(p, intType);
   }
 
+  static void writeU8Forward(char *p, uint8_t value)
+  {
+    p[0] = value & 0xFF;
+  }
+  static void writeU8Reverse(char *p, uint8_t value)
+  {
+    p[0] = value & 0xFF;
+  }
   static void writeU16Forward(char *p, uint16_t value)
   {
     p[0] = value >> 8;
@@ -136,6 +156,14 @@ public:
   {
     if (isForward) writeForward(p, value, intType);
     else writeReverse(p, value, intType);
+  }
+
+  static void reverse(char *p, uint32_t nbytes)
+  {
+    uint32_t mid = nbytes / 2;
+    for (uint32_t i = 0; i < mid; ++i) {
+      std::swap(p[i], p[nbytes - i - 1]);
+    }
   }
 };
 LY_NAMESPACE_END

@@ -1,4 +1,3 @@
-#include <core/util/marcos.h>
 #include <core/net/tcp/TcpServer.h>
 #include <core/multimedia/net/http/HttpFlvConnection.h>
 #include <core/multimedia/net/rtmp/RtmpServer.h>
@@ -14,6 +13,8 @@ public:
 	~HttpFlvServer();
 
 	void attach(std::shared_ptr<RtmpServer> rtmp_server);
+
+	std::string type() const override { return "HttpFlvServer"; }
 
 private:
 	TcpConnection::ptr onConnect(sockfd_t sockfd) override;

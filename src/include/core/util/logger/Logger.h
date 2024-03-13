@@ -27,6 +27,7 @@
 #include <list>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -508,15 +509,15 @@ public:
   void setFormatter(const std::string &pattern);
   LogFormatter::ptr getFormatter() const;
 
-  Logger::ptr getLogger() { return root_; }
-  void setLogger(Logger::ptr pLogger) { root_ = pLogger; }
+  Logger::ptr getParent() { return parent_; }
+  void setParent(Logger::ptr pLogger) { parent_ = pLogger; }
 
 private:
   std::string name_;
   LogLevel level_{LogLevel::Level::LDEBUG};
   std::list<LogAppender::ptr> appenders_;
   LogFormatter::ptr formatter_;
-  Logger::ptr root_;
+  Logger::ptr parent_;
 
   mutable Mutex::type mutex_;
 };
@@ -551,7 +552,9 @@ public:
   ~LogManager() = default;
 
   Logger::ptr getLogger(const std::string &name);
+  Logger::ptr getLogger2(const std::string &name);
   bool putLogger(Logger::ptr pLogger);
+  void insert(Logger::ptr pLogger);
 
   // TODO: For future do
   void init() {}
@@ -563,15 +566,20 @@ private:
   LogManager();
 
   Mutex::type mutex_;
-  std::unordered_map<std::string, Logger::ptr> loggers_;
+  std::map<std::string, Logger::ptr> loggers_;
   Logger::ptr root_;
 };
 
+enum LogIniterFlag : uint8_t {
+  CONSOLE = 0x01,
+  SYNC_FILE = 0x02,
+  ASYNC_FILE = 0x04,
+};
 class LogIniter
 {
 public:
   /* the appender's formatter is the same as the logger */
-  static Logger::ptr getLogger(
+  static Logger::ptr reg(
     /* logger */
     const std::string &log_name, LogLevel log_level,
     /* formatter */
@@ -580,11 +588,15 @@ public:
     bool write2file = true, const std::string &filename = "x",
     bool async = false);
 
-  static void loadYamlFile(std::string_view filename);
+  static Logger::ptr reg(const std::string &name, const std::string &split = ".", uint8_t flags = LogIniterFlag::CONSOLE, LogLevel level = LogLevel::LDEBUG, const std::string &pattern = kDefaultFormatPattern);
+
+  static void loadYamlFile(const std::string& filename);
   static void loadYamlNode(YAML::Node node);
 };
 
-/*
+static std::string kLogBasePath = "./logs/";
+
+/**
  * LogIniter::getLogger("sample",
  *                      "LogLevel::Level::LDEBUG",
  *                      kDefaultFormatPattern,
@@ -595,12 +607,102 @@ public:
  *
  */
 
-static void log_export_config() {
+inline void log_export_config() {
   LogManager::instance()->toYamlFile("config/log.yml");
 }
 
-static void log_load_config() {
+inline void log_load_config() {
   LogIniter::loadYamlFile("config/log.yml");
+}
+
+static Logger::ptr base_logger(Logger::ptr pLogger) {
+  Logger::ptr cur = pLogger;
+  Logger::ptr pa;
+  while (cur != pa) {
+    pa = cur->getParent();
+    if (pa->getName() == "root") return cur;
+
+    cur = pa;
+  }
+
+  // cur == pa, the root logger isn't 'root'
+  return cur;
+}
+
+static Logger::ptr GET_LOGGER2(const std::string &name, const std::string &parent = "root", uint8_t flags = LogIniterFlag::CONSOLE, LogLevel level = LogLevel::LDEBUG, const std::string &pattern = kDefaultFormatPattern) {
+  auto me = LogManager::instance()->getLogger2(name);
+  if (me) { return me; }
+
+  auto pa = LogManager::instance()->getLogger2(parent);
+  if (nullptr == pa) {
+    return nullptr;
+  }
+
+  if ((flags & CONSOLE) != CONSOLE
+   && (flags & SYNC_FILE) != SYNC_FILE
+   && (flags & ASYNC_FILE) != ASYNC_FILE) {
+    // invalid_argument
+    // throw std::invalid_argument("No such flags");
+    return nullptr;
+  }
+
+  auto pLogger = std::make_shared<Logger>(name);
+  pLogger->setLevel(level);
+  pLogger->setFormatter(pattern);
+
+  auto filename = base_logger(pa)->getName();
+  if ((flags & CONSOLE) == CONSOLE) {
+    pLogger->addAppender(std::make_shared<StdoutLogAppender>());
+  }
+  if ((flags & SYNC_FILE) == SYNC_FILE) {
+    pLogger->addAppender(std::make_shared<FileLogAppender>(filename));
+  }
+  else if ((flags & ASYNC_FILE) == ASYNC_FILE) {
+    pLogger->addAppender(std::make_shared<AsyncFileLogAppender>(filename));
+  }
+  pLogger->setParent(pa);
+
+  LogManager::instance()->insert(pLogger);
+  return pLogger;
+}
+
+// Dot
+// Examples: input system.debugger.console -> create system, system.debugger, system.debugger.console logger in sequences
+static Logger::ptr GET_LOGGER3(const std::string &name, const std::string &split = ".", uint8_t flags = LogIniterFlag::CONSOLE, LogLevel level = LogLevel::LDEBUG, const std::string &pattern = kDefaultFormatPattern) {
+  auto me = LogManager::instance()->getLogger2(name);
+  if (me) { return me; }
+
+  if ((flags & CONSOLE) != CONSOLE
+   && (flags & SYNC_FILE) != SYNC_FILE
+   && (flags & ASYNC_FILE) != ASYNC_FILE) {
+    // invalid_argument
+    // throw std::invalid_argument("No such flags");
+    return nullptr;
+  }
+
+  auto firstDot = name.find(split);
+  auto lastDot = name.rfind(split);
+  auto pLogger = std::make_shared<Logger>(name);
+  pLogger->setLevel(level);
+  pLogger->setFormatter(pattern);
+
+  auto filename = name.substr(0, firstDot);  // if no dot, this is myself
+  if ((flags & CONSOLE) == CONSOLE) {
+    pLogger->addAppender(std::make_shared<StdoutLogAppender>());
+  }
+  if ((flags & SYNC_FILE) == SYNC_FILE) {
+    pLogger->addAppender(std::make_shared<FileLogAppender>(filename));
+  }
+  else if ((flags & ASYNC_FILE) == ASYNC_FILE) {
+    pLogger->addAppender(std::make_shared<AsyncFileLogAppender>(filename));
+  }
+
+  if (firstDot != std::string::npos) {
+    pLogger->setParent(GET_LOGGER3(name.substr(0, lastDot), split, flags, level, pattern));
+  }
+
+  LogManager::instance()->insert(pLogger);
+  return pLogger;
 }
 
 LY_NAMESPACE_END
