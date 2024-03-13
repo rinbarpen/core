@@ -44,15 +44,20 @@ FnPtr Library::getModule(const char *name)
   return handle;
 }
 template<>
-void* Library::getModule(const char *name)
-{
-  void *handle;
-#if defined(__LINUX__)
-  handle = ::dlopen(name, RTLD_LAZY);
-#elif defined(__WIN__)
-  handle = ::GetProcAddress(module_, name);
+#if defined(__WIN__)
+FARPROC
+#else
+void* 
 #endif
-  return handle;
+Library::getModule(const char *name)
+{
+#if defined(__LINUX__)
+  return :dlopen(name, RTLD_LAZY);
+#elif defined(__WIN__)
+  return ::GetProcAddress(HMODULE(module_), name);
+#else
+  return nullptr;
+#endif
 }
 
 void Library::close()

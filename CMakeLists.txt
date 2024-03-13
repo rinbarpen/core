@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.6)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CoreProjectName "lycore")
@@ -48,6 +49,8 @@ endif()
 ######################################### Requirments Begin ########################################
 add_subdirectory("3rdparty/yaml-cpp")
 include_directories("3rdparty/yaml-cpp/include")
+add_subdirectory("3rdparty/fmt")
+include_directories("3rdparty/fmt/include")
 add_subdirectory("3rdparty/googletest")
 include_directories("3rdparty/googletest/googletest/include")
 include_directories("3rdparty/googletest/googlemock/include")
@@ -87,9 +90,9 @@ set(FFMPEG_LIBRARIES
 ######################################### Library End   ############################################
 
 add_definitions(-DLOG_MORE_FUNCTION_INFO_ENABLED)
-if (WIN32)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-endif()
+#if (WIN32)
+#    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+#endif()
 
 #find_package(Qt5 REQUIRED COMPONENTS Widgets Gui Core Sql REQUIRED)
 file(GLOB_RECURSE

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <cstring>
-#include <core/util/marcos.h>
 #include <core/net/platform.h>
 #include <core/net/NetAddress.h>
 #include <core/util/logger/Logger.h>

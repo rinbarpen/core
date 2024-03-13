@@ -1,6 +1,5 @@
 #include <iostream>
 
-#include <core/config/config.h>
 #include <core/net/EventLoop.h>
 #include <core/net/tcp/TcpServer.h>
 #include <core/util/Library.h>
@@ -8,7 +7,6 @@
 #include <core/util/Util.h>
 #include <core/util/logger/Logger.h>
 #include <core/util/thread/Thread.h>
-#include <core/util/thread/ThreadPool.h>
 #include <core/util/time/Clock.h>
 #include <core/util/time/Timestamp.h>
 #include <core/util/time/TimestampDuration.h>
@@ -70,8 +68,8 @@ void rtsp_server_on() {
 
 int main() {
 #ifdef __WIN__
-  WSADATA wsaData;
-  if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+  ::WSADATA wsaData;
+  if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
   {
     return -1;
   }
@@ -130,6 +128,6 @@ int main() {
 #endif
 
 #ifdef __WIN__
-  WSACleanup();
+  ::WSACleanup();
 #endif
 }
