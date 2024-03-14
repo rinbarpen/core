@@ -86,10 +86,10 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
       return false;
     }
 
-    MediaSession *session = MediaSession::create(config.server.suffix);
-    session->addSource(channel_0, H264Source::create(screen_live_config_.frame_rate));
-    session->addSource(
-      channel_1, AACSource::create(sample_rate, channels, false));
+    net::MediaSession *session = net::MediaSession::create(config.server.suffix);
+    session->addSource(net::channel_0, net::H264Source::create(screen_live_config_.frame_rate));
+    // session->addSource(
+    //   net::channel_1, net::AACSource::create(sample_rate, channels, false));
     session->addNotifyConnectedCallback(
       [this](net::MediaSessionId session_id, std::string peer_ip,
         uint16_t peer_port) {
