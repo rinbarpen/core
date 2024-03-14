@@ -65,7 +65,7 @@ include_directories("3rdparty/jsoncpp/include")
 ######################################### Requirments End   ########################################
 
 ######################################### Library Begin ############################################
-set(FFMPEG_DIR "${PROJECT_SOURCE_DIR}/3rdparty/ffmpeg")
+set(FFMPEG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/ffmpeg")
 
 find_package(OpenSSL COMPONENTS SSL Crypto REQUIRED)
 if (OPENSSL_FOUND)
@@ -88,9 +88,6 @@ set(FFMPEG_LIBRARIES
 ######################################### Library End   ############################################
 
 add_definitions(-DLOG_MORE_FUNCTION_INFO_ENABLED)
-#if (WIN32)
-#    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-#endif()
 
 #find_package(Qt5 REQUIRED COMPONENTS Widgets Gui Core Sql REQUIRED)
 file(GLOB_RECURSE
@@ -105,67 +102,10 @@ file(GLOB_RECURSE
 # message(STATUS "SOURCE FILES: ${CoreSrcs}")
 
 #add_definitions(-DENABLE_TEST)
-add_subdirectory(examples)
-add_subdirectory(tests)
-
-if (GEN_SHARED)
-    add_library ("${CoreProjectName}.${PROJECT_VERSION}" SHARED ${CoreSrcs})
-else()
-    add_library ("${CoreProjectName}.${PROJECT_VERSION}" STATIC ${CoreSrcs})
+#add_subdirectory(examples)
+if (ENABLE_TEST)
+    add_subdirectory(tests)
 endif()
-
-target_include_directories(${CoreProjectName}.${PROJECT_VERSION}
-    PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/include"
-        "${FFMPEG_INCLUDE}"
-        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/yaml-cpp/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fmt/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/googletest/googletest/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/googletest/googlemock/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/jsoncpp/include"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/range-v3/include"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/sqlite3pp/include"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw/include"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libyuv/include"
-)
-target_link_directories(${CoreProjectName}.${PROJECT_VERSION}
-    PUBLIC
-        ${FFMPEG_LIBRARIES_DIR}
-)
-if(WIN32)
-    target_link_libraries(${CoreProjectName}.${PROJECT_VERSION}
-        PUBLIC
-            fmt::fmt
-            yaml-cpp::yaml-cpp
-            jsoncpp
-            OpenSSL::SSL
-            OpenSSL::Crypto
-            ${FFMPEG_LIBRARIES}
-    #        range-v3
-            D3D9.lib
-    #        glfw
-    #        yuvconvert
-    )
-elseif(UNIX)
-    target_link_libraries(${CoreProjectName}.${PROJECT_VERSION}
-        PUBLIC
-            fmt::fmt
-            yaml-cpp::yaml-cpp
-            jsoncpp
-            OpenSSL::SSL
-            OpenSSL::Crypto
-            ${FFMPEG_LIBRARIES}
-    #        range-v3
-    #        glfw
-    #        yuvconvert
-    )
-endif()
-target_compile_features(${CoreProjectName}.${PROJECT_VERSION}
-    PUBLIC
-        cxx_std_17
-        c_std_11
-)
-
 
 add_executable (${CoreProjectName} "src/main.cpp" ${CoreSrcs} "src/ScreenLive.cpp")
 target_include_directories(${CoreProjectName}
@@ -174,13 +114,6 @@ target_include_directories(${CoreProjectName}
         "${FFMPEG_INCLUDE}"
         "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/yaml-cpp/include"
         "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fmt/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/googletest/googletest/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/googletest/googlemock/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/jsoncpp/include"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/range-v3/include"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/sqlite3pp/include"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw/include"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libyuv/include"
 )
 target_link_directories(${CoreProjectName}
     PUBLIC
@@ -191,27 +124,19 @@ if(WIN32)
         PUBLIC
             fmt::fmt
             yaml-cpp::yaml-cpp
-            jsoncpp
             OpenSSL::SSL
             OpenSSL::Crypto
             ${FFMPEG_LIBRARIES}
-    #        range-v3
             D3D9.lib
-    #        glfw
-    #        yuvconvert
     )
 elseif(UNIX)
     target_link_libraries(${CoreProjectName}
         PUBLIC
             fmt::fmt
             yaml-cpp::yaml-cpp
-            jsoncpp
             OpenSSL::SSL
             OpenSSL::Crypto
             ${FFMPEG_LIBRARIES}
-    #        range-v3
-    #        glfw
-    #        yuvconvert
     )
 endif()
 target_compile_features(${CoreProjectName}

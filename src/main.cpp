@@ -14,23 +14,23 @@
 //#include <ScreenLive.h>
 
 #include <fmt/core.h>
-#include <core/multimedia/codec/encoder/AACEncoder.h>
-#include <core/multimedia/codec/encoder/H264Encoder.h>
-#include <thread>
-#include "ScreenLive.h"
+// #include <core/multimedia/codec/encoder/AACEncoder.h>
+// #include <core/multimedia/codec/encoder/H264Encoder.h>
+// #include "ScreenLive.h"
 #include "core/multimedia/ffmpeg/FFmpegUtil.h"
-#include "core/multimedia/net/rtsp/RtspServer.h"
-#include "core/multimedia/net/rtsp/RtspPusher.h"
-#include "core/multimedia/net/AACSource.h"
-#include "core/multimedia/net/H264Source.h"
-#include "core/multimedia/net/MediaSession.h"
-#include "core/multimedia/net/media.h"
+// #include "core/multimedia/net/rtsp/RtspServer.h"
+// #include "core/multimedia/net/rtsp/RtspPusher.h"
+// #include "core/multimedia/net/AACSource.h"
+// #include "core/multimedia/net/H264Source.h"
+// #include "core/multimedia/net/MediaSession.h"
+// #include "core/multimedia/net/media.h"
 
 using namespace ly;
 using namespace lynet;
 using namespace ly::literals;
 using namespace std::literals;
 
+/*
 void rtsp_server_on() {
 //  GET_LOGGER("net")->setLevel(LogLevel::LINFO);
 //  GET_LOGGER("multimedia")->setLevel(LogLevel::LINFO);
@@ -65,13 +65,14 @@ void rtsp_server_on() {
   }
   rtsp_server->stop();
 }
+*/
 
 int main() {
 #ifdef __WIN__
-  ::WSADATA wsaData;
-  if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+  WSADATA wsaData;
+  if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
   {
-    return -1;
+    exit(-1);
   }
 #endif
 #ifdef LIBYUV_VERSION
@@ -103,7 +104,7 @@ int main() {
 
   ffmpeg::reg_ffmpeg(ffmpeg::RegFlag::ALL);
 
-#if 1
+#if 0
   {
     ScreenLive live;
     ScreenLiveConfig config;
@@ -128,6 +129,6 @@ int main() {
 #endif
 
 #ifdef __WIN__
-  ::WSACleanup();
+  WSACleanup();
 #endif
 }

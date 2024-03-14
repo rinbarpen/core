@@ -3,19 +3,27 @@
 #if (defined(_WIN32) || defined(WIN32)) && !defined(WIN_SOCK_DEFINED)
 # define WIN_SOCK_DEFINED
 # define WIN32_LEAN_AND_MEAN
-# define FD_SETSIZE 1024
 # ifndef _WINSOCK_DEPRECATED_NO_WARNINGS
 #  define _WINSOCK_DEPRECATED_NO_WARNINGS
 # endif
+# ifndef _CRT_SECURE_NO_WARNINGS
+#  define _CRT_SECURE_NO_WARNINGS
+# endif
+# define FD_SETSIZE 1024
+
+# pragma comment(lib, "Ws2_32.lib")
 
 # include <WinSock2.h>
-# include <windows.h>
-# include <ws2tcpip.h>
+# include <Windows.h>
+# include <WS2tcpip.h>
 # include <iphlpapi.h>
-# pragma comment(lib, "ws2_32.lib")
-# pragma comment(lib, "iphlpapi.lib")
+# include <Winerror.h>
 
 using sockfd_t = SOCKET;
+# define SHUT_RD    0
+# define SHUT_WR    1
+# define SHUT_RDWR  2
+
 #elif (defined(__linux__) || defined(__linux)) && !defined(LINUX_SOCK_DEFINED)
 # define LINUX_SOCK_DEFINED
 

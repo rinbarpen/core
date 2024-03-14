@@ -11,7 +11,8 @@
 #include <ScreenLive.h>
 
 LY_NAMESPACE_BEGIN
-static auto g_screen_live_logger = GET_LOGGER("screen.live");
+static auto g_screen_live_logger = GET_LOGGER("app.screen.live");
+using namespace net;
 
 ScreenLive::ScreenLive()
   : event_loop_(new net::EventLoop{}),
@@ -71,8 +72,8 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
     return false;
   }
 
-  // uint32_t sample_rate = audio_capture_->getSampleRate();
-  // uint32_t channels = audio_capture_->getChannels();
+  uint32_t sample_rate = audio_capture_->getSampleRate();
+  uint32_t channels = audio_capture_->getChannels();
 
   if (type == ScreenLiveType::RTSP_SERVER) {
     auto rtsp_server = net::RtspServer::create(event_loop_.get());
@@ -144,17 +145,17 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
     uint8_t extradata[1024] = {0};
     int extradata_size = 0;
 
-    // extradata_size = aac_encoder_.getSpecificConfig(extradata, 1024);
-    // if (extradata_size < 0) {
-    //   ILOG_ERROR_FMT(g_screen_live_logger, "Get audio specific config failed.");
-    //   return false;
-    // }
+    extradata_size = aac_encoder_.getSpecificConfig(extradata, 1024);
+    if (extradata_size < 0) {
+      ILOG_ERROR_FMT(g_screen_live_logger, "Get audio specific config failed.");
+      return false;
+    }
 
-    // mediaInfo.audio_specific_config_size = extradata_size;
-    // mediaInfo.audio_specific_config.reset(
-    //   new uint8_t[mediaInfo.audio_specific_config_size],
-    //   std::default_delete<uint8_t[]>());
-    // memcpy(mediaInfo.audio_specific_config.get(), extradata, extradata_size);
+    mediaInfo.audio_specific_config_size = extradata_size;
+    mediaInfo.audio_specific_config.reset(
+      new uint8_t[mediaInfo.audio_specific_config_size],
+      std::default_delete<uint8_t[]>());
+    memcpy(mediaInfo.audio_specific_config.get(), extradata, extradata_size);
 
     extradata_size = h264_encoder_.getSequenceParams(extradata, 1024);
     if (extradata_size < 0) {
@@ -296,15 +297,15 @@ bool ScreenLive::startCapture()
   audio_capture_.reset(new WASAPIAudioCapture{});
   if (!audio_capture_->init()) {
     ILOG_ERROR(g_screen_live_logger) << "Fail to open Pulse audio capture";
-    // (void)screen_capture_.release();
-    // (void)audio_capture_.release();
+    (void)screen_capture_.release();
+    (void)audio_capture_.release();
     return false;
   }
 #endif
 
-  // if (audio_capture_  && !audio_capture_->init()) {
-  //   return false;
-  // }
+  if (audio_capture_  && !audio_capture_->init()) {
+    return false;
+  }
 
   capture_started_ = true;
   return true;
@@ -353,13 +354,13 @@ bool ScreenLive::startEncoder(ScreenLiveConfig &config)
 
   int sample_rate = audio_capture_->getSampleRate();
   int channels = audio_capture_->getChannels();
-  if (!aac_encoder_.prepare(sample_rate, channels, AV_SAMPLE_FMT_S16, 64)) {
+  if (!aac_encoder_.prepare(sample_rate, channels, AV_SAMPLE_FMT_S16, 64000)) {
     return false;
   }
 
   encoder_started_ = true;
   encode_video_thread_ = std::thread(&ScreenLive::encodeVideo, this);
-  // encode_audio_thread_ = std::thread(&ScreenLive::encodeAudio, this);
+  encode_audio_thread_ = std::thread(&ScreenLive::encodeAudio, this);
   return true;
 }
 bool ScreenLive::stopEncoder()
@@ -371,12 +372,12 @@ bool ScreenLive::stopEncoder()
       encode_video_thread_.join();
     }
 
-    // if (encode_audio_thread_.joinable()) {
-    //   encode_audio_thread_.join();
-    // }
+    if (encode_audio_thread_.joinable()) {
+      encode_audio_thread_.join();
+    }
 
     h264_encoder_.close();
-    // aac_encoder_.close();
+    aac_encoder_.close();
   }
 
   return true;

@@ -13,7 +13,11 @@ LY_NAMESPACE_BEGIN
 class PulseCapture : public AVCapture
 {
 public:
+#ifdef __LINUX__
   using PacketCallback = std::function<void(pa_sample_spec *handle, int buffer_frames)>;
+#else
+  using PacketCallback = std::function<void(void *handle, int buffer_frames)>;
+#endif
 
   PulseCapture();
   ~PulseCapture();
