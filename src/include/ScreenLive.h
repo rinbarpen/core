@@ -31,14 +31,17 @@ struct ScreenLiveConfig
   // h265.ffmpeg
   std::string codec = "h264.ffmpeg";
 
-  uint32_t width = 800, height = 600;  // -1 for auto
+  uint32_t width = 800, height = 600;
   uint32_t offset_x = 0, offset_y = 0;
-  int display_index = 0;  // -1 for auto
+  int display_index = 0;
 
-  bool video_on = true, audio_on = true;
   // for audio
-  int volume = 100;
+  uint32_t volume = 100;
   bool muted = false;
+
+  // control
+  bool video_on = true, audio_on = true;
+  float speed = 1.0f;
 
   bool operator==(const ScreenLiveConfig& rhs) const {
     return rhs.bit_rate_bps == bit_rate_bps
