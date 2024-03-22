@@ -52,8 +52,8 @@ RtmpConnection::RtmpConnection(
   app_ = rtmp->getApp();
 
   this->setReadCallback(
-    [this](std::shared_ptr<TcpConnection> conn, BufferReader &buffer) {
-      return this->onRead(buffer);
+    [this](std::shared_ptr<TcpConnection> conn, BufferReader &in) {
+      return this->handleRead(in);
     });
 
   this->setCloseCallback(
@@ -62,7 +62,7 @@ RtmpConnection::RtmpConnection(
 
 RtmpConnection::~RtmpConnection() {}
 
-bool RtmpConnection::onRead(BufferReader &buffer) {
+bool RtmpConnection::handleRead(BufferReader &buffer) {
   bool r{true};
 
   if (handshake_->isCompleted()) {
@@ -75,18 +75,17 @@ bool RtmpConnection::onRead(BufferReader &buffer) {
   if (res_size <= 0) {
     r = false;
   }
-
-  if (res_size > 0) {
+  else {
     this->send(res.get(), res_size);
   }
 
   if (handshake_->isCompleted()) {
-    if (buffer.readableBytes() > 0) {
+    if (!buffer.empty()) {
       r = handleChunk(buffer);
     }
 
     if (connection_mode_ == ConnectionMode::RTMP_PUBLISHER
-        || connection_mode_ == ConnectionMode::RTMP_CLIENT) {
+     || connection_mode_ == ConnectionMode::RTMP_CLIENT) {
       this->setChunkSize();
       this->connect();
     }
@@ -95,7 +94,7 @@ bool RtmpConnection::onRead(BufferReader &buffer) {
   return r;
 }
 
-void RtmpConnection::onClose() {
+void RtmpConnection::handleClose() {
   if (connection_mode_ == ConnectionMode::RTMP_SERVER) {
     this->handleDeleteStream();
   }
@@ -714,7 +713,7 @@ bool RtmpConnection::handleOnStatus(RtmpMessage &rtmp_msg) {
         }
       }
       else if (connection_mode_ == ConnectionMode::RTMP_CLIENT) {
-        if (/*obj.tring() == "NetStream.Play.Reset" || */
+        if (/*obj.string() == "NetStream.Play.Reset" || */
           status_ == "NetStream.Play.Start") {
           is_playing_ = true;
         }

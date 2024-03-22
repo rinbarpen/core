@@ -1,10 +1,10 @@
+#include <fstream>
 #include <core/multimedia/capture/screen_capture/DXGIScreenCapture.h>
 #include <core/util/logger/Logger.h>
-#include <fstream>
 
 #ifdef __WIN__
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "d3d11.lib")
+# pragma comment(lib, "dxgi.lib")
+# pragma comment(lib, "d3d11.lib")
 #endif
 
 LY_NAMESPACE_BEGIN
@@ -187,7 +187,7 @@ bool DXGIScreenCapture::startCapture() {
 
   started_ = true;
   this->acquireFrame();
-  worker_.dispatch([this] {
+  thread_.dispatch([this] {
     while (started_) {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
       this->acquireFrame();
@@ -198,7 +198,7 @@ bool DXGIScreenCapture::startCapture() {
 }
 bool DXGIScreenCapture::stopCapture() {
   started_ = false;
-  worker_.destroy();
+  thread_.stop();
   return true;
 }
 bool DXGIScreenCapture::createSharedTexture() {

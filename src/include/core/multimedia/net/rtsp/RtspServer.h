@@ -14,7 +14,7 @@ class RtspConnection;
 class RtspServer : public Rtsp, public TcpServer
 {
 public:
-	static auto create(EventLoop* event_loop) -> std::shared_ptr<RtspServer>;
+	static std::shared_ptr<RtspServer> create(EventLoop* event_loop);
 
 	RtspServer(EventLoop* event_loop);
 	~RtspServer() = default;
@@ -24,13 +24,13 @@ public:
 
   bool pushFrame(MediaSessionId sessionId, MediaChannelId channel_id, SimAVFrame frame);
 
-  auto type() const -> std::string override { return "RtspServer"; }
+  std::string type() const override { return "RtspServer"; }
 private:
   friend class RtspConnection;
 
-  auto lookMediaSession(const std::string& suffix) -> MediaSession::ptr override;
-  auto lookMediaSession(MediaSessionId session_id) -> MediaSession::ptr override;
-  virtual auto onConnect(sockfd_t sockfd) -> TcpConnection::ptr override;
+  MediaSession::ptr lookMediaSession(const std::string& suffix) override;
+  MediaSession::ptr lookMediaSession(MediaSessionId session_id) override;
+  virtual TcpConnection::ptr onConnect(sockfd_t sockfd) override;
 
   std::unordered_map<MediaSessionId, std::shared_ptr<MediaSession>> media_sessions_;
   std::unordered_map<std::string, MediaSessionId> rtsp_suffix_map_;

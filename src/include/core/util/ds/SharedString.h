@@ -6,14 +6,13 @@
 #include <core/util/Traits.h>
 #include <core/util/marcos.h>
 
-
 LY_NAMESPACE_BEGIN
+// use
 template <typename CharT = char>
 class SharedString final
 {
-  static_assert(is_any_of_v<CharT, char, unsigned char, signed char>,
+  LY_CHECK((is_any_of_v<CharT, char, unsigned char, signed char>),
     "It should be char or unsigned char or signed char");
-
 public:
   SharedString() : data_(nullptr), size_(0) {}
   explicit SharedString(size_t size)
@@ -32,6 +31,18 @@ public:
   }
 
   CharT *get() const { return data_.get(); }
+
+  static SharedString<CharT> fromString(const std::string &s) {
+    SharedString<CharT> ss(s.length());
+    ss.fill(static_cast<const CharT*>(s.c_str()), s.length());
+    return ss;
+  }
+  static SharedString<CharT> fromString(const CharT *s, size_t len) {
+    SharedString<CharT> ss(len);
+    ss.fill(s, len);
+    return ss;
+  }
+  std::string toString() const { return std::string(data_, size_); }
 
   CharT &operator[](size_t index) { return data_.get()[index]; }
   CharT &operator[](size_t index) const { return data_.get()[index]; }

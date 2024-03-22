@@ -47,12 +47,12 @@ template<>
 #if defined(__WIN__)
 FARPROC
 #else
-void* 
+void*
 #endif
 Library::getModule(const char *name)
 {
 #if defined(__LINUX__)
-  return :dlopen(name, RTLD_LAZY);
+  return ::dlopen(name, RTLD_LAZY);
 #elif defined(__WIN__)
   return ::GetProcAddress(HMODULE(module_), name);
 #else

@@ -1,34 +1,36 @@
 #pragma once
 
-#include <thread>
 #include <atomic>
-#include <queue>
 #include <core/multimedia/ffmpeg/FFmpegUtil.h>
 #include <core/multimedia/ffmpeg/Encoder.h>
 #include <core/multimedia/util/AVClock.h>
 #include <core/multimedia/util/AVQueue.h>
-#include <core/multimedia/util/AACEncoder.h>
+#include <core/multimedia/ffmpeg/Decoder.h>
+#include "core/util/thread/Thread.h"
 
 LY_NAMESPACE_BEGIN
-#if 0
+#if 1
 class AVThread
 {
 public:
-  virtual bool open(EncoderConfig config) = 0;
-  virtual bool close() = 0;
+  AVThread(std::string_view threadName) : thread_(threadName) {}
+  virtual ~AVThread() = default;
+  virtual void open() { launched_ = true; thread_.dispatch(&AVThread::run, this); }
+  virtual void close() { launched_ = false; thread_.destroy(); }
   virtual void run() = 0;
 
-private:
-
+protected:
+  std::atomic_bool launched_{false};
+  Thread thread_{""};
 };
 class AVEncodeThread : public AVThread
 {
 public:
-  AVEncodeThread(AVQueue<ffmpeg::AVPacketPtr> &in, AVQueue<ffmpeg::AVPacketPtr> &out);
+  AVEncodeThread(AVFrameQueue &in, AVPacketQueue &out)
+    : AVThread("AVEncodeThread"),
+      in_frames_(in), out_packets_(out)
+  {}
   ~AVEncodeThread() = default;
-
-  bool open(EncoderConfig config) override;
-  bool close() override;
 
   void run() override {
     while (launched_) {
@@ -42,7 +44,7 @@ public:
         continue;
       }
 
-      auto pkt = encoder_->encode(frame, encoder_config_);
+      auto pkt = encoder_->encode(frame);
       if (pkt) {
         out_packets_.push(pkt);
       }
@@ -52,19 +54,18 @@ public:
 private:
   std::atomic_bool launched_{false};
 
-  std::unique_ptr<Encoder> encoder_;
-  AVQueue<ffmpeg::AVFramePtr> &in_frames_;
-  AVQueue<ffmpeg::AVPacketPtr> &out_packets_;
-  EncoderConfig encoder_config_;
+  std::unique_ptr<ffmpeg::Encoder> encoder_;
+  AVFrameQueue &in_frames_;
+  AVPacketQueue &out_packets_;
 };
 class AVDecodeThread : public AVThread
 {
 public:
-  AVDecodeThread(AVQueue<ffmpeg::AVPacketPtr> &in, AVQueue<ffmpeg::AVPacketPtr> &out);
+  AVDecodeThread(AVPacketQueue &in, AVFrameQueue &out)
+    : AVThread("AVDecodeThread"),
+      in_packets_(in), out_frames_(out)
+  {}
   ~AVDecodeThread() = default;
-
-  bool open(EncoderConfig config) override;
-  bool close() override;
 
   void run() override {
     while (launched_) {
@@ -78,7 +79,7 @@ public:
         continue;
       }
 
-      auto frame = decoder_->decode(packet, decoder_config_);
+      auto frame = decoder_->decode(packet);
       if (frame) {
         out_frames_.push(frame);
       }
@@ -88,11 +89,9 @@ public:
 private:
   std::atomic_bool launched_{false};
 
-  // std::unique_ptr<Decoder> decoder_;
-  AVQueue<ffmpeg::AVPacketPtr> &in_packets_;
-  AVQueue<ffmpeg::AVFramePtr> &out_frames_;
-  DecoderConfig decoder_config_;
-
+  std::unique_ptr<ffmpeg::Decoder> decoder_;
+  AVPacketQueue &in_packets_;
+  AVFrameQueue &out_frames_;
 };
 #endif
 LY_NAMESPACE_END

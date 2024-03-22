@@ -44,7 +44,7 @@ private:
 private:
 	bool initialized_{false};
 	bool started_{false};
-	Thread worker_{"DXGIScreenCapture"};
+	Thread thread_{"DXGIScreenCapture"};
 
 	Mutex::type mutex_;
   SharedString<uint8_t> bgra_image_;

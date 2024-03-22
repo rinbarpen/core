@@ -97,11 +97,7 @@ IncludeCategories:                                       # 头文件排序规则
   - Regex:           '.\*'
     Priority:        1
 IndentCaseLabels: false                             # 强制将 switch case 的 case 进行缩进
-IndentWidth: 2                                      # 默认行缩进量
-IndentWrappedFunctionNames: true                   # Indent if a function definition or declaration is wrapped after the type.
-IndentPPDirectives: AfterHash
 IndentRequiresClause: false
-IndentWrappedFunctionNames: false
 #InsertNewlineAtEOF: true
 #IntegerLiteralSeparator: {
 #  Binary: 4,
@@ -138,7 +134,5 @@ SpacesInParentheses: false                          # ( 后 ) 前是否插入空
 SpacesInSquareBrackets: false                       # [ 后 ] 前是否插入空格
 TabWidth: 2                                         # Tab 宽度
 UseTab: Never                                       # 保留 Tab 或者用空格替换
-PointerBindsToType: false
-IndentFunctionDeclarationAfterType: true
 #QualifierOrder: ['inline', 'static', 'const', 'constexpr', 'type' ]
 Standard: c++17                                      # 语言标准 c++11 c++17 c++20 Auto

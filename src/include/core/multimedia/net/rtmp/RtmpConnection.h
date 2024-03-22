@@ -7,6 +7,7 @@
 #include <core/multimedia/net/rtmp/rtmp.h>
 #include <core/multimedia/net/rtmp/RtmpHandshake.h>
 #include <core/multimedia/net/rtmp/RtmpChunk.h>
+#include "core/util/buffer/BufferReader.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -63,7 +64,7 @@ public:
   bool isPlaying() const { return is_playing_; }
   bool isPublishing() const { return is_publishing_; }
 
-  std::string getStatus() {
+  std::string getStatus() const {
     if (status_ == "") {
       return "unknown error";
     }
@@ -73,8 +74,8 @@ public:
 private:
   RtmpConnection(TaskScheduler *scheduler, sockfd_t sockfd, Rtmp *rtmp);
 
-  bool onRead(BufferReader &buffer);
-  void onClose();
+  bool handleRead(BufferReader &buffer);
+  void handleClose();
 
   bool handleChunk(BufferReader &buffer);
   bool handleMessage(RtmpMessage &rtmp_msg);
@@ -107,12 +108,12 @@ private:
     uint32_t csid, std::shared_ptr<char> payload, uint32_t payload_size);
   bool sendNotifyMessage(
     uint32_t csid, std::shared_ptr<char> payload, uint32_t payload_size);
-  bool sendMetaData(AmfObjectMap metaData);
-  bool sendMediaData(uint8_t type, uint64_t timestamp,
+  virtual bool sendMetaData(AmfObjectMap metaData);
+  virtual bool sendMediaData(uint8_t type, uint64_t timestamp,
     std::shared_ptr<char> payload, uint32_t payload_size);
-  bool sendVideoData(
+  virtual bool sendVideoData(
     uint64_t timestamp, std::shared_ptr<char> payload, uint32_t payload_size);
-  bool sendAudioData(
+  virtual bool sendAudioData(
     uint64_t timestamp, std::shared_ptr<char> payload, uint32_t payload_size);
   void sendRtmpChunks(uint32_t csid, RtmpMessage &rtmp_msg);
   bool isKeyFrame(std::shared_ptr<char> payload, uint32_t payload_size);
@@ -128,7 +129,7 @@ private:
   ConnectionStatus connection_status_;
 
   TaskScheduler *task_scheduler_;
-  std::shared_ptr<net::FdChannel> channel_;
+  std::shared_ptr<FdChannel> channel_;
 
   uint32_t peer_bandwidth_ = 5000000;
   uint32_t acknowledgement_size_ = 5000000;

@@ -15,13 +15,16 @@ class RtmpServer : public TcpServer, public Rtmp, public std::enable_shared_from
 	friend class RtmpConnection;
 	friend class HttpFlvConnection;
 public:
+	using EventCallback = std::function<void(std::string event_type, std::string stream_path)>;
+
 	static std::shared_ptr<RtmpServer> create(EventLoop* event_loop);
 	RtmpServer(EventLoop *event_loop);
   ~RtmpServer();
 
+	void setEventCallback(EventCallback event_callback);
+
   virtual std::string type() const override { return "RtmpServer"; }
 
-  LY_NONCOPYABLE(RtmpServer);
 private:
 	void addSession(std::string stream_path);
 	void removeSession(std::string stream_path);
@@ -30,11 +33,13 @@ private:
 	bool hasSession(std::string stream_path) const;
 	bool hasPublisher(std::string stream_path);
 
+	void notifyEvent(std::string event_type, std::string stream_path);
+
   virtual TcpConnection::ptr onConnect(sockfd_t sockfd) override;
 
-	EventLoop *event_loop_;
+private:
   std::unordered_map<std::string, std::shared_ptr<RtmpSession>> rtmp_sessions_;
-  mutable Mutex::type mutex_;
+  std::vector<EventCallback> event_callbacks_;
 };
 NAMESPACE_END(net)
 LY_NAMESPACE_END

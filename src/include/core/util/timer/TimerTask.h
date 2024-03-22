@@ -32,6 +32,14 @@ struct TimerTask
     : id(++next_id), callback(_callback), one_shot(_oneShot) {
     expire_time = TimerClock::now();
   }
+  TimerTask(TaskCallback _callback, int64_t _interval_ms,
+    bool _oneShot = true)
+    : id(++next_id)
+    , callback(_callback)
+    , one_shot(_oneShot)
+    , interval(_interval_ms) {
+    expire_time = TimerClock::now() + this->interval;
+  }
   TimerTask(TaskCallback _callback, std::chrono::milliseconds _interval,
     bool _oneShot = true)
     : id(++next_id)

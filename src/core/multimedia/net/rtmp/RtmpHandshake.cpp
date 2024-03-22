@@ -2,6 +2,7 @@
 #include <core/multimedia/net/rtmp/RtmpHandshake.h>
 #include <core/multimedia/net/rtmp/rtmp.h>
 #include <core/util/logger/Logger.h>
+#include "core/util/marcos.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -76,6 +77,7 @@ int RtmpHandshake::parse(BufferReader &in, char *res_buf, uint32_t res_buf_size)
 	return res_size;
 }
 bool RtmpHandshake::buildC0C1(char *buf, uint32_t buf_size) {
+  LY_ASSERT(buf_size >= 1537);
 	uint32_t size = 1 + 1536; // COC1
 	::memset(buf, 0, 1537);
 	buf[0] = RTMP_VERSION;

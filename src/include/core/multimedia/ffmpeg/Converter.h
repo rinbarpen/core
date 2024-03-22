@@ -8,7 +8,7 @@ struct VideoInfo
 {
   int height;
   int width;
-  ::AVPixelFormat format;
+  AVPixelFormat format;
 };
 /**
  * @brief Resample the audio(pcm) data

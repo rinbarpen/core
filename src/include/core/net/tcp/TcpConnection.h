@@ -13,8 +13,6 @@ LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
 class TcpConnection : public std::enable_shared_from_this<TcpConnection>
 {
-protected:
-  static constexpr int kMaxBufferSize = 1024 * 1024;
 public:
   SHARED_REG(TcpConnection);
 

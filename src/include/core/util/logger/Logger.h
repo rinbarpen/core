@@ -29,11 +29,13 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
 #include <core/util/marcos.h>
 #include <core/util/Mutex.h>
+#include <core/util/thread/Thread.h>
 
 #include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
@@ -54,10 +56,10 @@
 
 #define __LogEventGen(level, timestamp) \
   std::make_shared<::ly::LogEvent>(     \
-    level, __FILE__, __LINE__, LY_FUNC, timestamp)
+    level, std::this_thread::get_id(), __FILE__, __LINE__, LY_FUNC, timestamp)
 
 #define __LogEventGen2(level)                                          \
-  std::make_shared<::ly::LogEvent>(level, __FILE__, __LINE__, LY_FUNC, \
+  std::make_shared<::ly::LogEvent>(level, std::this_thread::get_id(), __FILE__, __LINE__, LY_FUNC, \
     std::chrono::duration_cast<std::chrono::milliseconds>(             \
       std::chrono::system_clock::now() \
       .time_since_epoch())             \
@@ -159,6 +161,7 @@ LY_NAMESPACE_BEGIN
 // 2023-03-01    root[DEBUG]    Logger.h:121    main    thanks for using lycore
 inline constexpr const char *kDefaultFormatPattern =
   "$DATETIME{%Y-%m-%d %H:%M:%S}"
+  "$CHAR:\t$THREAD_NAME"
   "$CHAR:\t$LOG_NAME$CHAR:[$LOG_LEVEL$CHAR:]"
   "$CHAR:\t$FILENAME$CHAR::$LINE"
   "$CHAR:\t$FUNCTION_NAME"
@@ -298,7 +301,7 @@ class LogEvent
 public:
   using ptr = std::shared_ptr<LogEvent>;
 
-  LogEvent(LogLevel level, const std::string &filename, int32_t line,
+  LogEvent(LogLevel level, std::thread::id tid, const std::string &filename, int32_t line,
     const std::string &functionName, int64_t timestamp,
     LogColorConfig config = LogColorConfig());
 
@@ -308,7 +311,8 @@ public:
   int64_t getTimestamp() const { return timestamp_; }
   std::string getContent() const { return ss_.str(); }
   // TODO: add thread id and process id
-  // std::thread::id getThreadId() const { return std::this_thread::get_id(); }
+  std::thread::id getThreadId() const { return tid_; }
+  std::string getThreadName() const { return Thread::name(tid_); }
   // int getProcessId() const {}
 
   LogLevel getLevel() const { return level_; }
@@ -331,6 +335,7 @@ public:
   }
 #endif
 private:
+  std::thread::id tid_;
   std::string filename_;
   std::string function_name_;
   int32_t line_ = 0;

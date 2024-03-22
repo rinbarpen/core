@@ -10,12 +10,11 @@ LY_NAMESPACE_BEGIN
 
 using T_steady_clock = ::std::chrono::steady_clock;
 using T_system_clock = ::std::chrono::system_clock;
-using T_high_resolution_clock = ::std::chrono::high_resolution_clock;
 
 namespace detail
 {
 template <class ClockType>
-struct is_clock : public is_any_of<ClockType, T_steady_clock, T_system_clock, T_high_resolution_clock> {
+struct is_clock : public is_any_of<ClockType, T_steady_clock, T_system_clock> {
 };
 template <class ClockType>
 using is_clock_t = typename is_clock<ClockType>::type;

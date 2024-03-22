@@ -42,7 +42,7 @@ void TaskScheduler::start()
 		this->handleTriggerEvent();
 	  this->timers_->run();
     auto timeout = timers_->nextTimestamp();
-		ILOG_TRACE(g_net_logger) << "timeout(ms): " << timeout.count();
+		// ILOG_TRACE(g_net_logger) << "timeout(ms): " << timeout.count();
 	  this->handleEvent(timeout.duration());
 	}
 }
@@ -56,7 +56,7 @@ void TaskScheduler::stop()
 	wakeup_pipe_->write(&event, 1);
 }
 
-auto TaskScheduler::addTimer(TimerTask task) -> TimerTaskId
+TimerTaskId TaskScheduler::addTimer(TimerTask task)
 {
 	Mutex::lock locker(mutex_);
   if (timers_->add(task)) {

@@ -8,24 +8,25 @@
 LY_NAMESPACE_BEGIN
 static auto g_max_buffer_size = LY_CONFIG_GET(common.buffer.max_buffer_size);
 
-void BufferReader::read(char *data, uint32_t nbytes)
+size_t BufferReader::read(char *data, uint32_t nbytes)
 {
   size_t bytesRead = this->readableBytes();
-  if (nbytes <= bytesRead) {
-    bytesRead = nbytes;
+  if (nbytes > bytesRead) {
+    nbytes = bytesRead;
   }
 
-  ::memcpy(data, data_, bytesRead);
+  ::memcpy(data, data_, nbytes);
+  return nbytes;
 }
 std::string BufferReader::read(uint32_t nbytes) {
   size_t bytesRead = this->readableBytes();
-  if (nbytes <= bytesRead) {
-    bytesRead = nbytes;
+  if (nbytes > bytesRead) {
+    nbytes = bytesRead;
   }
 
   std::string r;
-  r.resize(bytesRead);
-  r.assign(data_, bytesRead);
+  r.resize(nbytes);
+  r.assign(data_, nbytes);
   return r;
 }
 int BufferReader::readFromSocket(sockfd_t sockfd)
@@ -51,7 +52,7 @@ int BufferReader::append(std::string_view data)
     this->reset();
   }
 
-  std::memcpy(peek(), data.data(), data.length());
+  ::memcpy(peek(), data.data(), data.length());
   return data.length();
 }
 
@@ -68,7 +69,7 @@ int BufferReader::findFirst(std::string_view matchStr)
 }
 int BufferReader::findAndSkip(std::string_view matchStr)
 {
-  auto len = this->findFirst(matchStr);
+  int len = this->findFirst(matchStr);
   if (len < 0) {
     return -1;
   }
@@ -119,8 +120,8 @@ void BufferReader::reset()
 {
   char *buffer = new char[capacity_ * 2];
   memcpy(buffer, data_, capacity_);
-  delete[] data_;
-  data_ = buffer;
+  std::swap(buffer, data_);
+  delete[] buffer;
   capacity_ *= 2;
 }
 LY_NAMESPACE_END

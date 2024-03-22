@@ -1,10 +1,10 @@
 #include <core/util/logger/Logger.h>
 #include <core/multimedia/capture/screen_capture/GDISrceenCapture.h>
 #include <core/multimedia/util/AVClock.h>
-#include "core/multimedia/ffmpeg/FFmpegUtil.h"
+#include <core/multimedia/ffmpeg/FFmpegUtil.h>
 
 LY_NAMESPACE_BEGIN
-static auto g_multimedia_capture_logger = GET_LOGGER("multimedia.capture");
+static auto g_capture_logger = GET_LOGGER("multimedia.capture");
 
 GDIScreenCapture::GDIScreenCapture(){}
 GDIScreenCapture::~GDIScreenCapture(){
@@ -33,22 +33,22 @@ bool GDIScreenCapture::init(int display_index, bool auto_run)
 	av_dict_set_int(&options, "draw_mouse", 1, AV_DICT_MATCH_CASE);
 	av_dict_set_int(&options, "offset_x", monitor_.left, AV_DICT_MATCH_CASE);
 	av_dict_set_int(&options, "offset_y", monitor_.top, AV_DICT_MATCH_CASE);
-	av_dict_set(&options, "video_size", video_size, 1);
+	av_dict_set(&options, "video_size", video_size, AV_DICT_MATCH_CASE);
 
 	input_format_ = av_find_input_format("gdigrab");
 	if (nullptr == input_format_) {
-		ILOG_ERROR(g_multimedia_capture_logger) << "Gdigrab not found.";
+		ILOG_ERROR(g_capture_logger) << "Gdigrab not found.";
 		return false;
 	}
 
 	format_context_ = avformat_alloc_context();
 	if (avformat_open_input(&format_context_, "desktop", input_format_, &options) != 0) {
-		ILOG_ERROR(g_multimedia_capture_logger) << "Open input failed.";
+		ILOG_ERROR(g_capture_logger) << "Fail to open gdi.";
 		return false;
 	}
 
 	if (avformat_find_stream_info(format_context_, nullptr) < 0) {
-		ILOG_ERROR(g_multimedia_capture_logger) << "Couldn't find stream info.";
+		ILOG_ERROR(g_capture_logger) << "Couldn't find stream info.";
     avformat_close_input(&format_context_);
 		format_context_ = nullptr;
 		return false;
@@ -63,7 +63,7 @@ bool GDIScreenCapture::init(int display_index, bool auto_run)
 	}
 
 	if (video_index < 0) {
-    ILOG_ERROR(g_multimedia_capture_logger) << "Couldn't find video stream.";
+    ILOG_ERROR(g_capture_logger) << "Couldn't find video stream.";
 		avformat_close_input(&format_context_);
 		format_context_ = nullptr;
 		return false;
@@ -71,7 +71,7 @@ bool GDIScreenCapture::init(int display_index, bool auto_run)
 
 	const AVCodec* codec = avcodec_find_decoder(format_context_->streams[video_index]->codecpar->codec_id);
 	if (nullptr == codec) {
-    ILOG_ERROR(g_multimedia_capture_logger) << "Couldn't find video codec.";
+    ILOG_ERROR(g_capture_logger) << "Couldn't find video codec.";
 		avformat_close_input(&format_context_);
 		format_context_ = nullptr;
 		return false;
@@ -79,7 +79,7 @@ bool GDIScreenCapture::init(int display_index, bool auto_run)
 
 	codec_context_ = avcodec_alloc_context3(codec);
 	if (nullptr == codec_context_) {
-    ILOG_ERROR(g_multimedia_capture_logger) << "Out of memory in allocating codec context";
+    ILOG_ERROR(g_capture_logger) << "Out of memory in allocating codec context";
 		return false;
 	}
 
@@ -152,7 +152,7 @@ bool GDIScreenCapture::startCapture()
 {
 	if (initialized_ && !started_) {
 		started_ = true;
-		worker_.dispatch([this] {
+		thread_.dispatch([this] {
 			while (started_) {
 				AVClock::sleep(std::chrono::milliseconds(1000 / frame_rate_));
 				this->acquireFrame();
@@ -168,7 +168,7 @@ void GDIScreenCapture::stopCapture()
 {
 	if (started_) {
 		started_ = false;
-		worker_.destroy();
+		thread_.stop();
 
 		Mutex::lock locker(mutex_);
 		image_.reset();

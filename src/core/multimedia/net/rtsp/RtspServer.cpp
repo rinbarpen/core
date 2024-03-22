@@ -43,7 +43,7 @@ bool RtspServer::pushFrame(MediaSessionId session_id, MediaChannelId channel_id,
 {
   std::shared_ptr<MediaSession> pSession;
   {
-    std::lock_guard<std::mutex> locker(mutex_);
+    Mutex::lock locker(mutex_);
     auto value = container_util::get_if_contain(media_sessions_, session_id);
     if (!value.has_value()) {
       return false;

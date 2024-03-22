@@ -3,7 +3,12 @@
 LY_NAMESPACE_BEGIN
 
 template <typename T>
-AVQueue<T>::AVQueue() {}
+AVQueue<T>::AVQueue() {
+}
+template <typename T>
+AVQueue<T>::AVQueue(size_t max_capacity) :
+  max_capacity_(max_capacity)
+{}
 template <typename T>
 AVQueue<T>::~AVQueue() {
   this->close();
@@ -18,21 +23,29 @@ void AVQueue<T>::close() {
 }
 
 template <typename T>
-auto AVQueue<T>::push(const T &x) -> bool {
+bool AVQueue<T>::push(const T &x) {
   if (!opening_) return false;
 
   Mutex::lock locker(mutex_);
+  if (data_.size() >= max_capacity_) {
+    data_.pop();
+  }
   data_.push(x);
+  return true;
 }
 template <typename T>
-auto AVQueue<T>::push(T &&x) -> bool {
+bool AVQueue<T>::push(T &&x) {
   if (!opening_) return false;
 
   Mutex::lock locker(mutex_);
+  if (data_.size() >= max_capacity_) {
+    data_.pop();
+  }
   data_.push(std::move(x));
+  return true;
 }
 template <typename T>
-auto AVQueue<T>::pop() -> std::optional<T> {
+std::optional<T> AVQueue<T>::pop() {
   if (!opening_) return {};
 
   Mutex::lock locker(mutex_);
@@ -42,7 +55,7 @@ auto AVQueue<T>::pop() -> std::optional<T> {
   return x;
 }
 template <typename T>
-auto AVQueue<T>::pop(T &x) -> bool {
+bool AVQueue<T>::pop(T &x) {
   if (!opening_) return false;
 
   Mutex::lock locker(mutex_);
@@ -53,14 +66,30 @@ auto AVQueue<T>::pop(T &x) -> bool {
 }
 
 template <typename T>
-auto AVQueue<T>::empty() const -> bool {
+void AVQueue<T>::reserve(size_t new_max_capacity) {
+  Mutex::lock locker(mutex_);
+  max_capacity_ = new_max_capacity;
+}
+
+template <typename T>
+bool AVQueue<T>::empty() const {
   Mutex::lock locker(mutex_);
   return data_.empty();
 }
 template <typename T>
-auto AVQueue<T>::size() const -> size_t {
+bool AVQueue<T>::full() const {
+  Mutex::lock locker(mutex_);
+  return data_.size() == max_capacity_;
+}
+template <typename T>
+size_t AVQueue<T>::size() const {
   Mutex::lock locker(mutex_);
   return data_.size();
+}
+template <typename T>
+size_t AVQueue<T>::capacity() const {
+  Mutex::lock locker(mutex_);
+  return max_capacity_;
 }
 
 LY_NAMESPACE_END

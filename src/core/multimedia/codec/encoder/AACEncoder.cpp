@@ -1,11 +1,11 @@
 #include <core/multimedia/codec/encoder/AACEncoder.h>
-#include "core/multimedia/ffmpeg/FFmpegUtil.h"
+#include <core/multimedia/ffmpeg/FFmpegUtil.h>
 
 LY_NAMESPACE_BEGIN
 
 bool AACEncoder::prepare(
   int sample_rate, int channels, int format, int bit_rate_bps) {
-	if (aac_encoder_.getAVCodecContext()) {
+	if (nullptr == aac_encoder_.getAVCodecContext()) {
 		return false;
 	}
 

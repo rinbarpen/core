@@ -33,7 +33,7 @@ private:
 
 	bool initialized_{false};
 	bool started_{false};
-	Thread worker_{"GDIScreenCapture"};
+	Thread thread_{"GDIScreenCapture"};
 
 	AVFormatContext* format_context_{nullptr};
 	AVInputFormat* input_format_{nullptr};

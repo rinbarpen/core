@@ -1,5 +1,10 @@
 #include <core/multimedia/ffmpeg/H264Encoder.h>
 #include <core/util/logger/Logger.h>
+#include "core/multimedia/ffmpeg/Converter.h"
+#include "core/multimedia/ffmpeg/FFmpegUtil.h"
+#include "core/util/marcos.h"
+#include "libavcodec/avcodec.h"
+#include "libavutil/pixfmt.h"
 
 static auto g_ffmpeg_logger = GET_LOGGER("multimedia.ffmpeg");
 
@@ -149,10 +154,56 @@ AVPacketPtr H264Encoder::encode(AVEncodeContext ctx)
 		return nullptr;
 	}
 
-	ILOG_TRACE_FMT(g_ffmpeg_logger, "[H264Encoder] A new packet has arrived");
 	return packet;
 }
 
+AVPacketPtr H264Encoder::encode(AVFramePtr frame)
+{
+	LY_ASSERT(frame);
+
+	if (frame->width != config_.video.width
+	 || frame->height != config_.video.height
+	 || !converter_) {
+		VideoInfo in, out;
+		in.width = frame->width;
+		in.height = frame->height;
+		in.format = (AVPixelFormat)frame->format;
+
+		out.width = config_.video.width;
+		out.height = config_.video.height;
+		out.format = config_.video.format;
+		converter_.reset(new Converter(in, out));
+	}
+
+	AVFramePtr yuv_frame;
+	if (converter_->convert(frame, yuv_frame) < 0) {
+		ILOG_WARN_FMT(g_ffmpeg_logger, "[H264Encoder] Something bad happened in converting frame");
+		return nullptr;
+	}
+	if (force_idr_) {
+		yuv_frame->key_frame = true;
+		force_idr_ = false;
+	}
+
+	int r = avcodec_send_frame(codec_context_, yuv_frame.get());
+	if (r < 0) {
+		ILOG_WARN_FMT(g_ffmpeg_logger, "[H264Encoder] Error occurs while sending frame");
+		return nullptr;
+	}
+
+	AVPacketPtr pkt = makePacketPtr();
+	r = avcodec_receive_packet(codec_context_, pkt.get());
+	if (r == AVERROR(EAGAIN) || r == AVERROR_EOF) {
+    ILOG_INFO_FMT(g_ffmpeg_logger, "[H264Encoder] No packet to be gotten");
+		return nullptr;
+	}
+	else if (r < 0) {
+    ILOG_WARN_FMT(g_ffmpeg_logger, "[H264Encoder] Error occurs while receiving packet");
+		return nullptr;
+	}
+
+	return pkt;
+}
 void H264Encoder::setBitRate(uint32_t bit_rate_bps)
 {
 	if (codec_context_) {

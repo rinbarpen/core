@@ -60,8 +60,10 @@ void Acceptor::onAccept() {
   auto &&[target, _] = socket_->accept();
   if (socket_api::is_valid(target)) {
     ILOG_INFO(g_net_logger) << "Acceptor accepts a new client: " << target;
-    if (new_connection_callback_)
+    if (new_connection_callback_) {
+      ILOG_TRACE(g_net_logger) << "New connection callback has been called";
       new_connection_callback_(target);
+    }
     else
       socket_api::close(target);
   }

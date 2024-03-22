@@ -80,7 +80,6 @@
 #define LY_NAMESPACE_BEGIN  NAMESPACE_BEGIN(ly)
 #define LY_NAMESPACE_END    NAMESPACE_END(ly)
 
-
 LY_NAMESPACE_BEGIN
 namespace detail
 {
@@ -90,6 +89,10 @@ public:
   UnreachableException(const char *msg) : ::std::runtime_error(msg) {}
   UnreachableException(std::string msg) : ::std::runtime_error(msg.c_str()) {}
   UnreachableException(std::string_view msg) : ::std::runtime_error(msg.data()) {}
+};
+class NotImplementException : public ::std::runtime_error {
+public:
+  NotImplementException() : ::std::runtime_error("Not Implement!!") {}
 };
 }  // namespace detail
 LY_NAMESPACE_END
@@ -101,7 +104,6 @@ LY_NAMESPACE_END
       __FUNCTION__, __FILE__, __LINE__);                               \
     throw ::ly::detail::UnreachableException(__s);                     \
   } while (0)
-
 #define __UNREACHABLE_NOTHROW()                                     \
   do {                                                              \
     ::fprintf(stderr, "Unreachable has been called by %s in %s:%d", \
@@ -109,7 +111,7 @@ LY_NAMESPACE_END
   } while (0)
 
 #define LY_UNREACHABLE() __UNREACHABLE_THROW()
-
+#define LY_NOT_IMPLEMENT() do { throw ::ly::detail::NotImplementException(); } while (0)
 
 #define LY_NONCOPYABLE(CLS)  \
   CLS(const CLS &) = delete; \

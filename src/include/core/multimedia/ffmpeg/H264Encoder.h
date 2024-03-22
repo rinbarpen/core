@@ -1,6 +1,7 @@
 #pragma once
 #include <core/multimedia/ffmpeg/Converter.h>
 #include <core/multimedia/ffmpeg/Encoder.h>
+#include <core/multimedia/ffmpeg/FFmpegUtil.h>
 
 LY_NAMESPACE_BEGIN
 namespace ffmpeg
@@ -21,6 +22,7 @@ public:
    * @return
    */
   AVPacketPtr encode(AVEncodeContext ctx) override;
+  AVPacketPtr encode(AVFramePtr frame) override;
 
   void setBitRate(uint32_t bit_rate_bps) override;
   void useIDR() override;

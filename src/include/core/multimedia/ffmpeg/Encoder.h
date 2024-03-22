@@ -14,7 +14,8 @@ public:
 
   virtual bool prepare(AVConfig &config) = 0;
   virtual void close() = 0;
-  virtual AVPacketPtr encode(AVEncodeContext ctx) = 0;
+  virtual AVPacketPtr encode(AVEncodeContext ctx) { LY_NOT_IMPLEMENT(); return nullptr; }
+  virtual AVPacketPtr encode(AVFramePtr frame) { LY_NOT_IMPLEMENT(); return nullptr; }
 
   virtual uint32_t getFrameNum() const { return 0; }
   virtual void useIDR() { }

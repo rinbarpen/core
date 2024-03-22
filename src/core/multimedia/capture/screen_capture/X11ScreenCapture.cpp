@@ -168,7 +168,7 @@ void X11ScreenCapture::stopCapture()
 {
 	if (started_) {
 		started_ = false;
-		worker_.destroy();
+		worker_.stop();
 
 		Mutex::lock locker(mutex_);
 		image_.reset();

@@ -2,7 +2,6 @@
 
 #include <stdexcept>
 #include <core/multimedia/ffmpeg/FFmpegUtil.h>
-#include "libavutil/samplefmt.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(ffmpeg)
@@ -11,7 +10,7 @@ struct AudioInfo
   int sample_rate;
   int channels;
   int bits_per_sample;
-  ::AVSampleFormat format;
+  AVSampleFormat format;
 
   bool operator==(const AudioInfo &rhs) const {
     return sample_rate == rhs.sample_rate
@@ -68,7 +67,7 @@ public:
     }
   }
 
-  int convert(AVFramePtr in_frame, AVFramePtr &out_frame) noexcept
+  int convert(AVFramePtr in_frame, AVFramePtr &out_frame)
   {
     LY_ASSERT(swr_context_ != nullptr);
 

@@ -8,17 +8,16 @@
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
-
 class TcpServer
 {
 public:
   explicit TcpServer(EventLoop *event_loop);
   virtual ~TcpServer();
 
-  virtual bool start(const char *ip, uint16_t port, int max_backlog);
-  virtual bool stop();
+  bool start(const char *ip, uint16_t port, int max_backlog);
+  bool stop();
 
-  virtual auto type() const -> std::string { return "TcpServer"; }
+  virtual std::string type() const { return "TcpServer"; }
 
   LY_NONCOPYABLE(TcpServer);
 protected:
@@ -32,7 +31,7 @@ protected:
   std::unordered_map<sockfd_t, TcpConnection::ptr> connections_;
 
   std::atomic_bool running_{false};
-  Mutex::type mutex_;
+	mutable Mutex::type mutex_;
 };
 
 NAMESPACE_END(net)

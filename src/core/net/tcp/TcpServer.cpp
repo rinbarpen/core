@@ -30,21 +30,6 @@ TcpServer::TcpServer(EventLoop *event_loop) : event_loop_(event_loop) {
         auto &&address = socket_api::socket_address(close_conn->getSockfd());
         ILOG_INFO_FMT(g_net_tcp_logger, "A client ({}) leaves", address);
       });
-
-      // TODO: Remove it
-      // conn->setReadCallback(
-      //   [this](TcpConnection::ptr read_conn, BufferReader &reader) {
-      //     std::string buf{};
-      //     const int readBytes = reader.readAll(buf);
-      //     if (readBytes <= 0 || buf.empty()) return false;
-
-      //     buf = "Server Echo: you sent " + buf + "recently.\n";
-      //     buf += "Thanks for your response.";
-      //     ILOG_INFO(g_net_tcp_logger) << buf;
-      //     read_conn->send(buf.c_str(), buf.length());
-
-      //     return true;
-      //   });
     }
   });
 }

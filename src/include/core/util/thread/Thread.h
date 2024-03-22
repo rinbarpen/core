@@ -3,18 +3,18 @@
 #include <atomic>
 #include <thread>
 #include <future>
+#include <unordered_map>
 
 #include <core/util/marcos.h>
 #include <core/util/FunctionWrapper.h>
-
-// TODO: complement ThreadContext and Thread. Thread supports to be derived. Use our special Thread instead of ThreadPool's std::thread. Then input thread info into Logger
 
 LY_NAMESPACE_BEGIN
 struct ThreadContext
 {
   std::thread::id id{};
-  std::string name;
+  std::string name{"undefined"};
 
+  ThreadContext() {}
   ThreadContext(std::string_view threadName)
     : name(threadName)
   {}
@@ -34,14 +34,14 @@ struct ThreadContext
   void clear()
   {
     id = std::thread::id{};
-    name = "";
+    name = "undefined";
   }
 };
 
 class Thread
 {
 public:
-  explicit Thread(const ThreadContext &context);
+  Thread(const ThreadContext &context);
   Thread(std::string_view name);
   ~Thread();
 
@@ -51,7 +51,7 @@ public:
   {
     using ResultType = std::invoke_result_t<Fn, Args...>;
 
-    if (running_) this->destroy();
+    if (running_) this->stop();
 
     auto task = std::make_shared<std::packaged_task<ResultType(Args...)>>(std::forward<Fn>(fn));
     auto res = task->get_future();
@@ -60,11 +60,29 @@ public:
     thread_ = std::thread([task, &args...]{(*task)(std::forward<Args>(args)...);});
     context_.reset(thread_.get_id());
 
+    s_thread_mapping[thread_.get_id()] = context_;
+
     return res;
   }
-  void destroy();
+
+  void start();
+  void stop();
+
+  virtual void run() {}
 
   ThreadContext context() const;
+
+  static ThreadContext context(std::thread::id tid) {
+    auto it = s_thread_mapping.find(tid);
+    if (it != s_thread_mapping.end())
+      return it->second;
+
+    return {};
+  }
+  static std::string name(std::thread::id tid) {
+    return context(tid).name;
+  }
+  static bool include(std::thread::id tid) { return s_thread_mapping.find(tid) != s_thread_mapping.end(); }
 
   LY_NONCOPYABLE(Thread);
 private:
@@ -72,6 +90,9 @@ private:
   std::atomic_bool running_{false};
 
   ThreadContext context_;
+
+  static inline std::unordered_map<std::thread::id, ThreadContext> s_thread_mapping = {};
 };
+
 
 LY_NAMESPACE_END

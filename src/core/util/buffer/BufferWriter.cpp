@@ -70,6 +70,7 @@ int BufferWriter::send(sockfd_t sockfd, int ms_timeout)
 				count += 1;
 				buffer_.pop();
 			}
+			LOG_TRACE() << "send a packet";
 		}
 		else if (r < 0) {
 #if defined(__LINUX__)

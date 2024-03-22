@@ -29,9 +29,9 @@ bool RtmpPublisher::setMediaInfo(MediaInfo media_info) {
       aac_sequence_header_size_ = media_info_.audio_specific_config_size + 2;
       aac_sequence_header_.reset(new char[aac_sequence_header_size_]);
       uint8_t *data = (uint8_t *) aac_sequence_header_.get();
-      uint8_t sound_rate = 3;   // for aac awlays 3
+      uint8_t sound_rate = 3;   // for aac always 3
       uint8_t soundz_size = 1;  // 0:8bit , 1:16bit
-      uint8_t sound_type = 1;   // for aac awlays 1
+      uint8_t sound_type = 1;   // for aac always 1
 
       // audio tag data
       audio_tag_ = data[0] =
@@ -206,7 +206,7 @@ bool RtmpPublisher::isKeyFrame(uint8_t *data, uint32_t size) const {
   }
   else if (data[0] == 0 && data[1] == 0 && data[2] == 0 && data[3] == 1) {
     startCodeOffset = 4;
-  } 
+  }
   else [[unlikely]] {
     LY_UNREACHABLE();
   }

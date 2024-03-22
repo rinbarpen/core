@@ -63,26 +63,26 @@ struct AmfObject
   AmfObject(std::string str)
     : type(AmfObjectType::AMF_STRING)
   {
-    std::get<0>(this->data) = str;
+    std::get<std::string>(this->data) = str;
   }
   AmfObject(double number)
     : type(AmfObjectType::AMF_NUMBER)
   {
-    std::get<1>(this->data) = number;
+    std::get<double>(this->data) = number;
   }
   AmfObject(bool boolean)
     : type(AmfObjectType::AMF_BOOLEAN)
   {
-    std::get<2>(this->data) = boolean;
+    std::get<bool>(this->data) = boolean;
   }
 
-  std::string& string() { return std::get<0>(this->data); }
-  double& number() { return std::get<1>(this->data); }
-  bool& boolean() { return std::get<2>(this->data); }
+  std::string& string() { return std::get<std::string>(this->data); }
+  double& number() { return std::get<double>(this->data); }
+  bool& boolean() { return std::get<bool>(this->data); }
 
-  std::string string() const { return std::get<0>(this->data); }
-  double number() const { return std::get<1>(this->data); }
-  bool boolean() const { return std::get<2>(this->data); }
+  std::string string() const { return std::get<std::string>(this->data); }
+  double number() const { return std::get<double>(this->data); }
+  bool boolean() const { return std::get<bool>(this->data); }
 
   void clear() {
     type = AmfObjectType::AMF_NONE;

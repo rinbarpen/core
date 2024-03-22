@@ -1,9 +1,10 @@
 #include <fstream>
-#include <iostream>
 #include <functional>
 #include <future>
-#include <string>
+#include <iostream>
 #include <set>
+#include <string>
+
 
 #include <core/config/config.h>
 #include <core/util/OSUtil.h>
@@ -12,16 +13,20 @@
 LY_NAMESPACE_BEGIN
 static auto g_max_file_line = LY_CONFIG_GET(common.logger.max_file_line);
 
-/********************************************* LogEvent **********************************************/
-LogEvent::LogEvent(LogLevel level, const std::string &filename, int32_t line,
-  const std::string &function_name, int64_t timestamp, LogColorConfig config)
-  : filename_(filename)
+/********************************************* LogEvent
+ * **********************************************/
+LogEvent::LogEvent(LogLevel level, std::thread::id tid,
+  const std::string &filename, int32_t line, const std::string &function_name,
+  int64_t timestamp, LogColorConfig config)
+  : tid_(tid)
+  , filename_(filename)
   , function_name_(function_name)
   , line_(line)
   , timestamp_(timestamp)
   , level_(level) {}
 
-/***************************************** LogFormatterItem ******************************************/
+/***************************************** LogFormatterItem
+ * ******************************************/
 class MessageFormatterItem final : public LogFormatterItem
 {
 public:
@@ -135,6 +140,31 @@ public:
 private:
   std::string str_;
 };
+class ThreadNameFormatterItem : public LogFormatterItem
+{
+public:
+  ThreadNameFormatterItem(const std::string &str) : str_(str) {}
+  void format(std::ostream &os, LogEvent::ptr pLogEvent,
+    std::shared_ptr<Logger> pLogger) override {
+    os << pLogEvent->getThreadName();
+  }
+
+private:
+  std::string str_;
+};
+class ThreadIdFormatterItem : public LogFormatterItem
+{
+public:
+  ThreadIdFormatterItem(const std::string &str) : str_(str) {}
+  void format(std::ostream &os, LogEvent::ptr pLogEvent,
+    std::shared_ptr<Logger> pLogger) override {
+    os << pLogEvent->getThreadId();
+  }
+
+private:
+  std::string str_;
+};
+
 
 /******************************************* LogFormatter
  * *******************************************/
@@ -236,6 +266,8 @@ void LogFormatter::init() {
       XX("LINE", LineFormatterItem),
       XX("CHAR", CharFormatterItem),
       XX("FUNCTION_NAME", FunctionNameFormatterItem),
+      XX("THREAD_NAME", ThreadNameFormatterItem),
+      XX("THREAD_ID", ThreadIdFormatterItem),
 #undef XX
     };
 
@@ -269,7 +301,8 @@ YAML::Node LogFormatter::toYaml() const {
 }
 
 
-/******************************************* LogAppender *********************************************/
+/******************************************* LogAppender
+ * *********************************************/
 void LogAppender::setFormatter(LogFormatter::ptr pFormatter) {
   Mutex::lock locker(mutex_);
   formatter_ = pFormatter;
@@ -280,7 +313,8 @@ LogFormatter::ptr LogAppender::getFormatter() const {
   return formatter_;
 }
 
-/***************************************** FileLogAppender *******************************************/
+/***************************************** FileLogAppender
+ * *******************************************/
 FileLogAppender::FileLogAppender(const std::string &filename)
   : filename_(kLogBasePath + filename) {
   reopen();
@@ -375,8 +409,7 @@ std::string FileLogAppender::getWholeFilename() {
 /*************************************** AsyncFileLogAppender
  * ***************************************/
 AsyncFileLogAppender::AsyncFileLogAppender(const std::string &filename)
-  : filename_(kLogBasePath + filename) {
-}
+  : filename_(kLogBasePath + filename) {}
 void AsyncFileLogAppender::log(
   LogEvent::ptr pLogEvent, std::shared_ptr<Logger> pLogger) {
   if (pLogEvent->getLevel() >= level_) {
@@ -624,8 +657,7 @@ Logger::ptr LogManager::getLogger2(const std::string &name) {
   return nullptr;
 }
 bool LogManager::putLogger(Logger::ptr pLogger) {
-  if (auto it = loggers_.find(pLogger->getName());
-      it != loggers_.end()) {
+  if (auto it = loggers_.find(pLogger->getName()); it != loggers_.end()) {
     return false;
   }
   loggers_[pLogger->getName()] = pLogger;
@@ -678,10 +710,10 @@ Logger::ptr LogIniter::reg(const std::string &log_name, LogLevel log_level,
   return pLogger;
 }
 
-Logger::ptr LogIniter::reg(const std::string &name, const std::string &split, uint8_t flags, LogLevel level, const std::string &pattern) {
-  if ((flags & CONSOLE) != CONSOLE
-   && (flags & SYNC_FILE) != SYNC_FILE
-   && (flags & ASYNC_FILE) != ASYNC_FILE) {
+Logger::ptr LogIniter::reg(const std::string &name, const std::string &split,
+  uint8_t flags, LogLevel level, const std::string &pattern) {
+  if ((flags & CONSOLE) != CONSOLE && (flags & SYNC_FILE) != SYNC_FILE
+      && (flags & ASYNC_FILE) != ASYNC_FILE) {
     // invalid_argument
     // throw std::invalid_argument("No such flags");
     return nullptr;
@@ -705,28 +737,30 @@ Logger::ptr LogIniter::reg(const std::string &name, const std::string &split, ui
   }
 
   if (firstDot != std::string::npos) {
-    pLogger->setParent(reg(name.substr(0, lastDot), split, flags, level, pattern));
+    pLogger->setParent(
+      reg(name.substr(0, lastDot), split, flags, level, pattern));
   }
 
   LogManager::instance()->insert(pLogger);
   return pLogger;
 }
 
-void LogIniter::loadYamlFile(const std::string& filename) {
+void LogIniter::loadYamlFile(const std::string &filename) {
   auto node = YAML::LoadFile(filename);
   if (!node["logger"].IsDefined()) return;
 
-  (void)os_api::mkdir(kLogBasePath);
+  (void) os_api::mkdir(kLogBasePath);
 
   loadYamlNode(node);
 }
 
 void LogIniter::loadYamlNode(YAML::Node node) {
-  auto compare = [](const YAML::Node &lhs, const YAML::Node &rhs){
+  auto compare = [](const YAML::Node &lhs, const YAML::Node &rhs) {
     return lhs["name"].as<std::string>() < lhs["name"].as<std::string>();
   };
 
-  std::set<YAML::Node, decltype(compare)> loggers(node["logger"].begin(), node["logger"].end(), compare);
+  std::set<YAML::Node, decltype(compare)> loggers(
+    node["logger"].begin(), node["logger"].end(), compare);
 
   for (auto it = loggers.begin(); it != loggers.end(); ++it) {
     YAML::Node cur = *it;

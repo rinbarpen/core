@@ -72,16 +72,16 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
     return false;
   }
 
-  uint32_t sample_rate = audio_capture_->getSampleRate();
-  uint32_t channels = audio_capture_->getChannels();
+  // uint32_t sample_rate = audio_capture_->getSampleRate();
+  // uint32_t channels = audio_capture_->getChannels();
 
   if (type == ScreenLiveType::RTSP_SERVER) {
     auto rtsp_server = net::RtspServer::create(event_loop_.get());
     net::MediaSessionId session_id = 0;
 
-    if (config.server.ip == "127.0.0.1") {
-      config.server.ip = "0.0.0.0";
-    }
+    // if (config.server.ip == "127.0.0.1") {
+    //   config.server.ip = "0.0.0.0";
+    // }
 
     if (!rtsp_server->start(config.server.ip.c_str(), config.server.port, 1000)) {
       return false;
@@ -120,9 +120,9 @@ bool ScreenLive::startLive(ScreenLiveType type, LiveConfig &config) {
     auto session = net::MediaSession::create();
     session->addSource(
       net::channel_0, net::H264Source::create(screen_live_config_.frame_rate));
-    session->addSource(
-      net::channel_1, net::AACSource::create(audio_capture_->getSampleRate(),
-                        audio_capture_->getChannels(), false));
+    // session->addSource(
+    //   net::channel_1, net::AACSource::create(audio_capture_->getSampleRate(),
+    //                     audio_capture_->getChannels(), false));
 
     rtsp_pusher->addSession(session);
     if (!rtsp_pusher->openUrl(config.pusher.rtsp_url, 1000ms)) {
@@ -352,15 +352,15 @@ bool ScreenLive::startEncoder(ScreenLiveConfig &config)
     return false;
   }
 
-  int sample_rate = audio_capture_->getSampleRate();
-  int channels = audio_capture_->getChannels();
-  if (!aac_encoder_.prepare(sample_rate, channels, AV_SAMPLE_FMT_S16, 64000)) {
-    return false;
-  }
+  // int sample_rate = audio_capture_->getSampleRate();
+  // int channels = audio_capture_->getChannels();
+  // if (!aac_encoder_.prepare(sample_rate, channels, AV_SAMPLE_FMT_S16, 64000)) {
+  //   return false;
+  // }
 
   encoder_started_ = true;
   encode_video_thread_ = std::thread(&ScreenLive::encodeVideo, this);
-  encode_audio_thread_ = std::thread(&ScreenLive::encodeAudio, this);
+  // encode_audio_thread_ = std::thread(&ScreenLive::encodeAudio, this);
   return true;
 }
 bool ScreenLive::stopEncoder()

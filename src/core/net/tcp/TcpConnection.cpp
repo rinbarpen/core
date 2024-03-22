@@ -7,11 +7,13 @@
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
 static auto g_send_timeout_ms = LY_CONFIG_GET(net.common.send_timeout_ms);
+static auto g_max_sender_buffer_size = LY_CONFIG_GET(net.common.max_sender_buffer_size);
+static auto g_max_receiver_buffer_size = LY_CONFIG_GET(net.common.max_receiver_buffer_size);
 
 TcpConnection::TcpConnection(TaskScheduler *task_scheduler, sockfd_t fd)
   : task_scheduler_(task_scheduler),
-  read_buffer_(new BufferReader(kMaxBufferSize)),
-  write_buffer_(new BufferWriter(kMaxBufferSize)),
+  read_buffer_(new BufferReader(g_max_receiver_buffer_size)),
+  write_buffer_(new BufferWriter(g_max_sender_buffer_size)),
   channel_(new FdChannel(fd))
 {
   channel_->setReadCallback([this]() { this->onRead(); });
@@ -46,15 +48,14 @@ void TcpConnection::send(const char* data, size_t len)
 size_t TcpConnection::recv(char *data, size_t len)
 {
   if (running_) {
-    std::string r;
+    size_t r{};
     {
       Mutex::lock locker(mutex_);
-      r = read_buffer_->read((uint32_t)len);
-      ::memcpy(data, r.c_str(), r.length());
+      r = read_buffer_->read(data, (uint32_t)len);
     }
 
     this->onRead();
-    return r.length();
+    return r;
   }
   return 0;
 }
@@ -81,8 +82,8 @@ void TcpConnection::disconnect()
 
 void TcpConnection::onRead()
 {
-  Mutex::lock locker(mutex_);
   if (!running_) return;
+  Mutex::lock locker(mutex_);
 
   int r = read_buffer_->readFromSocket(channel_->getSockfd());
   if (r <= 0) {
@@ -99,8 +100,8 @@ void TcpConnection::onRead()
 }
 void TcpConnection::onWrite()
 {
-  Mutex::lock locker(mutex_);
   if (!running_) return;
+  Mutex::lock locker(mutex_);
 
   int r = write_buffer_->send(channel_->getSockfd(), g_send_timeout_ms);
   if (r < 0) {

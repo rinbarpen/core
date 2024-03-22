@@ -12,6 +12,7 @@ class AVQueue
 {
 public:
   AVQueue();
+  explicit AVQueue(size_t max_capacity);
   ~AVQueue();
 
   void open();
@@ -22,16 +23,24 @@ public:
   std::optional<T> pop();
   bool pop(T &x);
 
+  void reserve(size_t new_max_capacity);
+
   bool empty() const;
+  bool full() const;
   size_t size() const;
+  size_t capacity() const;
 
   bool isOpen() const { return opening_; }
 
 private:
   bool opening_{true};
   std::queue<T> data_;
+  size_t max_capacity_{0xFFFFFFFF};  // secs * framerate
   mutable Mutex::type mutex_;
 };
+
+template class AVQueue<ffmpeg::AVFramePtr>;
+template class AVQueue<ffmpeg::AVPacketPtr>;
 
 using AVFrameQueue = AVQueue<ffmpeg::AVFramePtr>;
 using AVPacketQueue = AVQueue<ffmpeg::AVPacketPtr>;
