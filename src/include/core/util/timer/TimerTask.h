@@ -1,7 +1,8 @@
 #pragma once
 
-#include <functional>
 #include <core/util/time/Clock.h>
+#include <functional>
+
 
 LY_NAMESPACE_BEGIN
 
@@ -24,16 +25,12 @@ struct TimerTask
   TimerTimestampDuration interval{0ms};
   TimerTimestamp expire_time;
 
-  TimerTask()
-  {
-    expire_time = TimerClock::now();
-  }
+  TimerTask() { expire_time = TimerClock::now(); }
   TimerTask(TaskCallback _callback, bool _oneShot = true)
     : id(++next_id), callback(_callback), one_shot(_oneShot) {
     expire_time = TimerClock::now();
   }
-  TimerTask(TaskCallback _callback, int64_t _interval_ms,
-    bool _oneShot = true)
+  TimerTask(TaskCallback _callback, int64_t _interval_ms, bool _oneShot = true)
     : id(++next_id)
     , callback(_callback)
     , one_shot(_oneShot)
@@ -54,9 +51,7 @@ struct TimerTask
     expire_time = TimerClock::now() + this->interval;
   }
 
-  auto isExpired(TimerTimestamp now) const -> bool {
-    return expire_time < now;
-  }
+  bool isExpired(TimerTimestamp now) const { return expire_time < now; }
 
   void operator()() const {
     if (TimerClock::now() > expire_time) {

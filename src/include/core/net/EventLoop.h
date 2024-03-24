@@ -5,7 +5,6 @@
 #include <core/util/thread/ThreadPool.h>
 #include <core/net/EpollTaskScheduler.h>
 #include <core/net/SelectTaskScheduler.h>
-#include "core/util/marcos.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -20,11 +19,11 @@ public:
   void start();
   void stop();
 
-  auto getTaskScheduler() -> TaskScheduler::ptr;
+  TaskScheduler::ptr getTaskScheduler();
 
 	bool addTriggerEvent(TriggerEvent callback);
   bool addTriggerEventForce(TriggerEvent callback, std::chrono::milliseconds timeout);
-	TimerTaskId addTimer(TimerTask timerTask);
+	TimerTaskId addTimer(const TimerTask &timerTask);
 	void removeTimer(TimerTaskId timerTaskId);
 	void updateChannel(FdChannel::ptr pChannel);
 	void removeChannel(sockfd_t sockfd);

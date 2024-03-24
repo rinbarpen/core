@@ -52,14 +52,13 @@ bool Timer::remove(const TimerTaskId id) {
 }
 
 void Timer::run() {
+  const auto now = TimerClock::now();
+
+  Mutex::ulock locker(mutex_);
   if (task_map_.empty()) {
     return;
   }
-
-  const auto now = TimerClock::now();
-
   std::vector<TimerTask> taskList;
-  Mutex::ulock locker(mutex_);
   while (!task_map_.empty()) {
     TimerTask curTask = task_map_.begin()->second;
     if (!curTask.isExpired(now)) {

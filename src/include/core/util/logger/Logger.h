@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <cstdarg>
+#include <cstdint>
 #include <functional>
 #include <future>
 #include <fstream>
@@ -161,11 +162,11 @@ LY_NAMESPACE_BEGIN
 // 2023-03-01    root[DEBUG]    Logger.h:121    main    thanks for using lycore
 inline constexpr const char *kDefaultFormatPattern =
   "$DATETIME{%Y-%m-%d %H:%M:%S}"
-  "$CHAR:\t$THREAD_NAME"
+  "$CHAR:\t$THREAD_NAME$CHAR:[$THREAD_ID$CHAR:]"
   "$CHAR:\t$LOG_NAME$CHAR:[$LOG_LEVEL$CHAR:]"
   "$CHAR:\t$FILENAME$CHAR::$LINE"
   "$CHAR:\t$FUNCTION_NAME"
-  "$CHAR:\t$MESSAGE$CHAR:\n";
+  "$CHAR: | $MESSAGE$CHAR:\n";
 // 2023-03-01    Logger.h:121    [DEBUG]    main    thanks for using lycore
 inline constexpr const char *kCommonFormatPattern =
   "$DATETIME{%Y-%m-%d %H:%M:%S}"
@@ -184,6 +185,12 @@ inline constexpr const char *kBriefFormatPattern =
   "$DATETIME{%Y-%m-%d %H:%M:%S}"
   "$CHAR:\t$CHAR:[$LOG_LEVEL$CHAR:]"
   "$CHAR:\t$MESSAGE$CHAR:\n";
+
+enum LogIniterFlag : uint8_t {
+  CONSOLE = 0x01,
+  SYNC_FILE = 0x02,
+  ASYNC_FILE = 0x04,
+};
 
 class LogLevel
 {
@@ -494,7 +501,7 @@ public:
   using ptr = std::shared_ptr<Logger>;
 
   Logger(const std::string &name = "root");
-  Logger(const std::string &name, LogLevel level, std::string pattern);
+  Logger(const std::string &name, LogLevel level, const std::string &pattern = kDefaultFormatPattern, uint8_t flags = LogIniterFlag::CONSOLE, const std::string &filename = "undefined");
   ~Logger() = default;
 
   void log(LogEvent::ptr pLogEvent);
@@ -575,11 +582,6 @@ private:
   Logger::ptr root_;
 };
 
-enum LogIniterFlag : uint8_t {
-  CONSOLE = 0x01,
-  SYNC_FILE = 0x02,
-  ASYNC_FILE = 0x04,
-};
 class LogIniter
 {
 public:

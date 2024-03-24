@@ -551,8 +551,24 @@ YAML::Node StdoutLogAppender::toYaml() const {
  * **********************************************/
 Logger::Logger(const std::string &name)
   : name_(name), formatter_(new LogFormatter()) {}
-Logger::Logger(const std::string &name, LogLevel level, std::string pattern)
-  : name_(name), level_(level), formatter_(new LogFormatter(pattern)) {}
+Logger::Logger(const std::string &name, LogLevel level, const std::string &pattern, uint8_t flags, const std::string &filename)
+  : name_(name), level_(level), formatter_(new LogFormatter(pattern)) {
+  if ((flags & LogIniterFlag::CONSOLE) == LogIniterFlag::CONSOLE) {
+    auto pAppender = std::make_shared<StdoutLogAppender>();
+    pAppender->setFormatter(formatter_);
+    appenders_.push_back(pAppender);
+  }
+  if ((flags & LogIniterFlag::ASYNC_FILE) == LogIniterFlag::ASYNC_FILE) {
+    auto pAppender = std::make_shared<AsyncFileLogAppender>(filename);
+    pAppender->setFormatter(formatter_);
+    appenders_.push_back(pAppender);
+  }
+  else if ((flags & LogIniterFlag::SYNC_FILE) == LogIniterFlag::SYNC_FILE) {
+    auto pAppender = std::make_shared<FileLogAppender>(filename);
+    pAppender->setFormatter(formatter_);
+    appenders_.push_back(pAppender);
+  }
+}
 
 void Logger::log(LogEvent::ptr pLogEvent) {
   if (pLogEvent->getLevel() >= level_) {
@@ -643,7 +659,7 @@ Logger::ptr LogManager::getLogger(const std::string &name) {
     return it->second;
   }
 
-  auto pLogger = std::make_shared<Logger>(name);
+  auto pLogger = std::make_shared<Logger>(name, LogLevel::LDEBUG);
   pLogger->setParent(root_);
   loggers_[name] = pLogger;
   return pLogger;
@@ -721,7 +737,13 @@ Logger::ptr LogIniter::reg(const std::string &name, const std::string &split,
 
   auto firstDot = name.find(split);
   auto lastDot = name.rfind(split);
-  auto pLogger = std::make_shared<Logger>(name);
+  auto pLogger = LogManager::instance()->getLogger2(name);
+  if (pLogger) {
+    pLogger->clearAppenders();
+  }
+  else {
+    pLogger = std::make_shared<Logger>(name);
+  }
   pLogger->setLevel(level);
   pLogger->setFormatter(pattern);
 

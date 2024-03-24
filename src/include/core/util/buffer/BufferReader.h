@@ -24,7 +24,7 @@ public:
 
   size_t read(char *data, uint32_t nbytes);
   std::string read(uint32_t nbytes);
-  int readFromSocket(sockfd_t sockfd);
+  uint32_t readFromSocket(sockfd_t sockfd);
   std::string readAll();
 
   int append(std::string_view data);

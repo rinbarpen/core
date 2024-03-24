@@ -41,8 +41,10 @@ struct ThreadContext
 class Thread
 {
 public:
+  Thread() = default;
   Thread(const ThreadContext &context);
   Thread(std::string_view name);
+  Thread(Thread&& th);
   ~Thread();
 
   template <typename Fn, typename... Args>

@@ -29,9 +29,9 @@ std::string BufferReader::read(uint32_t nbytes) {
   r.assign(data_, nbytes);
   return r;
 }
-int BufferReader::readFromSocket(sockfd_t sockfd)
+uint32_t BufferReader::readFromSocket(sockfd_t sockfd)
 {
-  int writeBytes = writableBytes();
+  uint32_t writeBytes = writableBytes();
   if (writeBytes < g_max_buffer_size) {
     this->reset();
   }

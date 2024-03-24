@@ -1,6 +1,7 @@
 #include <core/net/Acceptor.h>
 #include <core/net/tcp/TcpSocket.h>
 #include <core/net/udp/UdpSocket.h>
+#include "core/util/logger/Logger.h"
 
 LY_NAMESPACE_BEGIN
 NAMESPACE_BEGIN(net)
@@ -8,13 +9,15 @@ static auto g_net_logger = GET_LOGGER("net");
 
 Acceptor::Acceptor(EventLoop *event_loop, bool is_tcp)
   : event_loop_(event_loop), is_tcp_(is_tcp) {
-  accept_callback_ = [this]() {
-    this->onAccept();
-  };
+  // accept_callback_ = [this]() {
+  //   this->onAccept();
+  // };
 }
-void Acceptor::listen(const char *ip, uint16_t port, int backlog) {
+bool Acceptor::listen(const char *ip, uint16_t port, int backlog) {
   ILOG_INFO_FMT(g_net_logger, "Acceptor is listening({},{}) on {}", backlog, ip, port);
   Mutex::lock locker(mutex_);
+  if (socket_ && socket_->isValid())
+    socket_->close();
   if (is_tcp_) {
     socket_.reset(new TcpSocket{});
   }
@@ -22,24 +25,28 @@ void Acceptor::listen(const char *ip, uint16_t port, int backlog) {
     socket_.reset(new UdpSocket{});
   }
 
-  socket_api::set_reuse_address(socket_->getSockfd());
-  socket_api::set_reuse_port(socket_->getSockfd());
-  socket_api::set_nonblocking(socket_->getSockfd());
+  sockfd_t fd = socket_->getSockfd();
+  socket_api::set_reuse_address(fd);
+  socket_api::set_reuse_port(fd);
+  socket_api::set_nonblocking(fd);
+  channel_.reset(new FdChannel(fd));
 
   if (socket_->bind(ip, port) < 0) {
-    throw std::runtime_error("bind");
+    ILOG_WARN_FMT(g_net_logger, "Fail to bind socket: {}, {} has already used", ip, port);
+    return false;
   }
-  channel_.reset(new FdChannel(socket_->getSockfd()));
   if (socket_->listen(backlog) < 0) {
-    throw std::runtime_error("listen");
+    ILOG_ERROR_FMT(g_net_logger, "Fail to listen socket: The backlog is not enough(request {})", backlog);
+    return false;
   }
 
   channel_->setReadCallback([this]() { this->onAccept(); });
   channel_->enableReading();
   event_loop_->updateChannel(channel_);
+  return true;
 }
-void Acceptor::listen(const NetAddress &addr, int backlog) {
-  this->listen(addr.ip.c_str(), addr.port, backlog);
+bool Acceptor::listen(const NetAddress &addr, int backlog) {
+  return this->listen(addr.ip.c_str(), addr.port, backlog);
 }
 
 void Acceptor::close() {

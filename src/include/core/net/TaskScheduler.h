@@ -28,17 +28,17 @@ public:
 
 	void start();
 	void stop();
-  auto addTimer(TimerTask task) -> TimerTaskId;
+  TimerTaskId addTimer(const TimerTask &task);
 	void removeTimer(TimerTaskId timerId);
-	auto addTriggerEvent(TriggerEvent callback) -> bool;
-  auto addTriggerEventForce(
-    TriggerEvent callback, std::chrono::milliseconds timeout) -> bool;
+	bool addTriggerEvent(TriggerEvent callback);
+  bool addTriggerEventForce(
+    TriggerEvent callback, std::chrono::milliseconds timeout);
 
-	auto getId() const -> TaskSchedulerId { return id_; }
+	TaskSchedulerId getId() const { return id_; }
 
-	virtual void updateChannel(FdChannel::ptr channel) { }
-	virtual void removeChannel(sockfd_t fd) { }
-	virtual bool handleEvent(std::chrono::milliseconds timeout) { return false; }
+	virtual void updateChannel(FdChannel::ptr channel) = 0;
+	virtual void removeChannel(sockfd_t fd) = 0;
+	virtual bool handleEvent(std::chrono::milliseconds timeout) = 0;
 
 protected:
 	void wake();

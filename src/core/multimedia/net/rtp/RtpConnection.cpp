@@ -3,14 +3,14 @@
 #include <random>
 #include <string>
 
-#include <core/util/time/Timestamp.h>
-#include <core/util/time/time.h>
+#include <core/multimedia/net/media.h>
+#include <core/multimedia/net/rtp/RtpConnection.h>
+#include <core/multimedia/net/rtsp/RtspConnection.h>
 #include <core/net/NetAddress.h>
 #include <core/net/SocketUtil.h>
 #include <core/net/TaskScheduler.h>
-#include <core/multimedia/net/rtp/RtpConnection.h>
-#include <core/multimedia/net/rtsp/RtspConnection.h>
-#include <core/multimedia/net/media.h>
+#include <core/util/time/Timestamp.h>
+#include <core/util/time/time.h>
 
 #include <fmt/core.h>
 
@@ -20,8 +20,7 @@ RtpConnection::RtpConnection(std::weak_ptr<TcpConnection> rtspConnection)
   : rtsp_connection_(rtspConnection) {
   std::random_device rd;
 
-  for (int i = 0; i < kMaxMediaChannel; i++)
-  {
+  for (int i = 0; i < kMaxMediaChannel; i++) {
     rtpfd_[i] = kInvalidSockfd;
     rtcpfd_[i] = kInvalidSockfd;
     // std::uninitialized_fill_n(&media_channel_info_[i],
@@ -40,15 +39,12 @@ RtpConnection::RtpConnection(std::weak_ptr<TcpConnection> rtspConnection)
 }
 
 RtpConnection::~RtpConnection() {
-  for (int i = 0; i < kMaxMediaChannel; i++)
-  {
-    if (rtpfd_[i] != kInvalidSockfd)
-    {
+  for (int i = 0; i < kMaxMediaChannel; i++) {
+    if (socket_api::is_valid(rtpfd_[i])) {
       socket_api::close(rtpfd_[i]);
     }
 
-    if (rtcpfd_[i] != kInvalidSockfd)
-    {
+    if (socket_api::is_valid(rtcpfd_[i])) {
       socket_api::close(rtcpfd_[i]);
     }
   }
@@ -133,7 +129,8 @@ bool RtpConnection::setupRtpOverUdp(
   return true;
 }
 
-bool RtpConnection::setupRtpOverMulticast(MediaChannelId channelId, const NetAddress &address) {
+bool RtpConnection::setupRtpOverMulticast(
+  MediaChannelId channelId, const NetAddress &address) {
   std::random_device rd;
   for (int n = 0; n <= 10; n++) {
     if (n == 10) {
@@ -141,7 +138,8 @@ bool RtpConnection::setupRtpOverMulticast(MediaChannelId channelId, const NetAdd
     }
 
     local_rtp_port_[channelId] = rd() & 0xFFFE;
-    rtpfd_[channelId] = socket_api::socket_udp_bind("0.0.0.0", local_rtp_port_[channelId]);
+    rtpfd_[channelId] =
+      socket_api::socket_udp_bind("0.0.0.0", local_rtp_port_[channelId]);
     if (rtpfd_[channelId] < 0) {
       continue;
     }
@@ -190,7 +188,8 @@ void RtpConnection::teardown() {
   }
 }
 
-auto RtpConnection::getMulticastIp(MediaChannelId channelId) const -> std::string {
+auto RtpConnection::getMulticastIp(MediaChannelId channelId) const
+  -> std::string {
   return peer_rtp_addr_[channelId].ip;
 }
 
@@ -225,11 +224,12 @@ void RtpConnection::setFrameType(uint8_t frame_type) {
 
 void RtpConnection::setRtpHeader(MediaChannelId channelId, RtpPacket pkt) {
   if ((media_channel_info_[channelId].is_play
-      || media_channel_info_[channelId].is_record)
+        || media_channel_info_[channelId].is_record)
       && has_key_frame_) {
     media_channel_info_[channelId].rtp_header.marker = pkt.last;
     media_channel_info_[channelId].rtp_header.ts = htonl(pkt.timestamp);
-    media_channel_info_[channelId].rtp_header.seq = htons(media_channel_info_[channelId].packet_seq++);
+    media_channel_info_[channelId].rtp_header.seq =
+      htons(media_channel_info_[channelId].packet_seq++);
     memcpy(pkt.data.get() + 4, &media_channel_info_[channelId].rtp_header,
       RTP_HEADER_SIZE);
     // pkt.data.fill((const char*)&media_channel_info_[channelId].rtp_header,
@@ -248,25 +248,24 @@ bool RtpConnection::sendRtpPacket(MediaChannelId channelId, RtpPacket pkt) {
   }
 
   auto rtsp_conn = std::dynamic_pointer_cast<RtspConnection>(conn);
-  bool r =
-    rtsp_conn->task_scheduler_->addTriggerEvent([this, channelId, pkt] {
-      this->setFrameType(pkt.type);
-      this->setRtpHeader(channelId, pkt);
-      if ((media_channel_info_[channelId].is_play
+  bool r = rtsp_conn->task_scheduler_->addTriggerEvent([this, channelId, pkt] {
+    this->setFrameType(pkt.type);
+    this->setRtpHeader(channelId, pkt);
+    if ((media_channel_info_[channelId].is_play
           || media_channel_info_[channelId].is_record)
-          && has_key_frame_) {
-        if (transport_mode_ == RTP_OVER_TCP) {
-          this->sendRtpOverTcp(channelId, pkt);
-        }
-        else {
-          this->sendRtpOverUdp(channelId, pkt);
-        }
-
-        // NOTE: Maybe remove
-        media_channel_info_[channelId].octet_count  += pkt.size;
-        media_channel_info_[channelId].packet_count += 1;
+        && has_key_frame_) {
+      if (transport_mode_ == RTP_OVER_TCP) {
+        this->sendRtpOverTcp(channelId, pkt);
       }
-    });
+      else {
+        this->sendRtpOverUdp(channelId, pkt);
+      }
+
+      // NOTE: Maybe remove
+      media_channel_info_[channelId].octet_count += pkt.size;
+      media_channel_info_[channelId].packet_count += 1;
+    }
+  });
 
   return r;
 }
@@ -283,13 +282,14 @@ int RtpConnection::sendRtpOverTcp(MediaChannelId channelId, RtpPacket pkt) {
   rtpPktPtr[2] = (((pkt.size - 4) & 0xFF00) >> 8);
   rtpPktPtr[3] = ((pkt.size - 4) & 0xFF);
 
-  conn->send(reinterpret_cast<const char*>(rtpPktPtr), pkt.size);
+  conn->send(reinterpret_cast<const char *>(rtpPktPtr), pkt.size);
   return pkt.size;
 }
 
 int RtpConnection::sendRtpOverUdp(MediaChannelId channelId, RtpPacket pkt) {
-  int r = socket_api::sendto(rtpfd_[channelId], reinterpret_cast<const char*>(pkt.data.get()) + 4,
-    pkt.size - 4, 0, peer_rtp_addr_[channelId].ip.c_str(), peer_rtp_addr_[channelId].port);
+  int r = socket_api::sendto(rtpfd_[channelId],
+    reinterpret_cast<const char *>(pkt.data.get()) + 4, pkt.size - 4, 0,
+    peer_rtp_addr_[channelId].ip.c_str(), peer_rtp_addr_[channelId].port);
 
   if (r < 0) {
     this->teardown();

@@ -2,7 +2,7 @@
 #include <core/util/Mutex.h>
 
 #if defined(__LINUX__)
-#include <signal.h>
+# include <signal.h>
 #endif
 
 LY_NAMESPACE_BEGIN
@@ -56,7 +56,7 @@ void TaskScheduler::stop()
 	wakeup_pipe_->write(&event, 1);
 }
 
-TimerTaskId TaskScheduler::addTimer(TimerTask task)
+TimerTaskId TaskScheduler::addTimer(const TimerTask &task)
 {
 	Mutex::lock locker(mutex_);
   if (timers_->add(task)) {

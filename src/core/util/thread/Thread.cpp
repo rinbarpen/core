@@ -1,23 +1,19 @@
 #include <core/util/thread/Thread.h>
 
 LY_NAMESPACE_BEGIN
-Thread::Thread(const ThreadContext &context)
-  : context_(context)
-{
+Thread::Thread(const ThreadContext &context) : context_(context) {}
+Thread::Thread(std::string_view name) : context_(name) {}
+Thread::Thread(Thread &&th)
+  : context_(std::move(th.context())), thread_(std::move(th.thread_)) {
+  running_.store(th.running_);
 }
-Thread::Thread(std::string_view name)
-  : context_(name)
-{
-}
-Thread::~Thread()
-{
+Thread::~Thread() {
   if (thread_.joinable()) {
     thread_.join();
   }
   running_ = false;
 }
-void Thread::start()
-{
+void Thread::start() {
   if (running_) this->stop();
 
   running_ = true;
@@ -26,8 +22,7 @@ void Thread::start()
 
   s_thread_mapping[thread_.get_id()] = context_;
 }
-void Thread::stop()
-{
+void Thread::stop() {
   if (!running_) return;
 
   s_thread_mapping.erase(thread_.get_id());
@@ -37,8 +32,7 @@ void Thread::stop()
   running_ = false;
 }
 
-ThreadContext Thread::context() const
-{
+ThreadContext Thread::context() const {
   return context_;
 }
 

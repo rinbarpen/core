@@ -10,7 +10,7 @@ public:
   TcpSocket() : Socket(NetProtocol::TCP) {}
 
   int setNoDelay(int on = 1);
-  auto type() const -> std::string override { return "TcpSocket"; }
+  std::string type() const override { return "TcpSocket"; }
 
   LY_NONCOPYABLE(TcpSocket);
 };

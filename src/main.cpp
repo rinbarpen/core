@@ -17,8 +17,11 @@
 #include <core/multimedia/codec/encoder/AACEncoder.h>
 #include <core/multimedia/codec/encoder/H264Encoder.h>
 #include <fmt/core.h>
-#include <thread>
+#include <unistd.h>
 #include "core/multimedia/net/rtmp/RtmpServer.h"
+#include "core/multimedia/net/rtsp/RtspServer.h"
+#include "core/util/Process.h"
+#include "core/util/thread/ThreadPool.h"
 
 using namespace ly;
 using namespace lynet;
@@ -177,7 +180,7 @@ int main() {
   // LogIniter::reg("multimedia.capture", ".", LogIniterFlag::SYNC_FILE | LogIniterFlag::CONSOLE);
   // LogIniter::reg("app.screen.live", ".", LogIniterFlag::SYNC_FILE | LogIniterFlag::CONSOLE);
 
-  std::vector<std::string> v = {
+  auto v = {
     "system.debugger",
     "system.console",
     "system.fiber",
@@ -210,22 +213,55 @@ int main() {
   GET_LOGGER("net")->setLevel(LogLevel::LTRACE);
 
   ILOG_TRACE(GET_LOGGER("root")) << "Hello, World!";
+  ILOG_TRACE(GET_LOGGER("net")) << "Hello, World!";
 
 	EventLoop eventLoop;
-	auto rtmp_server = RtmpServer::create(&eventLoop);
-	rtmp_server->setChunkSize(60000);
-	// rtmp_server->setGopCache(); // enable gop cache
+  // Process rtmp([&eventLoop]{
+  //   auto rtmp_server = RtmpServer::create(&eventLoop);
+  //   rtmp_server->setChunkSize(60000);
+  //   rtmp_server->setGopCache(); // enable gop cache
+  //   rtmp_server->setEventCallback([](std::string type, std::string stream_path) {
+  //     printf("[Event] %s, stream path: %s\n\n", type.c_str(), stream_path.c_str());
+  //   });
 
-	rtmp_server->setEventCallback([](std::string type, std::string stream_path) {
-		printf("[Event] %s, stream path: %s\n\n", type.c_str(), stream_path.c_str());
-	});
+  //   if (!rtmp_server->start("0.0.0.0", 1935, 1024)) {
+  //     printf("start rtmpServer error\n");
+  //   }
+  //   LOG_INFO() << "My pid: " << getpid();
+  //   while(true) std::this_thread::sleep_for(100ms);
+  //   rtmp_server->stop();
+  // });
+  // Process rtsp([&eventLoop]{
+  //   auto rtsp_server = RtspServer::create(&eventLoop);
+  //   if (!rtsp_server->start("127.0.0.1", 554, 1024)) {
+  //     printf("start rtspServer error\n");
+  //   }
+  //   LOG_INFO() << "My pid: " << getpid();
+  //   while(true) std::this_thread::sleep_for(100ms);
+  //   rtsp_server->stop();
+  // });
 
-	if (!rtmp_server->start("127.0.0.1", 1935, 1024)) {
-		printf("start rtmpServer error\n");
-	}
+  // rtmp.run();
+  // rtsp.run();
+
+  auto rtmp_server = RtmpServer::create(&eventLoop);
+  rtmp_server->setChunkSize(60000);
+  // rtmp_server->setGopCache(); // enable gop cache
+  rtmp_server->setEventCallback([](std::string type, std::string stream_path) {
+    fmt::println(stderr, "[Event] {}, stream path: {}\n", type, stream_path);
+  });
+  if (!rtmp_server->start("0.0.0.0", 1935, 1024)) {
+    fmt::println(stderr, "Fail to start RtmpServer");
+  }
+
+  // auto rtsp_server = RtspServer::create(&eventLoop);
+  // if (!rtsp_server->start("0.0.0.0", 8554, 1024)) {
+  //   printf("start rtspServer error\n");
+  // }
+  // ILOG_INFO(GET_LOGGER("system.debugger")) << "My pid: " << getpid();
+  // rtsp_server->stop();
 
   while(true) std::this_thread::sleep_for(100ms);
-
   rtmp_server->stop();
 
 #ifdef __WIN__

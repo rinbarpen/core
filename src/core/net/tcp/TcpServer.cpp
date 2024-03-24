@@ -42,7 +42,10 @@ bool TcpServer::start(const char *ip, uint16_t port, int max_backlog) {
   if (running_) return false;
 
   ILOG_INFO_FMT(g_net_tcp_logger, "{} is started", this->type());
-  acceptor_->listen(ip, port, max_backlog);
+  if (!acceptor_->listen(ip, port, max_backlog)) {
+    return false;
+  }
+
   running_ = true;
   return true;
 }

@@ -19,8 +19,8 @@ public:
   Acceptor(EventLoop* event_loop, bool is_tcp = true);
   ~Acceptor() = default;
 
-  void listen(const char *ip, uint16_t port, int backlog);
-  void listen(const NetAddress &addr, int backlog);
+  bool listen(const char *ip, uint16_t port, int backlog);
+  bool listen(const NetAddress &addr, int backlog);
   void close();
 
   void setNewConnectionCallback(NewConnectionCallback callback);
@@ -35,7 +35,7 @@ private:
   EventLoop *event_loop_;
   bool is_tcp_;
   std::unique_ptr<Socket> socket_;
-  AcceptCallbackFn accept_callback_;
+  // AcceptCallbackFn accept_callback_;
   NewConnectionCallback new_connection_callback_;
   FdChannel::ptr channel_;
 

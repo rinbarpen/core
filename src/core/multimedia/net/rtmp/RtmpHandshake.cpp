@@ -32,7 +32,7 @@ int RtmpHandshake::parse(BufferReader &in, char *res_buf, uint32_t res_buf_size)
 			return -1;
 		}
 
-		offset += 1 + 1536 + 1536;
+		offset = 1 + 1536 + 1536;
 		res_size = 1536;
 		memcpy(res_buf, buf + 1, 1536); //C2
 		handshake_status_ = HANDSHAKE_COMPLETE;
@@ -47,7 +47,7 @@ int RtmpHandshake::parse(BufferReader &in, char *res_buf, uint32_t res_buf_size)
       return -1;
     }
 
-    offset += 1537;
+    offset = 1537;
     res_size = 1 + 1536 + 1536;
     memset(res_buf, 0, 1537); //S0 S1 S2
     res_buf[0] = RTMP_VERSION;
